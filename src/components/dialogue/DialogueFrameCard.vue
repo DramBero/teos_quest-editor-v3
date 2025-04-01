@@ -5,78 +5,73 @@
     <img
       class="dialogue-card__image"
       v-if="getNpcFace"
-      :src="getNpcFace ? require('@/assets/images/faces/' + getNpcFace) : ''"
+      :src="getNpcFace ? `/assets/images/faces/${getNpcFace}` : ''"
       :alt="speakerData.name || speakerId"
     />
   </div>
 </template>
 
-<script>
+<script setup lang="ts">
 import { fetchNPCData } from '@/api/idb';
-export default {
-  props: {
-    speakerType: {
-      type: String,
-    },
-    speakerId: {
-      type: String,
-    },
+import { computed, onMounted, ref } from 'vue';
+
+const props = defineProps({
+  speakerType: {
+    type: String,
   },
-  data() {
-    return {
-      speakerData: {},
-    };
+  speakerId: {
+    type: String,
   },
-  async mounted() {
-    let speakerData;
-    await this.$store
-      .dispatch('fetchNPCData', [this.speakerId])
-      .then((response) => {
-        speakerData = response;
-      })
-      .catch((error) => {
-        console.log('err: ', error);
-      });
-    this.speakerData = speakerData || {};
-  },
-  computed: {
-    getNpcFace() {
-      let sex = this.speakerData.npc_flags % 2 ? 'f' : 'm';
-      switch (this.speakerData.race) {
-        case 'Argonian':
-          return 'argonian-' + sex + '.png';
-        case 'High Elf':
-          return 'altmer-' + sex + '.png';
-        case 'Dark Elf':
-          return 'dunmer-' + sex + '.png';
-        case 'Breton':
-          return 'breton-' + sex + '.png';
-        case 'Wood Elf':
-          return 'bosmer-' + sex + '.png';
-        case 'Imperial':
-          return 'imperial-' + sex + '.png';
-        case 'Khajiit':
-          return 'khajiit-' + sex + '.png';
-        case 'Nord':
-          return 'nord-' + sex + '.png';
-        case 'Orc':
-          return 'orc-' + sex + '.png';
-        case 'Redguard':
-          return 'redguard-' + sex + '.png';
-        default:
-          return '';
-      }
-    },
-  },
-  methods: {
-    openDialogueModal() {
-      this.$store.commit('setDialogueModal', {
-        speakerId: this.speakerId,
-        speakerType: this.speakerType,
-      });
-    },
-  },
-};
+})
+
+const speakerData = ref({});
+
+onMounted(async () => {
+  let speakerDataResponse;
+  await fetchNPCData(props.speakerId)
+    .then((response) => {
+      speakerDataResponse = response;
+    })
+    .catch((error) => {
+      console.log('err: ', error);
+    });
+  speakerData.value = speakerDataResponse || {};
+})
+
+const getNpcFace = computed(() => {
+  let sex = speakerData.value.npc_flags % 2 ? 'f' : 'm';
+  switch (speakerData.value.race) {
+    case 'Argonian':
+      return 'argonian-' + sex + '.png';
+    case 'High Elf':
+      return 'altmer-' + sex + '.png';
+    case 'Dark Elf':
+      return 'dunmer-' + sex + '.png';
+    case 'Breton':
+      return 'breton-' + sex + '.png';
+    case 'Wood Elf':
+      return 'bosmer-' + sex + '.png';
+    case 'Imperial':
+      return 'imperial-' + sex + '.png';
+    case 'Khajiit':
+      return 'khajiit-' + sex + '.png';
+    case 'Nord':
+      return 'nord-' + sex + '.png';
+    case 'Orc':
+      return 'orc-' + sex + '.png';
+    case 'Redguard':
+      return 'redguard-' + sex + '.png';
+    default:
+      return '';
+  }
+})
+
+function openDialogueModal() {
+/*   this.$store.commit('setDialogueModal', {
+    speakerId: this.speakerId,
+    speakerType: this.speakerType,
+  }); */
+}
 </script>
 
 <style lang="scss">

@@ -1,9 +1,9 @@
-import Dexie, { DBCoreRangeType } from "dexie";
-import { active } from "sortablejs";
+import Dexie from 'dexie';
+// import { active } from 'sortablejs';
 
 let databases = {};
 
-new Dexie("activePlugin");
+new Dexie('activePlugin');
 
 export const createDB = function (name) {
   databases[name] = new Dexie(name);
@@ -22,306 +22,361 @@ export const initPlugin = async function (pluginName) {
   createDB(pluginName);
   let activePlugin = getDB(pluginName);
   activePlugin.version(1).stores({
-    pluginData: "TMP_index,type,TMP_is_active,TMP_topic,TMP_type,TMP_info_id,TMP_prev_id,TMP_next_id,TMP_speaker_id,TMP_speaker_cell,TMP_speaker_faction,TMP_speaker_class,TMP_speaker_rank,TMP_id,name",
+    pluginData:
+      'TMP_index,type,TMP_is_active,TMP_topic,TMP_type,TMP_info_id,TMP_prev_id,TMP_next_id,TMP_speaker_id,TMP_speaker_cell,TMP_speaker_faction,TMP_speaker_class,TMP_speaker_rank,TMP_id,name',
   });
   await activePlugin.open().catch((err) => {
-    console.error (err.stack || err)
-  })
+    console.error(err.stack || err);
+  });
   return activePlugin;
-}
+};
 
 export const getDependencies = async function () {
   if (!databases['activePlugin']) {
-    throw('NO_INDEXEDDB_PLUGIN')
+    await initPlugin('activePlugin');
   }
-  const activePlugin = databases['activePlugin']
-  const headers = await activePlugin.pluginData.where('type').equals('Header').toArray()
+  if (!databases['activePlugin']) {
+    throw 'NO_INDEXEDDB_PLUGIN';
+  }
+  const activePlugin = databases['activePlugin'];
+  const headers = await activePlugin.pluginData.where('type').equals('Header').toArray();
   if (!headers.length) {
-    throw('NO_HEADERFOUND')
+    throw 'NO_HEADERFOUND';
   }
-  const header = headers[0]
-  const dependecies = header.masters.map(val => val[0])
-  return dependecies
-}
+  const header = headers[0];
+  const dependecies = header.masters.map((val) => val[0]);
+  return dependecies;
+};
 
 export const getActiveHeader = async function () {
   if (!databases['activePlugin']) {
-    throw('NO_INDEXEDDB_PLUGIN')
+    await initPlugin('activePlugin');
   }
-  const activePlugin = databases['activePlugin']
-  const headers = await activePlugin.pluginData.where('type').equals('Header').toArray()
+  if (!databases['activePlugin']) {
+    throw 'NO_INDEXEDDB_PLUGIN';
+  }
+  const activePlugin = databases['activePlugin'];
+  const headers = await activePlugin.pluginData.where('type').equals('Header').toArray();
   if (!headers.length) {
-    throw('NO_HEADERFOUND')
+    throw 'NO_HEADERFOUND';
   }
-  const header = headers[0]
+  const header = headers[0];
   return header;
-}
+};
 
 export const fetchNPCData = async function (npcID) {
   if (!databases['activePlugin']) {
-    throw('NO_INDEXEDDB_PLUGIN')
+    await initPlugin('activePlugin');
   }
-  const activePlugin = databases['activePlugin']
+  if (!databases['activePlugin']) {
+    throw 'NO_INDEXEDDB_PLUGIN';
+  }
+  const activePlugin = databases['activePlugin'];
   try {
     const response = await activePlugin.pluginData
-      .where("TMP_id").equals(npcID)
-      .and(entry => entry['type'] === 'Npc' || entry['type'] === 'Creature')
-      .toArray()
+      .where('TMP_id')
+      .equals(npcID)
+      .and((entry) => entry['type'] === 'Npc' || entry['type'] === 'Creature')
+      .toArray();
     if (response.length) {
-      return response[0]
+      return response[0];
     } else {
-      const dependecies = await getDependencies()
+      const dependecies = await getDependencies();
       for (let dep of dependecies) {
-        let dependencyDB = databases[dep]
+        let dependencyDB = databases[dep];
         if (!dependencyDB) {
-          continue
+          continue;
         }
         let depResponse = await dependencyDB.pluginData
-          .where("TMP_id").equals(npcID)
-          .and(entry => entry['type'] === 'Npc' || entry['type'] === 'Creature')
-          .toArray()
-        
-        if (depResponse.length) {
-          return depResponse[0]
-        }
-        continue
-      }
-      throw('NPC_NOT_FOUND')
-    }
-    
-  } catch (error) {
-    throw(error)
-  }
-}
+          .where('TMP_id')
+          .equals(npcID)
+          .and((entry) => entry['type'] === 'Npc' || entry['type'] === 'Creature')
+          .toArray();
 
-export const findNPCByName = async function (npcName, size=20) {
-  if (!databases['activePlugin']) {
-    throw('NO_INDEXEDDB_PLUGIN')
+        if (depResponse.length) {
+          return depResponse[0];
+        }
+        continue;
+      }
+      throw 'NPC_NOT_FOUND';
+    }
+  } catch (error) {
+    throw error;
   }
-  const activePlugin = databases['activePlugin']
+};
+
+export const findNPCByName = async function (npcName, size = 20) {
+  if (!databases['activePlugin']) {
+    await initPlugin('activePlugin');
+  }
+  if (!databases['activePlugin']) {
+    throw 'NO_INDEXEDDB_PLUGIN';
+  }
+  const activePlugin = databases['activePlugin'];
   try {
     let results = [];
     const npcResponse = await activePlugin.pluginData
-      .where("type").equals("Npc")
-      .and(entry => entry['name'].toLowerCase().includes(npcName.toLowerCase()))
+      .where('type')
+      .equals('Npc')
+      .and((entry) => entry['name'].toLowerCase().includes(npcName.toLowerCase()))
       .limit(size)
-      .toArray()
+      .toArray();
     const creatureResponse = await activePlugin.pluginData
-      .where("type").equals("Creature")
-      .and(entry => entry['name'].toLowerCase().includes(npcName.toLowerCase()))
+      .where('type')
+      .equals('Creature')
+      .and((entry) => entry['name'].toLowerCase().includes(npcName.toLowerCase()))
       .limit(size)
-      .toArray()
+      .toArray();
     if (npcResponse.length) {
       results = [...results, ...npcResponse];
     }
     if (creatureResponse.length) {
       results = [...results, ...creatureResponse];
     }
-    const dependecies = await getDependencies()
+    const dependecies = await getDependencies();
     for (let dep of dependecies) {
-      let dependencyDB = databases[dep]
+      let dependencyDB = databases[dep];
       if (!dependencyDB) {
-        continue
+        continue;
       }
       const npcResponseDep = await dependencyDB.pluginData
-        .where("type").equals("Npc")
-        .and(entry => entry['name'].toLowerCase().includes(npcName.toLowerCase()))
+        .where('type')
+        .equals('Npc')
+        .and((entry) => entry['name'].toLowerCase().includes(npcName.toLowerCase()))
         .limit(size)
-        .toArray()
+        .toArray();
       const creatureResponseDep = await dependencyDB.pluginData
-        .where("type").equals("Creature")
-        .and(entry => entry['name'].toLowerCase().includes(npcName.toLowerCase()))
+        .where('type')
+        .equals('Creature')
+        .and((entry) => entry['name'].toLowerCase().includes(npcName.toLowerCase()))
         .limit(size)
-        .toArray()
+        .toArray();
       if (npcResponseDep.length) {
         results = [...results, ...npcResponseDep];
       }
       if (creatureResponseDep.length) {
         results = [...results, ...creatureResponseDep];
       }
-      continue
+      continue;
     }
     return results;
   } catch (error) {
-    throw(error)
+    throw error;
   }
-}
+};
 
 export const fetchQuestByID = async function (questID) {
   if (!databases['activePlugin']) {
-    throw('NO_INDEXEDDB_PLUGIN')
+    await initPlugin('activePlugin');
   }
-  const activePlugin = databases['activePlugin']
+  if (!databases['activePlugin']) {
+    throw 'NO_INDEXEDDB_PLUGIN';
+  }
+  const activePlugin = databases['activePlugin'];
   try {
-
     let entries = await activePlugin.pluginData
-      .where("TMP_topic").equals(questID)
-      .and(val => val.type === 'Info' && val.quest_name !== 1).toArray()
+      .where('TMP_topic')
+      .equals(questID)
+      .and((val) => val.type === 'DialogueInfo' && val.quest_state !== 'Name')
+      .toArray();
     let name = await activePlugin.pluginData
-      .where("TMP_topic").equals(questID)
-      .and(val => val.type === 'Info' && val.quest_name === 1).toArray()
+      .where('TMP_topic')
+      .equals(questID)
+      .and((val) => val.type === 'DialogueInfo' && val.quest_state === 'Name')
+      .toArray();
     if (!name.length) {
-      name = ''
+      name = '';
     } else {
-      name = name[0].text
+      name = name[0].text;
     }
 
-    return { name, entries }
-
+    return { name, entries };
   } catch (error) {
-    throw(error)
+    throw error;
   }
-}
+};
 
 export const fetchTopicListByNPC = async function (npcID, speakerType) {
-  const speakerTypeKey = getSpeakerTypeKey(speakerType)
+  const speakerTypeKey = getSpeakerTypeKey(speakerType);
   if (!databases['activePlugin']) {
-    throw('NO_INDEXEDDB_PLUGIN')
+    await initPlugin('activePlugin');
   }
-  const activePlugin = databases['activePlugin']
+  if (!databases['activePlugin']) {
+    throw 'NO_INDEXEDDB_PLUGIN';
+  }
+  const activePlugin = databases['activePlugin'];
   try {
     let entries = await activePlugin.pluginData
       .where(JSON.parse(`{"${speakerTypeKey}": "${npcID}"}`))
-      .toArray()
-    let dialogue = {}
-    dialogue.topics = [...new Set(entries.filter(val => val.TMP_type === 'Topic').map(entry => entry.TMP_topic))]
-    dialogue.greetings = [...new Set(entries.filter(val => val.TMP_type === 'Greeting').map(entry => entry.TMP_topic))]
-    dialogue.persuasions = [...new Set(entries.filter(val => val.TMP_type === 'Persuasion').map(entry => entry.TMP_topic))]
-    return dialogue
+      .toArray();
+    let dialogue = {};
+    dialogue.topics = [
+      ...new Set(entries.filter((val) => val.TMP_type === 'Topic').map((entry) => entry.TMP_topic)),
+    ];
+    dialogue.greetings = [
+      ...new Set(
+        entries.filter((val) => val.TMP_type === 'Greeting').map((entry) => entry.TMP_topic),
+      ),
+    ];
+    dialogue.persuasions = [
+      ...new Set(
+        entries.filter((val) => val.TMP_type === 'Persuasion').map((entry) => entry.TMP_topic),
+      ),
+    ];
+    return dialogue;
   } catch (error) {
-    throw(error)
+    throw error;
   }
-}
+};
 
 /////// FOR DEPRECATION
 export const fetchAllDialogueNPCs = async function () {
   if (!databases['activePlugin']) {
-    throw('NO_INDEXEDDB_PLUGIN')
+    await initPlugin('activePlugin');
   }
-  const activePlugin = databases['activePlugin']
+  if (!databases['activePlugin']) {
+    throw 'NO_INDEXEDDB_PLUGIN';
+  }
+  const activePlugin = databases['activePlugin'];
   try {
-    let resp
+    let resp;
     await activePlugin.pluginData
-      .orderBy("TMP_speaker_id")
-      .uniqueKeys(keys => keys.filter(val => val !== ''))
+      .orderBy('TMP_speaker_id')
+      .uniqueKeys((keys) => keys.filter((val) => val !== ''))
       .then((response) => {
-        resp = response
-      })
-    return resp
+        resp = response;
+      });
+    return resp;
   } catch (error) {
-    throw(error)
+    throw error;
   }
-}
+};
 //////
 
 function getSpeakerTypeKey(speakerType) {
-  switch(speakerType) {
-    case 'npc': return 'TMP_speaker_id'
-    case 'cell': return 'TMP_speaker_cell'
-    case 'class': return 'TMP_speaker_class'
-    case 'faction': return 'TMP_speaker_faction'
-    case 'rank': return 'TMP_speaker_rank'
-    default: return speakerType
+  switch (speakerType) {
+    case 'npc':
+      return 'TMP_speaker_id';
+    case 'cell':
+      return 'TMP_speaker_cell';
+    case 'class':
+      return 'TMP_speaker_class';
+    case 'faction':
+      return 'TMP_speaker_faction';
+    case 'rank':
+      return 'TMP_speaker_rank';
+    default:
+      return speakerType;
   }
 }
 
 export const fetchAllDialogueBySpeaker = async function (speakerType) {
-  const speakerTypeKey = getSpeakerTypeKey(speakerType)
+  const speakerTypeKey = getSpeakerTypeKey(speakerType);
   if (!databases['activePlugin']) {
-    throw('NO_INDEXEDDB_PLUGIN')
+    await initPlugin('activePlugin');
   }
-  const activePlugin = databases['activePlugin']
+  if (!databases['activePlugin']) {
+    throw 'NO_INDEXEDDB_PLUGIN';
+  }
+  const activePlugin = databases['activePlugin'];
   try {
-    let resp
+    let resp;
     if (speakerTypeKey === 'global') {
-      console.log('NOT SUPPORTED YET')
+      console.log('NOT SUPPORTED YET');
     }
     await activePlugin.pluginData
       .orderBy(speakerTypeKey)
-      .uniqueKeys(keys => keys.filter(val => val !== ''))
+      .uniqueKeys((keys) => keys.filter((val) => val !== ''))
       .then((response) => {
-        resp = response
-      })
-    return resp
+        resp = response;
+      });
+    return resp;
   } catch (error) {
-    throw(error)
+    throw error;
   }
-}
+};
 
 export const fetchAllQuestIDs = async function () {
   if (!databases['activePlugin']) {
-    throw('NO_INDEXEDDB_PLUGIN')
+    await initPlugin('activePlugin');
   }
-  const activePlugin = databases['activePlugin']
+  if (!databases['activePlugin']) {
+    throw 'NO_INDEXEDDB_PLUGIN';
+  }
+  const activePlugin = databases['activePlugin'];
   try {
     let resp = await activePlugin.pluginData
-      .where("type").equals('Dialogue')
-      .and(val => val.TMP_type === 'Journal').toArray()
-    return resp
-    
+      .where('type')
+      .equals('Dialogue')
+      .and((val) => val.TMP_type === 'Journal')
+      .toArray();
+    return resp;
   } catch (error) {
-    throw(error)
+    throw error;
   }
-}
+};
 
-export const getAllDialogue = async function(topicId) {
-  const dependecies = await getDependencies()
-  let dialogue = []
+export const getAllDialogue = async function (topicId) {
+  const dependecies = await getDependencies();
+  let dialogue = [];
   try {
     for (let dep of dependecies) {
-      let dependencyDB = databases[dep]
+      let dependencyDB = databases[dep];
       if (!dependencyDB) {
-        continue
+        continue;
       }
       let depResponse = await dependencyDB.pluginData
-        .where("type").equals('Info')
-        .and(entry => entry['TMP_topic'] === topicId)
-        .toArray()
-      dialogue = [...dialogue, depResponse]
+        .where('type')
+        .equals('DialogueInfo')
+        .and((entry) => entry['TMP_topic'] === topicId)
+        .toArray();
+      dialogue = [...dialogue, depResponse];
     }
-    const activePlugin = databases['activePlugin']
+    const activePlugin = databases['activePlugin'];
     const response = await activePlugin.pluginData
-      .where("type").equals('Info')
-      .and(entry => entry['TMP_topic'] === topicId)
-      .toArray()
-      dialogue = [...dialogue, response]
-    return dialogue
+      .where('type')
+      .equals('DialogueInfo')
+      .and((entry) => entry['TMP_topic'] === topicId)
+      .toArray();
+    dialogue = [...dialogue, response];
+    return dialogue;
   } catch (error) {
-    throw(error)
+    throw error;
   }
-}
+};
 
-export const getAllTopicsByType = async function(topicType) {
-  console.log('searching for:', topicType)
+export const getAllTopicsByType = async function (topicType) {
+  console.log('searching for:', topicType);
 
-  const dependecies = await getDependencies()
-  let topics = []
+  const dependecies = await getDependencies();
+  let topics = [];
   try {
     for (let dep of dependecies) {
-      let dependencyDB = databases[dep]
+      let dependencyDB = databases[dep];
       if (!dependencyDB) {
-        continue
+        continue;
       }
-      
+
       let depResponse = await dependencyDB.pluginData
-        .where("type").equals('Dialogue')
-        .and(entry => entry['TMP_type'] === topicType)
-        .toArray()
-        topics = [...topics, ...depResponse]
+        .where('type')
+        .equals('Dialogue')
+        .and((entry) => entry['TMP_type'] === topicType)
+        .toArray();
+      topics = [...topics, ...depResponse];
     }
 
-    const activePlugin = databases['activePlugin']
+    const activePlugin = databases['activePlugin'];
     const response = await activePlugin.pluginData
-      .where("type").equals('Dialogue')
-      .and(entry => entry['TMP_type'] === topicType)
-      .toArray()
-    topics = [...topics, ...response]
+      .where('type')
+      .equals('Dialogue')
+      .and((entry) => entry['TMP_type'] === topicType)
+      .toArray();
+    topics = [...topics, ...response];
 
     const uniqueObjMap = {};
     for (const object of topics) {
-      uniqueObjMap[object.id] = uniqueObjMap[object.id]
-        ? [...uniqueObjMap[object.id], object]
-        : [object];
+      uniqueObjMap[object.id] =
+        uniqueObjMap[object.id] ? [...uniqueObjMap[object.id], object] : [object];
     }
 
     let uniqueObjects = Object.values(uniqueObjMap);
@@ -329,62 +384,61 @@ export const getAllTopicsByType = async function(topicType) {
     const activePluginHeader = await getActiveHeader();
     const activePluginName = activePluginHeader.TMP_dep;
 
-    uniqueObjects = uniqueObjects.sort((a, b) => b.filter(val => val.TMP_dep === activePluginName).length - a.filter(val => val.TMP_dep === activePluginName).length)
+    uniqueObjects = uniqueObjects.sort(
+      (a, b) =>
+        b.filter((val) => val.TMP_dep === activePluginName).length -
+        a.filter((val) => val.TMP_dep === activePluginName).length,
+    );
 
-    console.log('results:', uniqueObjects)
+    console.log('results:', uniqueObjects);
 
     return uniqueObjects;
   } catch (error) {
-    throw(error)
+    throw error;
   }
-}
+};
 
-export const getOrderedEntriesByTopic = async function(topicId) {
+export const getOrderedEntriesByTopic = async function (topicId) {
   if (!topicId) return [];
 
-  let pluginDialogue = await getAllDialogue(topicId)
+  let pluginDialogue = await getAllDialogue(topicId);
 
   if (!pluginDialogue.flat(1).length) return [];
 
-  let dependencies = await getDependencies()
+  let dependencies = await getDependencies();
 
   const findByIdType = function (idType, id) {
     let entries = pluginDialogue.flatMap((plugin) =>
-      plugin.filter((entry) => entry[idType] === id)
+      plugin.filter((entry) => entry[idType] === id),
     );
     if (!entries.length) return false;
     let lastValue = entries.at(-1);
     let oldValues = pluginDialogue.flatMap((plugin) =>
-      plugin.filter((entry) => entry.info_id === lastValue.info_id)
+      plugin.filter((entry) => entry.info_id === lastValue.info_id),
     );
     return {
       ...lastValue,
-      old_values:
-        oldValues.length > 1
-          ? oldValues.filter((val) => val && val.TMP_dep)
-          : []
+      old_values: oldValues.length > 1 ? oldValues.filter((val) => val && val.TMP_dep) : [],
     };
   };
 
-  let firstElement = findByIdType("prev_id", "");
+  let firstElement = findByIdType('prev_id', '');
 
   if (!firstElement) {
-    throw('NO_PREV_ID')
-  };
+    throw 'NO_PREV_ID';
+  }
 
   let orderedDialogue = [firstElement];
   let nextEntry;
   while (true) {
     let nextEntries = [
       ...new Set([
-        findByIdType("prev_id", orderedDialogue.at(-1).info_id),
-        findByIdType("info_id", orderedDialogue.at(-1).next_id)
-      ])
+        findByIdType('prev_id', orderedDialogue.at(-1).info_id),
+        findByIdType('info_id', orderedDialogue.at(-1).next_id),
+      ]),
     ];
     for (let dependency of dependencies) {
-      nextEntry =
-        nextEntries.find((val) => val.TMP_dep === dependency) ||
-        nextEntry;
+      nextEntry = nextEntries.find((val) => val.TMP_dep === dependency) || nextEntry;
     }
     nextEntry = nextEntries.find((val) => val.TMP_is_active) || nextEntry;
     if (nextEntry) {
@@ -393,20 +447,20 @@ export const getOrderedEntriesByTopic = async function(topicId) {
     } else break;
   }
   return orderedDialogue;
-}
+};
 
 export const importPlugin = async function (pluginData, pluginName, isActive) {
   let dialogueType;
   let dialogueId;
   let activePlugin = await initPlugin(isActive ? 'activePlugin' : pluginName);
-  let tableLength = await activePlugin.pluginData.count()
+  let tableLength = await activePlugin.pluginData.count();
   if (tableLength) {
-    console.log('exists')
-    await activePlugin.pluginData.clear()
+    console.log('exists');
+    await activePlugin.pluginData.clear();
   }
   let entries = [];
 
-/*   let chunksAmount = Math.ceil(pluginData.length / 5000)
+  /*   let chunksAmount = Math.ceil(pluginData.length / 5000)
 
   for (let chunkIndex in chunksAmount) {
     let chunk = pluginData.slice((chunkIndex * 5000), ((chunkIndex + 1)))
@@ -414,15 +468,16 @@ export const importPlugin = async function (pluginData, pluginName, isActive) {
  */
   for (let index in pluginData) {
     let dialogueEntry;
-    if (["Info", "Dialogue"].includes(pluginData[index].type)) {
-      if (pluginData[index].type === "Dialogue") {
+    if (['DialogueInfo', 'Dialogue'].includes(pluginData[index].type)) {
+      if (pluginData[index].type === 'Dialogue') {
         dialogueType = pluginData[index].dialogue_type;
+        if (pluginData[index].id) {
+          dialogueId = pluginData[index].id;
+        }
       }
-      if (pluginData[index].id) {
-        dialogueId = pluginData[index].id;
-      }
+
       dialogueEntry = {
-        type: "",
+        type: '',
         ...pluginData[index],
         TMP_id: pluginData[index].id || '',
         TMP_topic: dialogueId,
@@ -437,43 +492,42 @@ export const importPlugin = async function (pluginData, pluginName, isActive) {
         TMP_speaker_rank: pluginData[index].speaker_rank,
         TMP_dep: pluginName,
         TMP_is_active: isActive,
-        TMP_index: parseInt(index)
+        TMP_index: parseInt(index),
       };
     } else {
       dialogueEntry = {
-        type: "",
+        type: '',
         ...pluginData[index],
         TMP_id: pluginData[index].id || '',
-        TMP_topic: "",
-        TMP_type: "",
-        TMP_info_id: "",
-        TMP_prev_id: "",
-        TMP_next_id: "",
-        TMP_speaker_id: "",
-        TMP_speaker_cell: "",
-        TMP_speaker_faction: "",
-        TMP_speaker_class: "",
-        TMP_speaker_rank: "",
+        TMP_topic: '',
+        TMP_type: '',
+        TMP_info_id: '',
+        TMP_prev_id: '',
+        TMP_next_id: '',
+        TMP_speaker_id: '',
+        TMP_speaker_cell: '',
+        TMP_speaker_faction: '',
+        TMP_speaker_class: '',
+        TMP_speaker_rank: '',
         TMP_dep: pluginName,
         TMP_is_active: isActive,
-        TMP_index: parseInt(index)
+        TMP_index: parseInt(index),
       };
     }
     entries.push(dialogueEntry);
   }
   await activePlugin.transaction('rw', activePlugin.pluginData, async () => {
     await activePlugin.pluginData.bulkAdd(entries).catch((error) => {
-      console.log("Dexie ERROR on importing123");
+      console.log('Dexie ERROR on importing123');
       console.log(error);
     });
-  })
+  });
   if (isActive) {
-    const dependecies = await getDependencies()
+    const dependecies = await getDependencies();
     for (let dep of dependecies) {
-      await initPlugin(dep)
+      await initPlugin(dep);
     }
   }
-
 
   return databases[isActive ? 'activePlugin' : pluginName];
 };

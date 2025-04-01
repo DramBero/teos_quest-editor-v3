@@ -4,7 +4,7 @@
       <div class="frame-controls-left">
         <div class="frame-controls-types__type frame-controls-types__type_active" :style="{ gap: '10px' }"
           @click="addDialogue()">
-          Add <icon name="plus-circle" scale="1"></icon>
+          Add <!-- <icon name="plus-circle" scale="1"></icon> -->
         </div>
         <div class="frame-controls-types__secondary" :style="{ gap: '10px' }" @click="openClassicView()">
           Classic view
@@ -24,7 +24,7 @@
         </button>
       </form> -->
       </div>
-      <div class="frame-controls-types" v-if="getCurrentSpeakers && getCurrentSpeakers.length">
+      <div class="frame-controls-types" v-if="currentSpeakers && currentSpeakers.length">
         <template v-for="speakerType in speakerTypes">
           <div :key="speakerType" v-if="getSpeakerLength(speakerType)" class="frame-controls-types__type" :class="{
             'frame-controls-types__type_active': currentSpeakerType === speakerType,
@@ -42,56 +42,67 @@
       </div>
     </div>
     <div class="frame-dialogue__wrapper">
-      <transition-group name="fadeHeight" class="frame-dialogue" mode="out-in" :style="{ width: '100%' }">
-        <DialogueFrameCard v-for="speaker in getCurrentSpeakers" :key="speaker" :speakerId="speaker"
+      <div name="fadeHeight" class="frame-dialogue" mode="out-in" :style="{ width: '100%' }">
+        <!-- transition-group -->
+        <DialogueFrameCard v-for="speaker in currentSpeakers" :key="speaker" :speakerId="speaker"
           :speakerType="currentSpeakerType" />
-      </transition-group>
+      </div>
     </div>
   </div>
 </template>
 
-<script>
-import Icon from 'vue-awesome/components/Icon';
-import 'vue-awesome/icons';
-export default {
-  components: { Icon },
-  data() {
-    return {
-      speakerTypes: ['npc', 'cell', 'class', 'faction', 'rank', 'global'],
-      currentSpeakerType: 'npc',
-      speakerSearch: '',
-    };
+<script setup lang="ts">
+import DialogueFrameCard from '@/components/dialogue/DialogueFrameCard.vue';
+import { fetchAllDialogueBySpeaker } from '@/api/idb.js';
+import { computed, ref, watch } from 'vue';
+import { usePrimaryModal } from '@/stores/modals';
+
+type SpeakerType = 'npc' | 'cell' | 'class' | 'faction' | 'rank' | 'global';
+
+const speakerTypes = ref<SpeakerType[]>(['npc', 'cell', 'class', 'faction', 'rank', 'global']);
+const currentSpeakerType = ref<SpeakerType>('npc');
+const speakerSearch = ref<string>('');
+
+const currentSpeakers = ref([]);
+watch(currentSpeakerType,
+  async (newValue: SpeakerType) => {
+    try {
+      const speakersResponse = await fetchAllDialogueBySpeaker(newValue);
+      currentSpeakers.value = speakersResponse;
+      console.log('response:', speakersResponse)
+    } catch(error) {
+      console.error(error);
+    }
   },
-  computed: {
-    getCurrentSpeakers() {
-      return this.$store.getters['getAllSpeakers'](this.currentSpeakerType);
-    },
-    getDialogueGlobalExist() {
-      return this.$store.getters['getDialogueGlobalExist'];
-    },
-  },
-  methods: {
-    getSpeakerLength(speakerType) {
-      return this.$store.getters['getAllSpeakers'](speakerType).length;
-    },
-    toggleType(type) {
-      if (this.speakerTypes.includes(type)) {
-        this.speakerTypes = this.speakerTypes.filter((val) => val != type);
-      } else {
-        this.speakerTypes.push(type);
-      }
-    },
-    openClassicView() {
-      this.$store.commit('setClassicView', true);
-    },
-    addDialogue() {
-      this.$store.commit('setPrimaryModal', 'NewDialogue');
-    },
-    openGeneric() {
-      this.$store.commit('setDialogueModal', 'Global Dialogue');
-    },
-  },
-};
+  { immediate: true },
+)
+
+const getDialogueGlobalExist = computed(() => {
+  return false;
+  // return this.$store.getters['getDialogueGlobalExist'];
+})
+
+function getSpeakerLength(speakerType: SpeakerType) {
+  return 99;
+  // return this.$store.getters['getAllSpeakers'](speakerType).length;
+}
+
+function toggleType(speakerType: SpeakerType) {
+  return null;
+}
+
+function openClassicView() {
+  // this.$store.commit('setClassicView', true);
+}
+
+const primaryModalStore = usePrimaryModal();
+function addDialogue() {
+  primaryModalStore.setActiveModal('NewDialogue');
+}
+
+function openGeneric() {
+  // this.$store.commit('setDialogueModal', 'Global Dialogue');
+}
 </script>
 
 <style lang="scss">

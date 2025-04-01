@@ -3,18 +3,18 @@
     <div class="workspace-controls__button"
       :class="{ 'workspace-controls__button_active': getSidebarActive === 'Journal' }"
       @click="toggleSidebarActive('Journal')">
-      <icon name="book-open" class="icon-controls" scale="2"></icon>
+      <!-- <icon name="book-open" class="icon-controls" scale="2"></icon> -->
       <span>Journal</span>
     </div>
     <div class="workspace-controls__button"
       :class="{ 'workspace-controls__button_active': getSidebarActive === 'Header' }"
       @click="toggleSidebarActive('Header')">
-      <icon name="file-alt" class="icon-controls" scale="2"></icon>
+      <!-- <icon name="file-alt" class="icon-controls" scale="2"></icon> -->
       <span>Header</span>
     </div>
     <div class="workspace-controls__button" disabled
       :class="{ 'workspace-controls__button_active': getSidebarActive === 'Factions' }">
-      <icon name="users" class="icon-controls" scale="2"></icon>
+      <!-- <icon name="users" class="icon-controls" scale="2"></icon> -->
       <span>Factions</span>
     </div>
     <!--     <div class="workspace-controls__button workspace-controls__button_wip" disabled>
@@ -26,38 +26,31 @@
         <span>NPCs</span>
     </div> -->
     <div class="workspace-controls__button" disabled>
-      <icon name="user" class="icon-controls" scale="2"></icon>
+      <!-- <icon name="user" class="icon-controls" scale="2"></icon> -->
       <span>Actors</span>
     </div>
     <div class="workspace-controls__button" disabled>
-      <icon name="book" class="icon-controls" scale="2"></icon>
+      <!-- <icon name="book" class="icon-controls" scale="2"></icon> -->
       <span>Items</span>
     </div>
     <div class="workspace-controls__button" disabled>
-      <icon name="code" class="icon-controls" scale="2"></icon>
+      <!-- <icon name="code" class="icon-controls" scale="2"></icon> -->
       <span>Scripts</span>
     </div>
   </div>
 </template>
 
-<script>
-import Icon from 'vue-awesome/components/Icon';
-import 'vue-awesome/icons';
-export default {
-  components: {
-    Icon,
-  },
-  methods: {
-    toggleSidebarActive(value) {
-      this.$store.commit('toggleSidebarActive', value);
-    },
-  },
-  computed: {
-    getSidebarActive() {
-      return this.$store.getters['getSidebarActive'];
-    },
-  },
-};
+<script setup lang="ts">
+import { useSidebar } from '@/stores/sidebar';
+import { computed } from 'vue';
+
+const sidebarStore = useSidebar();
+function toggleSidebarActive(value: string) {
+  sidebarStore.setActiveItem(value);
+}
+const getSidebarActive = computed(() => {
+  return sidebarStore.getActiveItem;
+})
 </script>
 
 <style lang="scss">

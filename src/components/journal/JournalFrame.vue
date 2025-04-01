@@ -16,8 +16,29 @@
   </div>
 </template>
 
-<script>
-import Icon from 'vue-awesome/components/Icon';
+<script setup lang="ts">
+import { fetchAllQuestIDs } from '@/api/idb.js';
+import { usePrimaryModal } from '@/stores/modals';
+import { onMounted, ref } from 'vue';
+import JournalFrameQuest from './JournalFrameQuest.vue';
+
+const primaryModalStore = usePrimaryModal();
+function addQuest() {
+  primaryModalStore.setActiveModal('NewQuest');
+};
+
+const getJournal = ref([]);
+
+onMounted(async () => {
+  const journalResponse = await fetchAllQuestIDs();
+  if (journalResponse?.length) {
+    getJournal.value = journalResponse;
+  }
+})
+
+
+
+/* import Icon from 'vue-awesome/components/Icon';
 import 'vue-awesome/icons';
 export default {
   computed: {
@@ -54,7 +75,7 @@ export default {
       this.$store.commit('setPrimaryModal', 'NewQuest');
     },
   },
-};
+}; */
 </script>
 
 <style lang="scss">

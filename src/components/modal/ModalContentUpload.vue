@@ -1,21 +1,27 @@
 <template>
   <div class="frame-upload">
     <h2 class="modal__title">Upload your plugin and its masters</h2>
-    <ToolbarReadFile />
+    <ToolBarReadFile />
     <div class="frame-upload-deps">
       <div class="frame-upload-deps__title" v-if="getDependencies && getDependencies.length > 0">
         Requires:
       </div>
       <div class="frame-upload-deps__element" v-for="dep in getDependencies" :key="dep">
         {{ dep }}
-        <ToolbarReadFile :dep="dep" />
+        <!-- <ToolbarReadFile :dep="dep" /> -->
       </div>
     </div>
   </div>
 </template>
 
-<script>
-export default {
+<script setup lang="ts">
+import { computed } from 'vue';
+import ToolBarReadFile from '@/components/toolbar/ToolBarReadFile.vue';
+
+const getDependencies = computed(() => {
+  return [];
+})
+/* export default {
   computed: {
     getDependencies() {
       if (
@@ -26,7 +32,7 @@ export default {
       }
     },
   },
-};
+}; */
 </script>
 
 <style lang="scss">

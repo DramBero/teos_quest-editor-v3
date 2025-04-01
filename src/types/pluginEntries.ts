@@ -59,10 +59,102 @@ export interface InfoData {
     speaker_sex: SpeakerSex;
 }
 
+export type FilterComparison = 'Less' | 'LesserEqual' | 'Equal' | 'NotEqual' | 'GreaterEqual' | 'Greater';
+export type FilterFunction =
+    'ReactionLow' |
+    'ReactionHigh' |
+    'RankRequirement' |
+    'Reputation' |
+    'HealthPercent' |
+    'PcReputation' |
+    'PcLevel' |
+    'PcHealthPercent' |
+    'PcMagicka' |
+    'PcFatigue' |
+    'PcStrength' |
+    'PcBlock' |
+    'PcArmorer' |
+    'PcMediumArmor' |
+    'PcHeavyArmor' |
+    'PcBluntWeapon' |
+    'PcLongBlade' |
+    'PcAxe' |
+    'PcSpear' |
+    'PcAthletics' |
+    'PcEnchant' |
+    'PcDestruction' |
+    'PcAlteration' |
+    'PcIllusion' |
+    'PcConjuration' |
+    'PcMysticism' |
+    'PcRestoration' |
+    'PcAlchemy' |
+    'PcUnarmored' |
+    'PcSecurity' |
+    'PcSneak' |
+    'PcAcrobatics' |
+    'PcLightArmor' |
+    'PcShortBlade' |
+    'PcMarksman' |
+    'PcMercantile' |
+    'PcSpeechcraft' |
+    'PcHandToHand' |
+    'PcSex' |
+    'PcExpelled' |
+    'PcCommonDisease' |
+    'PcBlightDisease' |
+    'PcClothingModifier' |
+    'PcCrimeLevel' |
+    'SameSex' |
+    'SameRace' |
+    'SameFaction' |
+    'FactionRankDifference' |
+    'Detected' |
+    'Alarmed' |
+    'Choice' |
+    'PcIntelligence' |
+    'PcWillpower' |
+    'PcAgility' |
+    'PcSpeed' |
+    'PcEndurance' |
+    'PcPersonality' |
+    'PcLuck' |
+    'PcCorprus' |
+    'Weather' |
+    'PcVampire' |
+    'Level' |
+    'Attacked' |
+    'TalkedToPc' |
+    'PcHealth' |
+    'CreatureTarget' |
+    'FriendHit' |
+    'Fight' |
+    'Hello' |
+    'Alarm' |
+    'Flee' |
+    'ShouldAttack' |
+    'Werewolf' |
+    'WerewolfKills' |
+    'NotClass' |
+    'DeadType' |
+    'NotFaction' |
+    'ItemType' |
+    'JournalType' |
+    'NotCell' |
+    'NotRace' |
+    'NotIdType' |
+    'Global' |
+    'Pcgold' |
+    'CompareGlobal' |
+    'CompareLocal' |
+    'VariableCompare';
+
+export type Slot = 'Slot0' | 'Slot1' | 'Slot2' | 'Slot3' | 'Slot4' | 'Slot5' | 'Slot6';
+export type FilterType = 'None' | 'Function' | 'Global' | 'Local' | 'Journal' | 'Item' | 'Dead' | 'NotId' | 'NotFaction' | 'NotClass' | 'NotRace' | 'NotCell' | 'NotLocal';
 export interface InfoFilter {
     id: string;
     slot: string;
     filter_type: string;
     filter_function: string;
-    filter_comparison: string;
+    filter_comparison: FilterComparison;
 }

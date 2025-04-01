@@ -1,22 +1,18 @@
 <template>
   <button class="open-btn" @click="toggleOpenModal">
-    <icon name="folder-open" scale="1.3"></icon>
+    <!-- <GameIconsOpenFolder /> -->
+    Open
   </button>
 </template>
 
-<script>
-import Icon from 'vue-awesome/components/Icon';
-import 'vue-awesome/icons';
-export default {
-  components: {
-    Icon,
-  },
-  methods: {
-    toggleOpenModal() {
-      this.$store.commit('setPrimaryModal', 'Upload');
-    },
-  },
-};
+<script setup lang="ts">
+import { usePrimaryModal } from '@/stores/modals';
+
+// import GameIconsOpenFolder from '~icons/game-icons/open-folder';
+const primaryModalStore = usePrimaryModal();
+function toggleOpenModal() {
+  primaryModalStore.setActiveModal('Upload');
+}
 </script>
 
 <style lang="scss">
@@ -28,6 +24,7 @@ export default {
   padding: 10px 15px;
   height: 100%;
   background-color: rgba(255, 255, 255, 0.2);
+
   &:hover {
     background-color: rgba(255, 255, 255, 0.3);
   }

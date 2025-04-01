@@ -16,14 +16,10 @@
   </div>
 </template>
 
-<script>
-export default {
-  computed: {
-    getTitle() {
-      return this.$store.getters['getActiveHeader'].TMP_dep;
-    },
-  },
-};
+<script setup lang="ts">
+import { computed } from 'vue';
+import ToolBarOpen from './ToolBarOpen.vue';
+const getTitle = computed<string>(() => 'title.esp');
 </script>
 
 <style lang="scss">

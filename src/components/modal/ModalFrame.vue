@@ -15,7 +15,7 @@
                   </button>
                 </div> -->
 
-              <component :is="'ModalContent' + modalType" />
+              <component v-if="getModalComponent" :is="getModalComponent" />
             </div>
           </div>
         </transition>
@@ -24,36 +24,60 @@
   </div>
 </template>
 
-<script>
-export default {
-  data() {
-    return {
-      modalType: '',
-      triggerFade: '',
-    };
-  },
-  methods: {
-    hideModals() {
-      this.$store.commit('setPrimaryModal', '');
-    },
-  },
-  computed: {
-    getModal() {
-      return this.$store.getters['getPrimaryModal'];
-    },
-  },
-  watch: {
-    async getModal(newValue) {
-      await new Promise((resolve) => setTimeout(resolve, 1));
-      this.triggerFade = newValue;
-      if (newValue === '') {
-        await new Promise((resolve) => setTimeout(resolve, 300));
-      }
-      this.modalType = this.getModal;
-      //this.modalType
-    },
-  },
-};
+<script setup lang="ts">
+import { usePrimaryModal } from '@/stores/modals';
+import { computed, defineAsyncComponent, ref, watch } from 'vue';
+import type { PrimaryModal } from '@/types/modals.ts';
+
+const modalType = ref<string>('');
+const triggerFade = ref<string>('');
+
+const primaryModalStore = usePrimaryModal();
+
+function hideModals() {
+  primaryModalStore.setActiveModal('');
+}
+
+const getModal = computed<PrimaryModal>(() => {
+  return primaryModalStore.getActiveModal;
+})
+
+watch(getModal, async (newValue: string) => {
+  await new Promise((resolve) => setTimeout(resolve, 1));
+  triggerFade.value = newValue;
+  if (newValue === '') {
+    await new Promise((resolve) => setTimeout(resolve, 300));
+  }
+  modalType.value = getModal.value;
+})
+
+const ModalContentUpload = defineAsyncComponent(
+  () => import('@/components/modal/ModalContentUpload.vue')
+)
+/* const ModalContentDialogue = defineAsyncComponent(
+  () => import('@/components/modal/ModalContentDialogue.vue')
+) */
+const ModalContentNewDialogue = defineAsyncComponent(
+  () => import('@/components/modal/ModalContentNewDialogue.vue')
+)
+const ModalContentNewFilter = defineAsyncComponent(
+  () => import('@/components/modal/ModalContentNewFilter.vue')
+)
+const ModalContentNewQuest = defineAsyncComponent(
+  () => import('@/components/modal/ModalContentNewQuest.vue')
+)
+
+const getModalComponent = computed(() => {
+  switch (getModal.value) {
+    case 'Dialogue': return ModalContentDialogue;
+    case 'NewDialogue': return ModalContentNewDialogue;
+    case 'NewFilter': return ModalContentNewFilter;
+    case 'NewQuest': return ModalContentNewQuest;
+    case 'Upload': return ModalContentUpload;
+    default: return null;
+  }
+})
+
 </script>
 
 <style scoped lang="scss">

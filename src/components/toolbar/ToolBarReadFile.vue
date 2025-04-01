@@ -1,7 +1,7 @@
 <template>
   <div class="text-reader__wrapper" :class="{ 'text-reader__wrapper_dep': dep }">
     <label class="text-reader">
-      <input ref="file" type="file" accept=".json" @change="loadTextFromFile" />
+      <input type="file" accept=".esp,.esm" @change="loadTextFromFile" />
       {{ !dep ? 'Load active plugin' : 'Load dependency' }}
     </label>
     {{ !dep ? getActivePluginName : fileName }}
@@ -9,38 +9,58 @@
   </div>
 </template>
 
-<script>
-export default {
-  props: {
-    dep: {
-      type: String,
-      required: false,
-      default: '',
-    },
-  },
-  data() {
-    return {
-      fileName: '',
-      fileSize: null,
-    };
-  },
-  computed: {
-    getActivePluginName() {
-      return this.$store.getters['getActiveHeader'].TMP_dep;
-    },
-  },
+<script setup lang="ts">
+import { computed, onMounted, ref } from 'vue';
+import init, { load_objects } from '@/tes3_wasm/tes3_wasm.js';
+import { importPlugin } from '@/api/idb.js';
+
+interface Props {
+  dep?: string;
+}
+const props = defineProps<Props>();
+
+const fileName = ref<string>('');
+const fileSize = ref<string | null>(null);
+
+const getActivePluginName = computed(() => {
+  return 'test';
+  // return this.$store.getters['getActiveHeader'].TMP_dep;
+})
+
+function formatBytes(bytes: number, decimals: number = 2) {
+  if (!+bytes) return '0 Bytes';
+  const k = 1024;
+  const dm = decimals < 0 ? 0 : decimals;
+  const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`;
+}
+
+onMounted(async () => {
+  await init();
+})
+
+async function loadTextFromFile(event: InputEvent) {
+  try {
+    const element = event.target as HTMLInputElement;
+    if (!element.files) return;
+    const file: FileList = element.files;
+    if (!file.length) return;
+    const buffer = await file[0].arrayBuffer();
+    fileSize.value = formatBytes(file[0].size);
+    fileName.value = file[0].name;
+    const bytes = new Uint8Array(buffer);
+    const objects = await load_objects(bytes);
+    if (!props.dep) {
+      importPlugin(objects, fileName.value, true);
+    }
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+/* export default {
   methods: {
-    formatBytes(bytes, decimals = 2) {
-      if (!+bytes) return '0 Bytes';
-
-      const k = 1024;
-      const dm = decimals < 0 ? 0 : decimals;
-      const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
-
-      const i = Math.floor(Math.log(bytes) / Math.log(k));
-
-      return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`;
-    },
     loadTextFromFile(ev) {
       const file = ev.target.files[0];
       this.fileName = ev.target.files[0].name;
@@ -53,17 +73,17 @@ export default {
       reader.onload = (e) => {
         // TEST ENCODING
 
-        /*         var legacy = require('legacy-encoding');
+        var legacy = require('legacy-encoding');
 
-        let plugin = legacy.decode(e.target.result, 'cp1251', {mode: 'replacement'}) */
-        /* 
+        let plugin = legacy.decode(e.target.result, 'cp1251', {mode: 'replacement'})
+
         const { encode, decode } = require('single-byte');
  
         const buffer = encode('windows-1252', e.target.result);
         const plugin = decode('windows-1251', buffer)
 
 
-        console.log(plugin) */
+        console.log(plugin)
 
         // TEST ENCODING
 
@@ -78,7 +98,7 @@ export default {
       reader.readAsText(file);
     },
   },
-};
+}; */
 </script>
 
 <style lang="scss">

@@ -1,22 +1,26 @@
 <template>
   <div class="workspace-desk">
-    <workspace-controls />
+    <WorkspaceControls />
     <transition-group name="fadeSidebarr" :style="{ display: 'flex', width: '100%', height: '100%' }" mode="out-in">
-      <Sidebar v-show="getSidebar" :key="1" />
+      <SidebarMain v-show="getSidebar" :key="1" />
 
       <DialogueFrame v-show="true" :key="2" />
     </transition-group>
   </div>
 </template>
 
-<script>
-export default {
+<script setup lang="ts">
+import SidebarMain from '@/components/SidebarMain.vue';
+import WorkspaceControls from '@/components/WorkspaceControls.vue';
+import DialogueFrame from './dialogue/DialogueFrame.vue';
+const getSidebar = true;
+/* export default {
   computed: {
     getSidebar() {
       return this.$store.getters['getSidebarActive'] !== '';
     },
   },
-};
+}; */
 </script>
 
 <style>

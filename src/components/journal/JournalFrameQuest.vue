@@ -6,9 +6,11 @@
     <div class="quest-id" @click="toggleCollapse">
       {{ quest.id }}
     </div>
-    <collapse-transition v-if="questData.entries.length">
+    <div v-if="questData.entries.length">
+      <!-- collapse-transition -->
       <div v-show="isCollapsed">
-        <transition-group name="fadeHeight" mode="out-in" class="entries-list">
+        <div name="fadeHeight" mode="out-in" class="entries-list">
+          <!-- transition-group -->
           <div class="entries-list__child" key="TMP_quest-start" v-if="getIsHighlighted(-1)">
             <div class="entry-wrapper">
               <div
@@ -34,7 +36,7 @@
               <div
                 class="quest-entry"
                 :class="{
-                  'quest-entry_finished': entry.quest_finish,
+                  'quest-entry_finished': entry.quest_state === 'Finished',
                   'quest-entry_highlighted': getIsHighlighted(entry.data.disposition),
                 }"
                 draggable
@@ -79,7 +81,7 @@
                       type="checkbox"
                       title="Finished"
                       name="entryFinished"
-                      :checked="entry.quest_finish"
+                      :checked="entry.quest_state === 'Finished'"
                   /></label>
                 </div>
                 <div class="edit-entry-controls">
@@ -96,122 +98,126 @@
               </form>
             </div>
           </div>
-        </transition-group>
+        </div>
         <div class="add-entry" @click="createEntry">+</div>
       </div>
-    </collapse-transition>
+    </div>
     <div v-else class="no-entries">
       No entries yet. <a class="link" @click="createEntry">Create?</a>
     </div>
   </div>
 </template>
 
-<script>
-import { CollapseTransition } from '@ivanv/vue-collapse-transition';
-import Icon from 'vue-awesome/components/Icon';
-import 'vue-awesome/icons';
-export default {
-  props: {
-    quest: Object,
-  },
-  components: {
-    CollapseTransition,
-    Icon,
-  },
-  data() {
-    return {
-      isCollapsed: false,
-      highlightedComparison: '',
-      highlightedId: '',
-      entryEdit: '',
-      questData: {
-        entries: [],
-      },
-    };
-  },
-  async mounted() {
-    this.questData = await this.$store.dispatch('fetchQuestByID', [this.quest.id]);
-  },
-  watch: {
-    getHighlight(newValue) {
-      if (newValue.id === this.quest.id) {
-        this.isCollapsed = true;
-        this.highlightedComparison = newValue.filter_comparison;
-        this.highlightedId = newValue.value.Integer;
-      } else {
-        if (newValue.id) this.isCollapsed = false;
-        this.highlightedComparison = '';
-        this.highlightedId = '';
-      }
-    },
-  },
-  computed: {
-    getHighlight() {
-      return this.$store.getters['getJournalHighlight'];
-    },
-    getLatestDisposition() {
-      if (!this.questData.entries.length || !this.questData.entries[0].data.disposition)
-        return '10';
-      return (
-        Math.floor(
-          Math.max(...this.questData.entries.map((val) => parseInt(val.data.disposition))) / 10 + 1,
-        ) * 10
-      ).toString();
-    },
-  },
-  methods: {
-    //editJournalEntry(state, [entryId, entryText, entryDisp, entryFinished])
-    editEntry(event, info_id) {
-      this.$store.commit('editJournalEntry', [
+<script setup lang="ts">
+import { computed, onMounted, ref, watch } from 'vue';
+import { fetchQuestByID } from '@/api/idb.js'; 
+import type { FilterComparison } from '@/types/pluginEntries.ts';
+
+const props = defineProps({
+  quest: Object,
+})
+
+const isCollapsed = ref<boolean>(false);
+const highlightedComparison = ref<FilterComparison | ''>('');
+const highlightedId = ref('');
+const entryEdit = ref('');
+const questData = ref({
+  entries: []
+})
+
+onMounted(async () => {
+  try {
+    const questResponse = await fetchQuestByID(props.quest.id);
+    questData.value = questResponse;
+  } catch(error) {
+    console.error(error);
+  }
+})
+
+const getHighlight = computed(() => {
+  return '';
+  // return this.$store.getters['getJournalHighlight'];
+})
+
+const getLatestDisposition = computed(() => {
+  if (!questData.value.entries.length || !questData.value.entries[0].data.disposition)
+    return '10';
+  return (
+    Math.floor(
+      Math.max(...questData.value.entries.map((val) => parseInt(val.data.disposition))) / 10 + 1,
+    ) * 10
+  ).toString();
+})
+
+function editEntry(event, info_id) {
+  //editJournalEntry(state, [entryId, entryText, entryDisp, entryFinished])
+/*   this.$store.commit('editJournalEntry', [
         info_id,
         event.target.elements.entryText.value,
         event.target.elements.entryDisp.value,
         event.target.elements.entryFinished.checked,
       ]);
-      this.entryEdit = '';
-    },
-    deleteEntry(info_id) {
-      this.entryEdit = '';
-      this.$store.commit('deleteJournalEntry', info_id);
-    },
-    toggleCollapse() {
-      this.isCollapsed = !this.isCollapsed;
-    },
-    getIsHighlighted(entryId) {
-      let intEntryId = parseInt(entryId);
-      let intHighlightedId = parseInt(this.highlightedId);
-      switch (this.highlightedComparison) {
-        case 'Equal':
-          return intEntryId == intHighlightedId;
-        case 'GreaterEqual':
-          return intEntryId >= intHighlightedId;
-        case 'LesserEqual':
-          return intEntryId <= intHighlightedId;
-        case 'Less':
-          return intEntryId < intHighlightedId;
-        case 'Greater':
-          return intEntryId > intHighlightedId;
-        case 'NotEqual':
-          return intEntryId != intHighlightedId;
-        default:
-          return false;
-      }
-    },
-    createEntry() {
-      this.isCollapsed = true;
-      this.$store.commit('addJournalEntry', [
-        this.quest.id,
-        'New entry',
-        this.getLatestDisposition,
-      ]);
-    },
-    startDrag(event, entry) {
-      event.dataTransfer.setData('type', 'Journal');
-      event.dataTransfer.setData('topic', entry.TMP_topic);
-      event.dataTransfer.setData('disposition', entry.data.disposition);
-    },
-  },
-};
+      this.entryEdit = ''; */
+}
+
+watch(getHighlight, (newValue) => {
+  if (newValue.id === props.quest?.id) {
+    isCollapsed.value = true;
+    highlightedComparison.value = newValue.filter_comparison;
+    highlightedId.value = newValue.value.Integer;
+  } else {
+    if (newValue.id) {
+      isCollapsed.value = false;
+      highlightedComparison.value = '';
+      highlightedId.value = '';
+    }
+  }
+});
+
+function deleteEntry(info_id) {
+  entryEdit.value = '';
+  // this.$store.commit('deleteJournalEntry', info_id);
+}
+
+function toggleCollapse() {
+  isCollapsed.value = !isCollapsed.value;
+}
+
+function getIsHighlighted(entryId) {
+  let intEntryId = parseInt(entryId);
+  let intHighlightedId = parseInt(highlightedId.value);
+  switch (highlightedComparison.value) {
+    case 'Equal':
+      return intEntryId == intHighlightedId;
+    case 'GreaterEqual':
+      return intEntryId >= intHighlightedId;
+    case 'LesserEqual':
+      return intEntryId <= intHighlightedId;
+    case 'Less':
+      return intEntryId < intHighlightedId;
+    case 'Greater':
+      return intEntryId > intHighlightedId;
+    case 'NotEqual':
+      return intEntryId != intHighlightedId;
+    default:
+      return false;
+  }
+}
+
+function createEntry() {
+  isCollapsed.value = true;
+/*   this.$store.commit('addJournalEntry', [
+    this.quest.id,
+    'New entry',
+    this.getLatestDisposition,
+  ]); */
+}
+
+function startDrag(event, entry) {
+  event.dataTransfer.setData('type', 'Journal');
+  event.dataTransfer.setData('topic', entry.TMP_topic);
+  event.dataTransfer.setData('disposition', entry.data.disposition);
+}
 </script>
 
 <style lang="scss">

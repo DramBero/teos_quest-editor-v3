@@ -1,0 +1,1 @@
+export type PrimaryModal = 'Upload' | 'NewQuest' | 'NewFilter' | 'NewDialogue' | 'Dialogue' | '';
