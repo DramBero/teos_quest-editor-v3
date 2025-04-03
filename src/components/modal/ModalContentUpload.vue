@@ -26,18 +26,6 @@ const getHeader = computed(() => {
 const getDependencies = computed(() => {
   return getHeader.value?.masters?.map(val => val[0]) || [];
 })
-/* export default {
-  computed: {
-    getDependencies() {
-      if (
-        this.$store.getters['getActiveHeader'] &&
-        this.$store.getters['getActiveHeader'].masters
-      ) {
-        return this.$store.getters['getActiveHeader'].masters.map((val) => val[0]);
-      }
-    },
-  },
-}; */
 </script>
 
 <style lang="scss">

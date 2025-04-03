@@ -2,9 +2,9 @@
   <div class="workspace-desk">
     <WorkspaceControls />
     <transition-group name="fadeSidebarr" :style="{ display: 'flex', width: '100%', height: '100%' }" mode="out-in">
-      <SidebarMain v-show="getSidebar" :key="1" />
+      <SidebarMain />
 
-      <DialogueFrame v-show="true" :key="2" />
+      <DialogueFrame v-show="true" />
     </transition-group>
   </div>
 </template>
@@ -13,14 +13,6 @@
 import SidebarMain from '@/components/SidebarMain.vue';
 import WorkspaceControls from '@/components/WorkspaceControls.vue';
 import DialogueFrame from './dialogue/DialogueFrame.vue';
-const getSidebar = true;
-/* export default {
-  computed: {
-    getSidebar() {
-      return this.$store.getters['getSidebarActive'] !== '';
-    },
-  },
-}; */
 </script>
 
 <style>

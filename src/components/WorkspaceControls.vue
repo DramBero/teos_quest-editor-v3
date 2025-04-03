@@ -50,7 +50,7 @@ function toggleSidebarActive(value: string) {
 }
 const getSidebarActive = computed(() => {
   return sidebarStore.getActiveItem;
-})
+});
 </script>
 
 <style lang="scss">

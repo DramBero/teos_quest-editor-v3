@@ -32,24 +32,20 @@
   </div>
 </template>
 
-<script>
-export default {
-  data() {
-    return {
-      nameError: '',
-      idError: '',
-      inputName: '',
-      inputId: '',
-    };
-  },
-  methods: {
-    createQuest() {
-      this.$store.commit('addJournalQuest', [this.inputId, this.inputName]);
-      this.$store.commit('setPrimaryModal', '');
-    },
-  },
-  computed: {},
-};
+<script setup lang="ts">
+import { usePrimaryModal } from '@/stores/modals';
+import { ref } from 'vue';
+
+const nameError = ref<string>('');
+const idError = ref<string>('');
+const inputName = ref<string>('');
+const inputId = ref<string>('');
+
+const primaryModalStore = usePrimaryModal();
+function createQuest() {
+  //       this.$store.commit('addJournalQuest', [this.inputId, this.inputName]);
+  primaryModalStore.setActiveModal('');
+}
 </script>
 
 <style lang="scss">

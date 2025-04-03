@@ -1,0 +1,18 @@
+{
+  "name": "tes3-wasm",
+  "type": "module",
+  "collaborators": [
+    "Greatness7 <Greatness7@gmail.com>"
+  ],
+  "version": "0.1.0",
+  "files": [
+    "tes3_wasm_bg.wasm",
+    "tes3_wasm.js",
+    "tes3_wasm.d.ts"
+  ],
+  "main": "tes3_wasm.js",
+  "types": "tes3_wasm.d.ts",
+  "sideEffects": [
+    "./snippets/*"
+  ]
+}

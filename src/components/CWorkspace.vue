@@ -9,7 +9,6 @@
 <script setup lang="ts">
 import ToolBarMain from './toolbar/ToolBarMain.vue';
 import CWorkspaceDesk from './CWorkspaceDesk.vue';
-
 </script>
 
 <style>

@@ -13,7 +13,7 @@ import { computed } from 'vue';
 const sidebarStore = useSidebar();
 const getSidebarActive = computed(() => {
   return sidebarStore.getActiveItem;
-})
+});
 </script>
 
 <style lang="scss">
