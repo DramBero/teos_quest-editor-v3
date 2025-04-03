@@ -5,7 +5,7 @@
     <img
       class="dialogue-card__image"
       v-if="getNpcFace"
-      :src="getNpcFace ? `/assets/images/faces/${getNpcFace}` : ''"
+      :src="getNpcFace ? `/images/faces/${getNpcFace}` : ''"
       :alt="speakerData.name || speakerId"
     />
   </div>

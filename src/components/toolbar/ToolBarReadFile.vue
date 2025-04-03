@@ -12,7 +12,8 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
 import init, { load_objects } from '@/tes3_wasm/tes3_wasm.js';
-import { importPlugin } from '@/api/idb.js';
+import { importPlugin, getActiveHeader } from '@/api/idb.js';
+import { usePluginHeader } from '@/stores/pluginHeader';
 
 interface Props {
   dep?: string;
@@ -40,19 +41,25 @@ onMounted(async () => {
   await init();
 })
 
+const headerStore = usePluginHeader();
 async function loadTextFromFile(event: InputEvent) {
   try {
     const element = event.target as HTMLInputElement;
     if (!element.files) return;
     const file: FileList = element.files;
     if (!file.length) return;
-    const buffer = await file[0].arrayBuffer();
     fileSize.value = formatBytes(file[0].size);
     fileName.value = file[0].name;
+
+    const buffer = await file[0].arrayBuffer();
     const bytes = new Uint8Array(buffer);
     const objects = await load_objects(bytes);
     if (!props.dep) {
-      importPlugin(objects, fileName.value, true);
+      await importPlugin(objects, fileName.value, true);
+      const headerResponse = await getActiveHeader();
+      headerStore.setPluginHeader(headerResponse);
+    } else {
+      await importPlugin(objects, props.dep, false);
     }
   } catch (error) {
     console.error(error);

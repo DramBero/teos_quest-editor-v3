@@ -28,15 +28,15 @@ export const initPlugin = async function (pluginName) {
   await activePlugin.open().catch((err) => {
     console.error(err.stack || err);
   });
+  if (!databases['activePlugin']) {
+    throw 'NO_INDEXEDDB_PLUGIN';
+  }
   return activePlugin;
 };
 
 export const getDependencies = async function () {
   if (!databases['activePlugin']) {
     await initPlugin('activePlugin');
-  }
-  if (!databases['activePlugin']) {
-    throw 'NO_INDEXEDDB_PLUGIN';
   }
   const activePlugin = databases['activePlugin'];
   const headers = await activePlugin.pluginData.where('type').equals('Header').toArray();
@@ -52,9 +52,6 @@ export const getActiveHeader = async function () {
   if (!databases['activePlugin']) {
     await initPlugin('activePlugin');
   }
-  if (!databases['activePlugin']) {
-    throw 'NO_INDEXEDDB_PLUGIN';
-  }
   const activePlugin = databases['activePlugin'];
   const headers = await activePlugin.pluginData.where('type').equals('Header').toArray();
   if (!headers.length) {
@@ -67,9 +64,6 @@ export const getActiveHeader = async function () {
 export const fetchNPCData = async function (npcID) {
   if (!databases['activePlugin']) {
     await initPlugin('activePlugin');
-  }
-  if (!databases['activePlugin']) {
-    throw 'NO_INDEXEDDB_PLUGIN';
   }
   const activePlugin = databases['activePlugin'];
   try {
@@ -84,6 +78,9 @@ export const fetchNPCData = async function (npcID) {
       const dependecies = await getDependencies();
       for (let dep of dependecies) {
         let dependencyDB = databases[dep];
+        if (!dependencyDB) {
+          await initPlugin(dep);
+        }
         if (!dependencyDB) {
           continue;
         }
@@ -108,9 +105,6 @@ export const fetchNPCData = async function (npcID) {
 export const findNPCByName = async function (npcName, size = 20) {
   if (!databases['activePlugin']) {
     await initPlugin('activePlugin');
-  }
-  if (!databases['activePlugin']) {
-    throw 'NO_INDEXEDDB_PLUGIN';
   }
   const activePlugin = databases['activePlugin'];
   try {
@@ -169,9 +163,6 @@ export const fetchQuestByID = async function (questID) {
   if (!databases['activePlugin']) {
     await initPlugin('activePlugin');
   }
-  if (!databases['activePlugin']) {
-    throw 'NO_INDEXEDDB_PLUGIN';
-  }
   const activePlugin = databases['activePlugin'];
   try {
     let entries = await activePlugin.pluginData
@@ -200,9 +191,6 @@ export const fetchTopicListByNPC = async function (npcID, speakerType) {
   const speakerTypeKey = getSpeakerTypeKey(speakerType);
   if (!databases['activePlugin']) {
     await initPlugin('activePlugin');
-  }
-  if (!databases['activePlugin']) {
-    throw 'NO_INDEXEDDB_PLUGIN';
   }
   const activePlugin = databases['activePlugin'];
   try {
@@ -233,9 +221,6 @@ export const fetchTopicListByNPC = async function (npcID, speakerType) {
 export const fetchAllDialogueNPCs = async function () {
   if (!databases['activePlugin']) {
     await initPlugin('activePlugin');
-  }
-  if (!databases['activePlugin']) {
-    throw 'NO_INDEXEDDB_PLUGIN';
   }
   const activePlugin = databases['activePlugin'];
   try {
@@ -275,9 +260,6 @@ export const fetchAllDialogueBySpeaker = async function (speakerType) {
   if (!databases['activePlugin']) {
     await initPlugin('activePlugin');
   }
-  if (!databases['activePlugin']) {
-    throw 'NO_INDEXEDDB_PLUGIN';
-  }
   const activePlugin = databases['activePlugin'];
   try {
     let resp;
@@ -299,9 +281,6 @@ export const fetchAllDialogueBySpeaker = async function (speakerType) {
 export const fetchAllQuestIDs = async function () {
   if (!databases['activePlugin']) {
     await initPlugin('activePlugin');
-  }
-  if (!databases['activePlugin']) {
-    throw 'NO_INDEXEDDB_PLUGIN';
   }
   const activePlugin = databases['activePlugin'];
   try {
@@ -346,8 +325,6 @@ export const getAllDialogue = async function (topicId) {
 };
 
 export const getAllTopicsByType = async function (topicType) {
-  console.log('searching for:', topicType);
-
   const dependecies = await getDependencies();
   let topics = [];
   try {
@@ -389,8 +366,6 @@ export const getAllTopicsByType = async function (topicType) {
         b.filter((val) => val.TMP_dep === activePluginName).length -
         a.filter((val) => val.TMP_dep === activePluginName).length,
     );
-
-    console.log('results:', uniqueObjects);
 
     return uniqueObjects;
   } catch (error) {
@@ -455,7 +430,6 @@ export const importPlugin = async function (pluginData, pluginName, isActive) {
   let activePlugin = await initPlugin(isActive ? 'activePlugin' : pluginName);
   let tableLength = await activePlugin.pluginData.count();
   if (tableLength) {
-    console.log('exists');
     await activePlugin.pluginData.clear();
   }
   let entries = [];

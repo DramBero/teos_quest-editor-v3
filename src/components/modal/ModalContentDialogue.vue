@@ -7,14 +7,14 @@
           <span v-show="currentTopic.trim().length">{{ currentTopic }}</span>
         </transition>
         <div class="dialogue-answers__edit">
-          <icon name="list" color="#E1FF00" class="icon_gold" scale="1" @click="openClassicView"></icon>
+<!--           <icon name="list" color="#E1FF00" class="icon_gold" scale="1" @click="openClassicView"></icon>
           <icon v-if="!editMode" name="pen" color="#E1FF00" class="icon_gold" scale="1" @click="editMode = true"></icon>
           <div v-else>
             <icon name="ban" color="#E1FF00" class="icon_gold" scale="1" @click="
               editMode = false;
             editedEntry = '';
             "></icon>
-          </div>
+          </div> -->
         </div>
       </div>
       <div>
@@ -23,11 +23,11 @@
             <div class="dialogue-answers-answer__above" v-if="!editMode"></div>
             <div class="dialogue-answers-answer__above-add" v-if="editMode">
               <button class="entry-control-button" @click="addEntry([answer.prev_id, answer.info_id])">
-                <icon name="plus" class="entry-control-button__icon" color="#E1FF00" scale="1"></icon>
+                <!-- <icon name="plus" class="entry-control-button__icon" color="#E1FF00" scale="1"></icon> -->
               </button>
               <button class="entry-control-button" v-if="Object.keys(getClipboardDialogue).length"
                 @click="pasteDialogueFromClipboard([answer.prev_id, answer.info_id])">
-                <icon name="clipboard" class="entry-control-button__icon" color="#E1FF00" scale="1"></icon>
+                <!-- <icon name="clipboard" class="entry-control-button__icon" color="#E1FF00" scale="1"></icon> -->
               </button>
             </div>
             <form @submit.prevent="editDialogue" class="dialogue-answers-answer-wrapper">
@@ -64,17 +64,17 @@
                   <div class="curr-id">next id: {{ answer.next_id || '-' }}</div>
                 </div>
               </div>
-              <icon v-if="editMode && editedEntry !== answer.info_id" name="pen" color="#E1FF00" class="icon_gold"
-                scale="1" @click="editedEntry = answer.info_id"></icon>
+<!--               <icon v-if="editMode && editedEntry !== answer.info_id" name="pen" color="#E1FF00" class="icon_gold"
+                scale="1" @click="editedEntry = answer.info_id"></icon> -->
               <div class="entry-edit-controls" v-if="editMode && editedEntry == answer.info_id">
                 <button type="submit">
-                  <icon name="save" color="#E1FF00" class="icon_gold" scale="1"></icon>
+                  <!-- <icon name="save" color="#E1FF00" class="icon_gold" scale="1"></icon> -->
                 </button>
-                <icon name="copy" color="#E1FF00" class="icon_gold" scale="1" @click.prevent="setClipboard(answer)">
-                </icon>
-                <icon name="ban" color="#E1FF00" class="icon_gold" scale="1" @click.prevent="editedEntry = ''"></icon>
+<!--                 <icon name="copy" color="#E1FF00" class="icon_gold" scale="1" @click.prevent="setClipboard(answer)">
+                </icon> -->
+<!--                 <icon name="ban" color="#E1FF00" class="icon_gold" scale="1" @click.prevent="editedEntry = ''"></icon>
                 <icon name="trash" color="#E1FF00" class="icon_gold" scale="1"
-                  @click.prevent="deleteEntry(answer.info_id)"></icon>
+                  @click.prevent="deleteEntry(answer.info_id)"></icon> -->
               </div>
             </form>
           </div>
@@ -82,11 +82,11 @@
             :key="'separator'"></div>
           <div class="dialogue-answers-answer__above-add" v-if="editMode" :key="'add-lowest'">
             <button class="entry-control-button" @click.prevent="addEntry([getLastEntryId, ''])">
-              <icon name="plus" class="entry-control-button__icon" color="#E1FF00" scale="1"></icon>
+              <!-- <icon name="plus" class="entry-control-button__icon" color="#E1FF00" scale="1"></icon> -->
             </button>
             <button class="entry-control-button" v-if="Object.keys(getClipboardDialogue).length"
               @click.prevent="pasteDialogueFromClipboard([getLastEntryId, ''])">
-              <icon name="clipboard" class="entry-control-button__icon" color="#E1FF00" scale="1"></icon>
+              <!-- <icon name="clipboard" class="entry-control-button__icon" color="#E1FF00" scale="1"></icon> -->
             </button>
           </div>
         </transition-group>
@@ -119,49 +119,37 @@
   </div>
 </template>
 
-<script>
-import Icon from 'vue-awesome/components/Icon';
-import 'vue-awesome/icons';
+<script setup lang="ts">
+import { computed, ref, watch } from 'vue';
 
-export default {
-  components: {
-    Icon,
+const props = defineProps({
+  speaker: {
+    type: Object,
+    required: false,
+    default: () => ({}),
   },
-  props: {
-    speaker: {
-      type: Object,
-      required: false,
-      default: () => ({}),
-    },
-  },
+})
 
-  data() {
-    return {
-      //currentAnswers: [],
-      currentTopic: '',
-      editMode: false,
-      showDependencies: true,
-      editedEntry: '',
-      topicType: '',
-      infoMessage: '',
-      dialogue: {
-        greetings: [],
-        persuasions: [],
-        topics: [],
-      },
-      orderedEntries: [],
-    };
-  },
+const currentTopic = ref<string>('');
+const editMode = ref<boolean>(false);
+const showDependencies = ref<boolean>(true);
+const editedEntry = ref<string>('');
+const topicType = ref<string>('');
+const infoMessage = ref<string>('');
+const greetingsList = ref([]);
+const persuasionsList = ref([]);
+const topicsList = ref([]);
+const orderedEntries = ref([]);
 
-  async mounted() {
-    this.editMode = false;
-  },
+const getOrderedEntries = computed(() => {
+  return [];
+//      return this.$store.getters['getOrderedEntriesByTopic']([this.currentTopic, 'Topic']);
+});
 
-  computed: {
-    getOrderedEntries() {
-      return this.$store.getters['getOrderedEntriesByTopic']([this.currentTopic, 'Topic']);
-    },
-    currentAnswers() {
+const currentAnswers = computed(() => {
+    return [];
+/*
+
       let answers;
       if (this.speaker !== 'Global Dialogue') {
         answers = this.orderedEntries
@@ -188,177 +176,172 @@ export default {
           );
       }
       return answers;
-      if (this.showDependencies) {
-        return answers;
 
-        /*         return this.getSpeakerData(this.topicType).filter(
-          (val) => val.TMP_topic == this.currentTopic
-        ); */
-      } else {
-        return answers.filter((val) => !val.TMP_dep);
-        /*         return this.getSpeakerData(this.topicType).filter(
-          (val) => val.TMP_topic == this.currentTopic && !val.TMP_dep
-        ); */
-      }
-    },
-    getClipboardDialogue() {
-      return this.$store.getters['getClipboardDialogue'];
-    },
-    getSpeakerType() {
+*/
+});
+
+const getClipboardDialogue = computed(() => {
+  return {};
+  // return this.$store.getters['getClipboardDialogue'];
+});
+
+const getSpeakerType = computed(() => {
+  return '';
+  /*
       return this.currentAnswers[0] ?
         Object.keys(this.currentAnswers[0]).find(
           (key) => this.currentAnswers[0][key] === this.speaker.speakerId,
         )
         : '';
-    },
-    getLastEntryId() {
-      return this.currentAnswers.at(-1).info_id;
-    },
-  },
+  */
+});
 
-  methods: {
-    async setClipboard(entry) {
-      this.$store.commit('setClipboardDialogue', [entry, this.speaker.speakerId]);
-      this.infoMessage = `Entry "${entry.text.slice(0, 20)}${entry.text.length > 20 ? '...' : ''
-        }" by speaker "${entry.speaker_id}" copied to clipboard.`;
-      navigator.clipboard.writeText(entry.text);
-      await new Promise((resolve) => setTimeout(resolve, 2500));
-      this.infoMessage = '';
-    },
-    addEntry(location) {
-      if (!this.currentTopic) return;
-      if (!location)
-        location = this.$store.getters['getBestOrderLocationForNpc']([
-          this.speaker.speakerId,
-          this.currentTopic,
-          this.topicType,
-          this.getSpeakerType,
-        ]);
-      console.log(location);
-      if (location[0]) {
-        this.$store.commit('addDialogue', [
-          this.getSpeakerType,
-          this.speaker.speaker_id,
-          this.currentTopic,
-          this.topicType,
-          location[0],
-          'next',
-          'New entry',
-        ]);
-      } else if (!location[0] && location[1]) {
-        this.$store.commit('addDialogue', [
-          this.getSpeakerType,
-          this.speaker.speaker_id,
-          this.currentTopic,
-          this.topicType,
-          location[1],
-          'prev',
-          'New entry',
-        ]);
-      }
-    },
-    editDialogue() {
-      this.$store.commit('editDialogueEntry', [
-        this.editedEntry,
-        event.target.elements.entryText.value,
-      ]);
-      this.editedEntry = '';
-    },
-    async setCurrentAnswers(topic, topicType) {
-      this.topicType = 'Topic';
-      this.currentTopic = ' ';
-      await new Promise((resolve) => setTimeout(resolve, 160));
-      this.topicType = topicType;
-      this.currentTopic = topic;
-    },
-    deleteEntry(info_id) {
-      this.$store.commit('deleteDialogueEntry', info_id);
-    },
-    getSpeakerData(topicType) {
-      return this.$store.getters['getDialogueBySpeaker']([this.speaker.speaker_id, topicType]);
-    },
-    getLanguage(code, language) {
-      if (!code) return '';
-      if (language === 'Lua (MWSE)') {
-        return code
-          .split('\r\n')
-          .filter((val) => val.includes(';lua '))
-          .map((val) => val.replace(';lua ', ''))
-          .join('\r\n');
-      } else if (language === 'MWScript') {
-        return code
-          .split('\r\n')
-          .filter((val) => !val.includes(';lua '))
-          .join('\r\n');
-      }
-    },
-    checkDirtied(entryOne, entryTwo) {
-      let entryOneNonId = Object.fromEntries(
-        Object.entries(entryOne).filter(
-          ([key]) => !key.includes('_id') && !key.includes('TMP_') && !key.includes('old_values'),
-        ),
-      );
-      let entryTwoNonId = Object.fromEntries(
-        Object.entries(entryTwo).filter(
-          ([key]) => !key.includes('_id') && !key.includes('TMP_') && !key.includes('old_values'),
-        ),
-      );
-      return JSON.stringify(entryOneNonId) === JSON.stringify(entryTwoNonId);
-    },
-    handleAnswerClick(e) {
-      //if (this.editMode) return;
-      if (e.target.className == 'dialogue-answers-answer__text_hyperlink') {
-        this.setCurrentAnswers(e.target.innerText, 'Topic');
-        this.currentTopic = e.target.innerText;
-      }
-    },
-    getHyperlinkedAnswer(text) {
-      let hyperlinkedAnswer = text;
-      for (let topic of this.dialogue.topics) {
-        if (hyperlinkedAnswer.includes(topic)) {
-          hyperlinkedAnswer = hyperlinkedAnswer.replace(
-            topic,
-            `<span class="dialogue-answers-answer__text_hyperlink">${topic}</span>`,
-          );
-        }
-      }
-      return hyperlinkedAnswer;
-    },
-    pasteDialogueFromClipboard(location) {
-      let entry = { ...this.getClipboardDialogue, speaker_id: this.speaker.speaker_id };
-      this.$store.commit('pasteDialogue', [
-        entry,
-        this.currentTopic,
-        this.topicType,
-        location[0],
-        'next',
-      ]);
-    },
-    openClassicView() {
-      this.$store.commit('setClassicViewTopic', this.currentTopic);
-      this.$store.commit('setClassicView', true);
-    },
-  },
+const getLastEntryId = computed(() => {
+  return '';
+  // return this.currentAnswers.at(-1).info_id;
+})
 
-  watch: {
-    async speaker() {
-      this.setCurrentAnswers('', '');
-      this.currentTopic = '';
-      this.dialogue = await this.$store.dispatch('fetchTopicListByNPC', [
-        this.speaker.speakerId,
-        this.speaker.speakerType,
-      ]);
-    },
-    async currentTopic(newValue) {
-      if (newValue.trim()) {
-        this.orderedEntries = await this.$store.dispatch('fetchOrderedEntriesByTopic', [newValue]);
-      } else {
-        this.orderedEntries = [];
-      }
-    },
-  },
-};
+async function setClipboard(entry) {
+/*   this.$store.commit('setClipboardDialogue', [entry, this.speaker.speakerId]);
+  this.infoMessage = `Entry "${entry.text.slice(0, 20)}${entry.text.length > 20 ? '...' : ''
+    }" by speaker "${entry.speaker_id}" copied to clipboard.`;
+  navigator.clipboard.writeText(entry.text);
+  await new Promise((resolve) => setTimeout(resolve, 2500));
+  this.infoMessage = ''; */
+}
+function addEntry(location) {
+/*   if (!this.currentTopic) return;
+  if (!location)
+    location = this.$store.getters['getBestOrderLocationForNpc']([
+      this.speaker.speakerId,
+      this.currentTopic,
+      this.topicType,
+      this.getSpeakerType,
+    ]);
+  console.log(location);
+  if (location[0]) {
+    this.$store.commit('addDialogue', [
+      this.getSpeakerType,
+      this.speaker.speaker_id,
+      this.currentTopic,
+      this.topicType,
+      location[0],
+      'next',
+      'New entry',
+    ]);
+  } else if (!location[0] && location[1]) {
+    this.$store.commit('addDialogue', [
+      this.getSpeakerType,
+      this.speaker.speaker_id,
+      this.currentTopic,
+      this.topicType,
+      location[1],
+      'prev',
+      'New entry',
+    ]);
+  } */
+}
+function editDialogue() {
+/*   this.$store.commit('editDialogueEntry', [
+    this.editedEntry,
+    event.target.elements.entryText.value,
+  ]);
+  this.editedEntry = ''; */
+}
+async function setCurrentAnswers(topic, topicType) {
+/*   this.topicType = 'Topic';
+  this.currentTopic = ' ';
+  await new Promise((resolve) => setTimeout(resolve, 160));
+  this.topicType = topicType;
+  this.currentTopic = topic; */
+}
+function deleteEntry(info_id) {
+  // this.$store.commit('deleteDialogueEntry', info_id);
+}
+function getSpeakerData(topicType) {
+  return [];
+  // return this.$store.getters['getDialogueBySpeaker']([this.speaker.speaker_id, topicType]);
+}
+function getLanguage(code, language) {
+/*   if (!code) return '';
+  if (language === 'Lua (MWSE)') {
+    return code
+      .split('\r\n')
+      .filter((val) => val.includes(';lua '))
+      .map((val) => val.replace(';lua ', ''))
+      .join('\r\n');
+  } else if (language === 'MWScript') {
+    return code
+      .split('\r\n')
+      .filter((val) => !val.includes(';lua '))
+      .join('\r\n');
+  } */
+}
+function checkDirtied(entryOne, entryTwo) {
+/*   let entryOneNonId = Object.fromEntries(
+    Object.entries(entryOne).filter(
+      ([key]) => !key.includes('_id') && !key.includes('TMP_') && !key.includes('old_values'),
+    ),
+  );
+  let entryTwoNonId = Object.fromEntries(
+    Object.entries(entryTwo).filter(
+      ([key]) => !key.includes('_id') && !key.includes('TMP_') && !key.includes('old_values'),
+    ),
+  );
+  return JSON.stringify(entryOneNonId) === JSON.stringify(entryTwoNonId); */
+}
+function handleAnswerClick(e) {
+/*   if (e.target.className == 'dialogue-answers-answer__text_hyperlink') {
+    this.setCurrentAnswers(e.target.innerText, 'Topic');
+    this.currentTopic = e.target.innerText;
+  } */
+}
+function getHyperlinkedAnswer(text) {
+/*   let hyperlinkedAnswer = text;
+  for (let topic of this.dialogue.topics) {
+    if (hyperlinkedAnswer.includes(topic)) {
+      hyperlinkedAnswer = hyperlinkedAnswer.replace(
+        topic,
+        `<span class="dialogue-answers-answer__text_hyperlink">${topic}</span>`,
+      );
+    }
+  }
+  return hyperlinkedAnswer; */
+}
+function pasteDialogueFromClipboard(location) {
+/*   let entry = { ...this.getClipboardDialogue, speaker_id: this.speaker.speaker_id };
+  this.$store.commit('pasteDialogue', [
+    entry,
+    this.currentTopic,
+    this.topicType,
+    location[0],
+    'next',
+  ]); */
+}
+function openClassicView() {
+/*   this.$store.commit('setClassicViewTopic', this.currentTopic);
+  this.$store.commit('setClassicView', true); */
+}
+
+watch(getSpeakerData, (() => {
+/*   this.setCurrentAnswers('', '');
+  this.currentTopic = '';
+  this.dialogue = await this.$store.dispatch('fetchTopicListByNPC', [
+    this.speaker.speakerId,
+    this.speaker.speakerType,
+  ]); */
+}))
+
+watch(currentTopic, ((newValue) => {
+/*   if (newValue.trim()) {
+    this.orderedEntries = await this.$store.dispatch('fetchOrderedEntriesByTopic', [newValue]);
+  } else {
+    this.orderedEntries = [];
+  } */
+}))
 </script>
+
+
 
 <style lang="scss">
 .dialogue {

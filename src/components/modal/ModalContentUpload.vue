@@ -8,7 +8,7 @@
       </div>
       <div class="frame-upload-deps__element" v-for="dep in getDependencies" :key="dep">
         {{ dep }}
-        <!-- <ToolbarReadFile :dep="dep" /> -->
+        <ToolBarReadFile :dep="dep" />
       </div>
     </div>
   </div>
@@ -17,9 +17,14 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import ToolBarReadFile from '@/components/toolbar/ToolBarReadFile.vue';
+import { usePluginHeader } from '@/stores/pluginHeader';
 
+const headerStore = usePluginHeader();
+const getHeader = computed(() => {
+  return headerStore.getPluginHeader;
+})
 const getDependencies = computed(() => {
-  return [];
+  return getHeader.value?.masters?.map(val => val[0]) || [];
 })
 /* export default {
   computed: {

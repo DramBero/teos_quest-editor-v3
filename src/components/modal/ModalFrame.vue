@@ -54,9 +54,6 @@ watch(getModal, async (newValue: string) => {
 const ModalContentUpload = defineAsyncComponent(
   () => import('@/components/modal/ModalContentUpload.vue')
 )
-/* const ModalContentDialogue = defineAsyncComponent(
-  () => import('@/components/modal/ModalContentDialogue.vue')
-) */
 const ModalContentNewDialogue = defineAsyncComponent(
   () => import('@/components/modal/ModalContentNewDialogue.vue')
 )
@@ -69,7 +66,6 @@ const ModalContentNewQuest = defineAsyncComponent(
 
 const getModalComponent = computed(() => {
   switch (getModal.value) {
-    case 'Dialogue': return ModalContentDialogue;
     case 'NewDialogue': return ModalContentNewDialogue;
     case 'NewFilter': return ModalContentNewFilter;
     case 'NewQuest': return ModalContentNewQuest;

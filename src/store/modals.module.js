@@ -4,7 +4,6 @@ const state = {
   questCreateModal: false,
   dialogueCreateModal: null,
   selectedFilter: {},
-  primaryModal: "",
   selectedInfoId: '',
   selectedFilterIndex: '',
   clipboardDialogue: {},
@@ -13,9 +12,6 @@ const state = {
 };
 
 const mutations = {
-  setPrimaryModal(state, value) {
-    state.primaryModal = value
-  },
   setClassicView(state, value) {
     state.classicView = value
   },
@@ -71,7 +67,6 @@ const getters = {
   getDialogueModal: (s) => s.dialogueModal,
   getQuestCreateModal: (s) => s.questCreateModal,
   getDialogueCreateModal: (s) => s.dialogueCreateModal,
-  getPrimaryModal: (s) => s.primaryModal,
   getSelectedFilter: (s) => s.selectedFilter,
   getSelectedFilterIndex: (s) => s.selectedFilterIndex,
   getSelectedInfoId: (s) => s.selectedInfoId,

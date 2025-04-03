@@ -1,32 +1,20 @@
 <script setup lang="ts">
-import init, { load_objects } from './tes3_wasm/tes3_wasm.js';
-import { initPlugin } from '@/api/idb.js';
+import init from './tes3_wasm/tes3_wasm.js';
+import { getActiveHeader } from '@/api/idb.js';
 import { RouterView } from 'vue-router';
 import { onMounted } from 'vue';
 import CWorkspace from './components/CWorkspace.vue';
 import ModalFrame from './components/modal/ModalFrame.vue';
+import { usePluginHeader } from './stores/pluginHeader.js';
 
+const headerStore = usePluginHeader();
 onMounted(async () => {
   await init();
-  await initPlugin('activePlugin');
-})
-
-async function loadPlugin(event: InputEvent) {
-  try {
-    const element = event.target as HTMLInputElement;
-    if (!element.files) return;
-    const file: FileList = element.files;
-    if (!file.length) return;
-    const buffer = await file[0].arrayBuffer();
-    const bytes = new Uint8Array(buffer);
-    const objects = await load_objects(bytes);
-    console.log('PARSED:', objects);
-  } catch (error) {
-    console.error(error);
+  const headerResponse = await getActiveHeader();
+  if (headerResponse) {
+    headerStore.setPluginHeader(headerResponse);
   }
-
-  // this.fileName = ev.target.files[0].name;
-}
+})
 </script>
 
 <template>

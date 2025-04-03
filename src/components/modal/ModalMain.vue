@@ -19,7 +19,8 @@
           <div class="window-header__name">{{ header }}</div>
           <div class="window-header__right">
             <div class="window-header__close" @click="closeModal">
-              <icon name="times" scale="1.3"></icon>
+              <!-- <icon name="times" scale="1.3"></icon> -->
+               close
             </div>
           </div>
         </div>
@@ -31,45 +32,36 @@
   </div>
 </template>
 
-<script>
-import Icon from 'vue-awesome/components/Icon';
+<script setup lang="ts">
+import { ref } from 'vue';
 import VueDraggableResizable from 'vue-draggable-resizable';
-import 'vue-awesome/icons';
 
-export default {
-  components: {
-    Icon,
-    VueDraggableResizable,
-  },
-  data() {
-    return {
-      width: 0,
-      height: 0,
-      x: 0,
-      y: 0,
-    };
-  },
-  props: {
-    modalHide: String,
-    header: String,
-    dialogue: Boolean,
-  },
-  methods: {
-    closeModal() {
-      this.$store.commit(this.modalHide);
-    },
-    onResize: function (x, y, width, height) {
-      this.x = x;
-      this.y = y;
-      this.width = width;
-      this.height = height;
-    },
-    onDrag: function (x, y) {
-      this.x = x;
-      this.y = y;
-    },
-  },
-};
+const width = ref<number>(0);
+const height = ref<number>(0);
+const x = ref<number>(0);
+const y = ref<number>(0);
+
+const props = defineProps({
+  modalHide: String,
+  header: String,
+  dialogue: Boolean,
+});
+
+function closeModal() {
+  // this.$store.commit(this.modalHide);
+}
+
+function onResize(xInput: number, yInput: number, widthInput: number, heightInput: number) {
+  x.value = xInput;
+  y.value = yInput;
+  width.value = widthInput;
+  height.value = heightInput;
+}
+
+function onDrag(xInput: number, yInput: number) {
+  x.value = xInput;
+  y.value = yInput;
+}
 </script>
 
 <style lang="scss">

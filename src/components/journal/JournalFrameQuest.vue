@@ -6,7 +6,7 @@
     <div class="quest-id" @click="toggleCollapse">
       {{ quest.id }}
     </div>
-    <div v-if="questData.entries.length">
+    <div v-if="questDataLoaded && questData.entries.length">
       <!-- collapse-transition -->
       <div v-show="isCollapsed">
         <div name="fadeHeight" mode="out-in" class="entries-list">
@@ -102,7 +102,7 @@
         <div class="add-entry" @click="createEntry">+</div>
       </div>
     </div>
-    <div v-else class="no-entries">
+    <div v-else-if="questDataLoaded" class="no-entries">
       No entries yet. <a class="link" @click="createEntry">Create?</a>
     </div>
   </div>
@@ -121,18 +121,22 @@ const isCollapsed = ref<boolean>(false);
 const highlightedComparison = ref<FilterComparison | ''>('');
 const highlightedId = ref('');
 const entryEdit = ref('');
+
+const questDataLoaded = ref<boolean>(false);
 const questData = ref({
   entries: []
 })
-
-onMounted(async () => {
+async function loadQuestData() {
   try {
     const questResponse = await fetchQuestByID(props.quest.id);
     questData.value = questResponse;
+    questDataLoaded.value = true;
   } catch(error) {
     console.error(error);
   }
-})
+}
+
+loadQuestData();
 
 const getHighlight = computed(() => {
   return '';
