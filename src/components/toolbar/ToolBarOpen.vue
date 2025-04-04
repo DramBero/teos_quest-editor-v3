@@ -1,14 +1,13 @@
 <template>
   <button class="open-btn" @click="toggleOpenModal">
-    <!-- <GameIconsOpenFolder /> -->
-    Open
+    <GameIconsOpenFolder />
   </button>
 </template>
 
 <script setup lang="ts">
 import { usePrimaryModal } from '@/stores/modals';
 
-// import GameIconsOpenFolder from '~icons/game-icons/open-folder';
+import GameIconsOpenFolder from '~icons/game-icons/open-folder';
 const primaryModalStore = usePrimaryModal();
 function toggleOpenModal() {
   primaryModalStore.setActiveModal('Upload');

@@ -4,17 +4,20 @@
       :class="{ 'workspace-controls__button_active': getSidebarActive === 'Journal' }"
       @click="toggleSidebarActive('Journal')">
       <!-- <icon name="book-open" class="icon-controls" scale="2"></icon> -->
+      <GameIconsBookmarklet />
       <span>Journal</span>
     </div>
     <div class="workspace-controls__button"
       :class="{ 'workspace-controls__button_active': getSidebarActive === 'Header' }"
       @click="toggleSidebarActive('Header')">
       <!-- <icon name="file-alt" class="icon-controls" scale="2"></icon> -->
+       <GameIconsGears />
       <span>Header</span>
     </div>
     <div class="workspace-controls__button" disabled
       :class="{ 'workspace-controls__button_active': getSidebarActive === 'Factions' }">
       <!-- <icon name="users" class="icon-controls" scale="2"></icon> -->
+      <GameIconsOrganigram />
       <span>Factions</span>
     </div>
     <!--     <div class="workspace-controls__button workspace-controls__button_wip" disabled>
@@ -27,22 +30,29 @@
     </div> -->
     <div class="workspace-controls__button" disabled>
       <!-- <icon name="user" class="icon-controls" scale="2"></icon> -->
+      <GameIconsCharacter />
       <span>Actors</span>
     </div>
     <div class="workspace-controls__button" disabled>
       <!-- <icon name="book" class="icon-controls" scale="2"></icon> -->
+      <GameIconsGauntlet />
       <span>Items</span>
     </div>
-    <div class="workspace-controls__button" disabled>
-      <!-- <icon name="code" class="icon-controls" scale="2"></icon> -->
+<!--     <div class="workspace-controls__button" disabled>
       <span>Scripts</span>
-    </div>
+    </div> -->
   </div>
 </template>
 
 <script setup lang="ts">
 import { useSidebar } from '@/stores/sidebar';
 import { computed } from 'vue';
+
+import GameIconsBookmarklet from '~icons/game-icons/bookmarklet';
+import GameIconsGears from '~icons/game-icons/gears';
+import GameIconsOrganigram from '~icons/game-icons/organigram';
+import GameIconsCharacter from '~icons/game-icons/character';
+import GameIconsGauntlet from '~icons/game-icons/gauntlet';
 
 const sidebarStore = useSidebar();
 function toggleSidebarActive(value: string) {
@@ -80,6 +90,11 @@ const getSidebarActive = computed(() => {
     border-left: 3px solid rgba(216, 216, 216, 0);
     border-right: 3px solid rgba(216, 216, 216, 0);
     color: rgba(216, 216, 216, 0.5);
+
+    svg {
+      height: 30px;
+      width: 30px;
+    }
 
     &:hover {
       color: rgba(216, 216, 216, 0.8);
