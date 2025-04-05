@@ -1,12 +1,16 @@
 <template>
   <div>
     <div class="window" :class="{ window_dialogue: dialogue }">
-      <vue-draggable-resizable
+      <Vue3DraggableResizable
         class="window-frame"
         :prevent-deactivation="true"
         class-name-handle="my-handle-class"
-        :w="1000"
-        :h="600"
+        v-model:w="w"
+        v-model:h="h"
+        v-model:x="x"
+        v-model:y="y"
+        :initW
+        :initH
         :minHeight="320"
         :minWidth="550"
         :drag-handle="'.drag-handle'"
@@ -27,19 +31,35 @@
         <div class="window__content">
           <slot> </slot>
         </div>
-      </vue-draggable-resizable>
+      </Vue3DraggableResizable>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
-import VueDraggableResizable from 'vue-draggable-resizable';
+import { useSelectedSpeaker } from '@/stores/selectedSpeaker';
+import { useWindowSize } from '@vueuse/core';
+import { computed, onMounted, ref } from 'vue';
 
-const width = ref<number>(0);
-const height = ref<number>(0);
+const initW = 1000;
+const initH = 600;
+
+const w = ref<number>(initW);
+const h = ref<number>(initH);
 const x = ref<number>(0);
 const y = ref<number>(0);
+
+const windowSize = useWindowSize();
+const getInitCenter = computed(() => {
+  const initX = Math.round(windowSize.width.value / 2) - Math.round(initW / 2);
+  const initY = Math.round(windowSize.height.value / 2) - Math.round(initH / 2);
+  return { initX, initY }
+});
+
+onMounted(() => {
+  x.value = getInitCenter.value.initX;
+  y.value = getInitCenter.value.initY;
+})
 
 const props = defineProps({
   modalHide: String,
@@ -47,20 +67,10 @@ const props = defineProps({
   dialogue: Boolean,
 });
 
+const selectedSpeakerStore = useSelectedSpeaker();
 function closeModal() {
+  selectedSpeakerStore.setSelectedSpeaker({})
   // this.$store.commit(this.modalHide);
-}
-
-function onResize(xInput: number, yInput: number, widthInput: number, heightInput: number) {
-  x.value = xInput;
-  y.value = yInput;
-  width.value = widthInput;
-  height.value = heightInput;
-}
-
-function onDrag(xInput: number, yInput: number) {
-  x.value = xInput;
-  y.value = yInput;
 }
 </script>
 

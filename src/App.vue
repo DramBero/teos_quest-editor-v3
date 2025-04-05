@@ -2,10 +2,13 @@
 import init from './tes3_wasm/tes3_wasm.js';
 import { getActiveHeader } from '@/api/idb.js';
 import { RouterView } from 'vue-router';
-import { onMounted } from 'vue';
+import { computed, onMounted } from 'vue';
 import CWorkspace from './components/CWorkspace.vue';
 import ModalFrame from './components/modal/ModalFrame.vue';
 import { usePluginHeader } from './stores/pluginHeader.js';
+import ModalMain from './components/modal/ModalMain.vue';
+import ModalContentDialogue from './components/modal/ModalContentDialogue.vue';
+import { useSelectedSpeaker } from './stores/selectedSpeaker.js';
 
 const headerStore = usePluginHeader();
 onMounted(async () => {
@@ -15,6 +18,11 @@ onMounted(async () => {
     headerStore.setPluginHeader(headerResponse);
   }
 })
+
+const selectedSpeakerStore = useSelectedSpeaker();
+const getSpeakerData = computed(() => {
+  return selectedSpeakerStore.getSelectedSpeaker;
+})
 </script>
 
 <template>
@@ -22,6 +30,9 @@ onMounted(async () => {
   <div>
     <ModalFrame />
     <CWorkspace />
+    <ModalMain v-show="getSpeakerData.speakerId" :header="getSpeakerData.speakerId">
+      <ModalContentDialogue :speaker="getSpeakerData"/>
+    </ModalMain>
   </div>
   <RouterView />
 </template>

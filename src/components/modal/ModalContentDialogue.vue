@@ -99,19 +99,19 @@
       </div>
     </div>
     <div class="dialogue-questions">
-      <div class="dialogue-questions__container" v-if="dialogue.greetings.length">
+      <div class="dialogue-questions__container" v-if="dialogue?.greetings.length">
         <div class="dialogue-questions__topic" v-for="(question, index) in dialogue.greetings" :key="index"
           @click="setCurrentAnswers(question, 'Greeting')">
           {{ question }}
         </div>
       </div>
-      <div class="dialogue-questions__container" v-if="dialogue.persuasions.length">
+      <div class="dialogue-questions__container" v-if="dialogue?.persuasions.length">
         <div class="dialogue-questions__topic" v-for="(question, index) in dialogue.persuasions" :key="index"
           @click="setCurrentAnswers(question, 'Persuasion')">
           {{ question }}
         </div>
       </div>
-      <div class="dialogue-questions__topic" v-for="(question, index) in dialogue.topics" :key="index"
+      <div class="dialogue-questions__topic" v-for="(question, index) in dialogue?.topics" :key="index"
         @click="setCurrentAnswers(question, 'Topic')">
         {{ question }}
       </div>

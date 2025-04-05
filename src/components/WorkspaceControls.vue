@@ -3,20 +3,17 @@
     <div class="workspace-controls__button"
       :class="{ 'workspace-controls__button_active': getSidebarActive === 'Journal' }"
       @click="toggleSidebarActive('Journal')">
-      <!-- <icon name="book-open" class="icon-controls" scale="2"></icon> -->
       <GameIconsBookmarklet />
       <span>Journal</span>
     </div>
-    <div class="workspace-controls__button"
+<!--     <div class="workspace-controls__button"
       :class="{ 'workspace-controls__button_active': getSidebarActive === 'Header' }"
       @click="toggleSidebarActive('Header')">
-      <!-- <icon name="file-alt" class="icon-controls" scale="2"></icon> -->
        <GameIconsGears />
       <span>Header</span>
-    </div>
+    </div> -->
     <div class="workspace-controls__button" disabled
       :class="{ 'workspace-controls__button_active': getSidebarActive === 'Factions' }">
-      <!-- <icon name="users" class="icon-controls" scale="2"></icon> -->
       <GameIconsOrganigram />
       <span>Factions</span>
     </div>

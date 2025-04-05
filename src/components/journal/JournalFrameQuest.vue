@@ -330,6 +330,7 @@ input[type='reset'] {
   padding: 15px;
   margin: 5px;
   background-color: rgba(255, 255, 255, 0.3);
+  // border-top: 6px solid red;
   &-title {
     color: rgb(150, 50, 30);
     cursor: pointer;

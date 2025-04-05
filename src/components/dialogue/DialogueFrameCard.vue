@@ -13,6 +13,7 @@
 
 <script setup lang="ts">
 import { fetchNPCData } from '@/api/idb';
+import { useSelectedSpeaker } from '@/stores/selectedSpeaker';
 import { computed, onMounted, ref } from 'vue';
 
 const props = defineProps({
@@ -66,7 +67,12 @@ const getNpcFace = computed(() => {
   }
 })
 
+const selectedSpeakerStore = useSelectedSpeaker();
 function openDialogueModal() {
+  selectedSpeakerStore.setSelectedSpeaker({
+    speakerId: props.speakerId,
+    speakerType: props.speakerType
+  })
 /*   this.$store.commit('setDialogueModal', {
     speakerId: this.speakerId,
     speakerType: this.speakerType,

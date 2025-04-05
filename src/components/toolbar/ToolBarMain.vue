@@ -11,6 +11,14 @@
         </div>
         <div class="header-controls__info"></div>
       </div>
+      <div class="file-controls">
+        <button class="open-btn">
+          Header
+        </button>
+        <button class="open-btn">
+          GMST
+        </button>
+      </div>
     </div>
     <div class="pseudoheader"></div>
   </div>
