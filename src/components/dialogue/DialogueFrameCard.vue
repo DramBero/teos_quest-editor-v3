@@ -39,7 +39,7 @@ onMounted(async () => {
 })
 
 const getNpcFace = computed(() => {
-  let sex = speakerData.value.npc_flags % 2 ? 'f' : 'm';
+  let sex = speakerData.value.npc_flags?.includes('FEMALE') ? 'f' : 'm';
   switch (speakerData.value.race) {
     case 'Argonian':
       return 'argonian-' + sex + '.png';

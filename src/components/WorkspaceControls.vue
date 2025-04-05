@@ -92,8 +92,8 @@ const getSidebarActive = computed(() => {
     color: rgba(216, 216, 216, 0.5);
 
     svg {
-      height: 30px;
-      width: 30px;
+      height: 35px;
+      width: 35px;
     }
 
     &:hover {
