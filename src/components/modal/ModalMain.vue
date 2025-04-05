@@ -14,8 +14,6 @@
         :minHeight="320"
         :minWidth="550"
         :drag-handle="'.drag-handle'"
-        @dragging="onDrag"
-        @resizing="onResize"
         :parent="true"
       >
         <div class="window-header drag-handle">

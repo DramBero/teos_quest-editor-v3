@@ -188,6 +188,7 @@ export const fetchQuestByID = async function (questID) {
 };
 
 export const fetchTopicListByNPC = async function (npcID, speakerType) {
+  console.log('started:', npcID, speakerType)
   const speakerTypeKey = getSpeakerTypeKey(speakerType);
   if (!databases['activePlugin']) {
     await initPlugin('activePlugin');
@@ -389,7 +390,7 @@ export const getOrderedEntriesByTopic = async function (topicId) {
     if (!entries.length) return false;
     let lastValue = entries.at(-1);
     let oldValues = pluginDialogue.flatMap((plugin) =>
-      plugin.filter((entry) => entry.info_id === lastValue.info_id),
+      plugin.filter((entry) => entry.id === lastValue.id),
     );
     return {
       ...lastValue,
@@ -408,8 +409,8 @@ export const getOrderedEntriesByTopic = async function (topicId) {
   while (true) {
     let nextEntries = [
       ...new Set([
-        findByIdType('prev_id', orderedDialogue.at(-1).info_id),
-        findByIdType('info_id', orderedDialogue.at(-1).next_id),
+        findByIdType('prev_id', orderedDialogue.at(-1).id),
+        findByIdType('id', orderedDialogue.at(-1).next_id),
       ]),
     ];
     for (let dependency of dependencies) {
@@ -456,7 +457,7 @@ export const importPlugin = async function (pluginData, pluginName, isActive) {
         TMP_id: pluginData[index].id || '',
         TMP_topic: dialogueId,
         TMP_type: dialogueType,
-        TMP_info_id: pluginData[index].info_id,
+        TMP_info_id: pluginData[index].id,
         TMP_prev_id: pluginData[index].prev_id,
         TMP_next_id: pluginData[index].next_id,
         TMP_speaker_id: pluginData[index].speaker_id,

@@ -19,14 +19,14 @@
       </div>
       <div>
         <transition-group name="fadeHeight" class="dialogue-answers__frame" mode="out-in" :style="{ width: '100%' }">
-          <div v-for="answer in currentAnswers" :key="answer.info_id" :class="{ 'highlight-even': !editMode }">
+          <div v-for="answer in currentAnswers" :key="answer.id" :class="{ 'highlight-even': !editMode }">
             <div class="dialogue-answers-answer__above" v-if="!editMode"></div>
             <div class="dialogue-answers-answer__above-add" v-if="editMode">
-              <button class="entry-control-button" @click="addEntry([answer.prev_id, answer.info_id])">
+              <button class="entry-control-button" @click="addEntry([answer.prev_id, answer.id])">
                 <!-- <icon name="plus" class="entry-control-button__icon" color="#E1FF00" scale="1"></icon> -->
               </button>
               <button class="entry-control-button" v-if="Object.keys(getClipboardDialogue).length"
-                @click="pasteDialogueFromClipboard([answer.prev_id, answer.info_id])">
+                @click="pasteDialogueFromClipboard([answer.prev_id, answer.id])">
                 <!-- <icon name="clipboard" class="entry-control-button__icon" color="#E1FF00" scale="1"></icon> -->
               </button>
             </div>
@@ -44,12 +44,12 @@
                 </div>
                 <div class="dialogue-answers-answer__ids" v-if="false">
                   <div class="prev-id">{{ answer.prev_id || '-' }} (before)</div>
-                  <div class="curr-id">id: {{ answer.info_id }}</div>
+                  <div class="curr-id">id: {{ answer.id }}</div>
                 </div>
 
                 <DialogueEntryFilters :answer="answer" :speaker="speaker" :editMode="editMode" />
 
-                <div v-if="editedEntry !== answer.info_id" class="dialogue-answers-answer__text"
+                <div v-if="editedEntry !== answer.id" class="dialogue-answers-answer__text"
                   v-html="getHyperlinkedAnswer(answer.text)" @click="handleAnswerClick($event)"></div>
 
                 <textarea v-else v-text="answer.text" name="entryText" class="dialogue-entry-textarea"></textarea>
@@ -60,13 +60,13 @@
                   language="MWScript" />
 
                 <div class="dialogue-answers-answer__ids" v-if="false">
-                  <div class="prev-id">{{ answer.info_id }} (id)</div>
+                  <div class="prev-id">{{ answer.id }} (id)</div>
                   <div class="curr-id">next id: {{ answer.next_id || '-' }}</div>
                 </div>
               </div>
-<!--               <icon v-if="editMode && editedEntry !== answer.info_id" name="pen" color="#E1FF00" class="icon_gold"
-                scale="1" @click="editedEntry = answer.info_id"></icon> -->
-              <div class="entry-edit-controls" v-if="editMode && editedEntry == answer.info_id">
+<!--               <icon v-if="editMode && editedEntry !== answer.id" name="pen" color="#E1FF00" class="icon_gold"
+                scale="1" @click="editedEntry = answer.id"></icon> -->
+              <div class="entry-edit-controls" v-if="editMode && editedEntry == answer.id">
                 <button type="submit">
                   <!-- <icon name="save" color="#E1FF00" class="icon_gold" scale="1"></icon> -->
                 </button>
@@ -74,7 +74,7 @@
                 </icon> -->
 <!--                 <icon name="ban" color="#E1FF00" class="icon_gold" scale="1" @click.prevent="editedEntry = ''"></icon>
                 <icon name="trash" color="#E1FF00" class="icon_gold" scale="1"
-                  @click.prevent="deleteEntry(answer.info_id)"></icon> -->
+                  @click.prevent="deleteEntry(answer.id)"></icon> -->
               </div>
             </form>
           </div>
@@ -99,19 +99,19 @@
       </div>
     </div>
     <div class="dialogue-questions">
-      <div class="dialogue-questions__container" v-if="dialogue?.greetings.length">
-        <div class="dialogue-questions__topic" v-for="(question, index) in dialogue.greetings" :key="index"
+      <div class="dialogue-questions__container" v-if="greetingsList.length">
+        <div class="dialogue-questions__topic" v-for="(question, index) in greetingsList" :key="index"
           @click="setCurrentAnswers(question, 'Greeting')">
           {{ question }}
         </div>
       </div>
-      <div class="dialogue-questions__container" v-if="dialogue?.persuasions.length">
-        <div class="dialogue-questions__topic" v-for="(question, index) in dialogue.persuasions" :key="index"
+      <div class="dialogue-questions__container" v-if="persuasionsList.length">
+        <div class="dialogue-questions__topic" v-for="(question, index) in persuasionsLists" :key="index"
           @click="setCurrentAnswers(question, 'Persuasion')">
           {{ question }}
         </div>
       </div>
-      <div class="dialogue-questions__topic" v-for="(question, index) in dialogue?.topics" :key="index"
+      <div class="dialogue-questions__topic" v-for="(question, index) in topicsList" :key="index"
         @click="setCurrentAnswers(question, 'Topic')">
         {{ question }}
       </div>
@@ -120,7 +120,11 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue';
+import { useSelectedSpeaker } from '@/stores/selectedSpeaker';
+// import DialogueEntryFilters from '../dialogue/DialogueEntryFilters.vue';
+// import DialogueEntryResults from '../dialogue/DialogueEntryResults.vue';
+import { fetchTopicListByNPC, getOrderedEntriesByTopic } from '@/api/idb.js';
+import { computed, ref, toRefs, watch } from 'vue';
 
 const props = defineProps({
   speaker: {
@@ -129,6 +133,7 @@ const props = defineProps({
     default: () => ({}),
   },
 })
+const { speaker } = toRefs(props);
 
 const currentTopic = ref<string>('');
 const editMode = ref<boolean>(false);
@@ -141,43 +146,52 @@ const persuasionsList = ref([]);
 const topicsList = ref([]);
 const orderedEntries = ref([]);
 
+watch(speaker, async (newValue) => {
+  if (!newValue.speakerId) {
+    topicsList.value = [];
+    persuasionsList.value = [];
+    greetingsList.value = [];
+  } else {
+    const topicsResponse = await fetchTopicListByNPC(speaker.value.speakerId, speaker.value.speakerType);
+    topicsList.value = topicsResponse.topics;
+    persuasionsList.value = topicsResponse.persuasions;
+    greetingsList.value = topicsResponse.greetings;
+    console.log(topicsResponse)
+  }
+})
+
 const getOrderedEntries = computed(() => {
   return [];
 //      return this.$store.getters['getOrderedEntriesByTopic']([this.currentTopic, 'Topic']);
 });
 
 const currentAnswers = computed(() => {
-    return [];
-/*
-
-      let answers;
-      if (this.speaker !== 'Global Dialogue') {
-        answers = this.orderedEntries
-          .filter((val) => val.TMP_topic === this.currentTopic)
-          .filter((topic) =>
-            [
-              topic['speaker_id'],
-              topic['speaker_cell'],
-              topic['speaker_faction'],
-              topic['speaker_class'],
-              topic['speaker_rank'],
-            ].includes(this.speaker.speakerId),
-          );
-      } else {
-        answers = this.orderedEntries
-          .filter((val) => val.TMP_topic === this.currentTopic)
-          .filter(
-            (topic) =>
-              !topic['speaker_id'] &&
-              !topic['speaker_cell'] &&
-              !topic['speaker_faction'] &&
-              !topic['speaker_class'] &&
-              !topic['speaker_rank'],
-          );
-      }
-      return answers;
-
-*/
+  let answers;
+  if (speaker.value !== 'Global Dialogue') {
+    answers = orderedEntries.value
+      .filter((val) => val.TMP_topic === currentTopic.value)
+      .filter((topic) =>
+        [
+          topic['speaker_id'],
+          topic['speaker_cell'],
+          topic['speaker_faction'],
+          topic['speaker_class'],
+          topic['speaker_rank'],
+        ].includes(speaker.value.speakerId),
+      );
+  } else {
+    answers = orderedEntries.value
+      .filter((val) => val.TMP_topic === currentTopic.value)
+      .filter(
+        (topic) =>
+          !topic['speaker_id'] &&
+          !topic['speaker_cell'] &&
+          !topic['speaker_faction'] &&
+          !topic['speaker_class'] &&
+          !topic['speaker_rank'],
+      );
+  }
+  return answers;
 });
 
 const getClipboardDialogue = computed(() => {
@@ -185,20 +199,9 @@ const getClipboardDialogue = computed(() => {
   // return this.$store.getters['getClipboardDialogue'];
 });
 
-const getSpeakerType = computed(() => {
-  return '';
-  /*
-      return this.currentAnswers[0] ?
-        Object.keys(this.currentAnswers[0]).find(
-          (key) => this.currentAnswers[0][key] === this.speaker.speakerId,
-        )
-        : '';
-  */
-});
-
 const getLastEntryId = computed(() => {
   return '';
-  // return this.currentAnswers.at(-1).info_id;
+  // return this.currentAnswers.at(-1).id;
 })
 
 async function setClipboard(entry) {
@@ -248,15 +251,15 @@ function editDialogue() {
   ]);
   this.editedEntry = ''; */
 }
-async function setCurrentAnswers(topic, topicType) {
-/*   this.topicType = 'Topic';
-  this.currentTopic = ' ';
+async function setCurrentAnswers(selectedTopic: string, selectedTopicType: string) {
+  topicType.value = 'Topic';
+  currentTopic.value = ' ';
   await new Promise((resolve) => setTimeout(resolve, 160));
-  this.topicType = topicType;
-  this.currentTopic = topic; */
+  topicType.value = selectedTopicType;
+  currentTopic.value = selectedTopic;
 }
-function deleteEntry(info_id) {
-  // this.$store.commit('deleteDialogueEntry', info_id);
+function deleteEntry(id) {
+  // this.$store.commit('deleteDialogueEntry', id);
 }
 function getSpeakerData(topicType) {
   return [];
@@ -297,8 +300,8 @@ function handleAnswerClick(e) {
   } */
 }
 function getHyperlinkedAnswer(text) {
-/*   let hyperlinkedAnswer = text;
-  for (let topic of this.dialogue.topics) {
+  let hyperlinkedAnswer = text;
+  for (let topic of topicsList.value) {
     if (hyperlinkedAnswer.includes(topic)) {
       hyperlinkedAnswer = hyperlinkedAnswer.replace(
         topic,
@@ -306,7 +309,7 @@ function getHyperlinkedAnswer(text) {
       );
     }
   }
-  return hyperlinkedAnswer; */
+  return hyperlinkedAnswer;
 }
 function pasteDialogueFromClipboard(location) {
 /*   let entry = { ...this.getClipboardDialogue, speaker_id: this.speaker.speaker_id };
@@ -332,12 +335,13 @@ watch(getSpeakerData, (() => {
   ]); */
 }))
 
-watch(currentTopic, ((newValue) => {
-/*   if (newValue.trim()) {
-    this.orderedEntries = await this.$store.dispatch('fetchOrderedEntriesByTopic', [newValue]);
+watch(currentTopic, (async (newValue) => {
+  if (newValue.trim()) {
+    const orderedEntriesResponse = await getOrderedEntriesByTopic(newValue);
+    orderedEntries.value = orderedEntriesResponse;
   } else {
-    this.orderedEntries = [];
-  } */
+    orderedEntries.value = [];
+  }
 }))
 </script>
 
