@@ -18,6 +18,13 @@ export const deleteDB = function (name) {
   delete databases[name];
 };
 
+export const checkDB = async function (name) {
+  if (!Boolean(databases[name])) {
+    await initPlugin(name);
+  }
+  return Boolean(databases[name]);
+}
+
 export const initPlugin = async function (pluginName) {
   createDB(pluginName);
   let activePlugin = getDB(pluginName);
@@ -49,10 +56,14 @@ export const getDependencies = async function () {
 };
 
 export const getActiveHeader = async function () {
-  if (!databases['activePlugin']) {
-    await initPlugin('activePlugin');
+  return await getHeader('activePlugin');
+};
+
+export const getHeader = async function (pluginName) {
+  if (!databases[pluginName]) {
+    await initPlugin(pluginName);
   }
-  const activePlugin = databases['activePlugin'];
+  const activePlugin = databases[pluginName];
   const headers = await activePlugin.pluginData.where('type').equals('Header').toArray();
   if (!headers.length) {
     throw 'NO_HEADERFOUND';

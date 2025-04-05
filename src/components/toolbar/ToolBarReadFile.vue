@@ -1,31 +1,60 @@
 <template>
   <div class="text-reader__wrapper" :class="{ 'text-reader__wrapper_dep': dep }">
+    <button class="text-reader" @click="handleDelete">
+      <span v-if="loaded">Delete</span>
+      <SVGSpinners90RingWithBg v-else/>
+    </button>
     <label class="text-reader">
-      <input type="file" accept=".esp,.esm" @change="loadTextFromFile" />
-      {{ !dep ? 'Load active plugin' : 'Load dependency' }}
+      <input type="file" accept=".esp,.esm" @change="loadTextFromFile" :disabled="!loaded"/>
+      <span v-if="loaded">
+        {{ isDepLoaded ? 'Change' : 'Load' }}
+      </span>
+      <span v-else>{{ stage }}<SVGSpinners90RingWithBg /></span>
     </label>
-    {{ !dep ? getActivePluginName : fileName }}
-    {{ fileSize || '' }}
+    {{ isDepLoaded ? 'Loaded' : 'Not loaded' }}
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import init, { load_objects } from '@/tes3_wasm/tes3_wasm.js';
-import { importPlugin, getActiveHeader } from '@/api/idb.js';
+import { importPlugin, getActiveHeader, getHeader, deleteDB } from '@/api/idb.js';
 import { usePluginHeader } from '@/stores/pluginHeader';
+import SVGSpinners90RingWithBg from '~icons/svg-spinners/90-ring-with-bg';
 
 interface Props {
   dep?: string;
 }
 const props = defineProps<Props>();
 
+const deleteLoaded = ref<boolean>(true);
+async function handleDelete() {
+  loaded.value = false;
+  await deleteDB(props.dep || 'activePlugin');
+  loaded.value = true;
+}
+
 const fileName = ref<string>('');
 const fileSize = ref<string | null>(null);
 
-const getActivePluginName = computed(() => {
-  return 'test';
-  // return this.$store.getters['getActiveHeader'].TMP_dep;
+const loaded = ref<boolean>(true);
+
+
+
+const isDepLoaded = ref<boolean>(false);
+watch(loaded, async (newValue) => {
+  if (newValue === true) {
+    try {
+      const response = await getHeader(props.dep || 'activePlugin');
+      isDepLoaded.value = Boolean(response);
+    } catch (error) {
+      console.error(error);
+    }
+  } else {
+    isDepLoaded.value = false;
+  }
+}, {
+  immediate: true,
 })
 
 function formatBytes(bytes: number, decimals: number = 2) {
@@ -42,29 +71,44 @@ onMounted(async () => {
 })
 
 const headerStore = usePluginHeader();
+const stage = ref<string>('');
 async function loadTextFromFile(event: InputEvent) {
   try {
+    stage.value = '0%';
+    loaded.value = false;
     const element = event.target as HTMLInputElement;
     if (!element.files) return;
     const file: FileList = element.files;
     if (!file.length) return;
     fileSize.value = formatBytes(file[0].size);
+    stage.value = '10%';
     fileName.value = file[0].name;
 
     const buffer = await file[0].arrayBuffer();
+    stage.value = '80%';
     const bytes = new Uint8Array(buffer);
+    stage.value = '85%';
     const objects = await load_objects(bytes);
+    stage.value = '90%';
     if (!props.dep) {
       await importPlugin(objects, fileName.value, true);
+      stage.value = '98%';
       const headerResponse = await getActiveHeader();
       headerStore.setPluginHeader(headerResponse);
     } else {
       await importPlugin(objects, props.dep, false);
     }
+    stage.value = '';
   } catch (error) {
     console.error(error);
+  } finally {
+    loaded.value = true;
   }
 }
+
+const getActivePluginName = computed(() => {
+  return headerStore.getPluginHeader?.TMP_dep || '';
+})
 
 /* export default {
   methods: {

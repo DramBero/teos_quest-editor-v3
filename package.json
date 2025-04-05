@@ -29,6 +29,7 @@
   },
   "devDependencies": {
     "@iconify-json/game-icons": "^1.2.1",
+    "@iconify-json/svg-spinners": "^1.2.2",
     "@tauri-apps/cli": "^2.4.1",
     "@tsconfig/node22": "^22.0.1",
     "@types/node": "^22.13.9",

@@ -27,7 +27,12 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import ToolBarOpen from './ToolBarOpen.vue';
-const getTitle = computed<string>(() => 'title.esp');
+import { usePluginHeader } from '@/stores/pluginHeader';
+
+const pluginHeaderStore = usePluginHeader();
+const getTitle = computed<string>(() => pluginHeaderStore.getPluginHeader?.TMP_dep || '');
+
+
 </script>
 
 <style lang="scss">
