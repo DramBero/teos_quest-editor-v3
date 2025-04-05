@@ -6,12 +6,13 @@
       }}</span>
       <CodeEditor
         v-model="luaCode"
-        :read_only="!editMode"
-        :hide_header="true"
+        :read-only="!editMode"
+        :display-language="false"
+        theme="vs2015"
         :height="'100%'"
         :width="'100%'"
-        font_size="14px"
-        :border_radius="'0'"
+        font-size="14px"
+        :border-radius="'0'"
       >
       </CodeEditor>
       <!--       <prism-editor
@@ -26,33 +27,31 @@
   </div>
 </template>
 
-<script>
+<script setup lang="ts">
 import hljs from 'highlight.js';
 import CodeEditor from 'simple-code-editor';
+import { onBeforeMount, ref } from 'vue';
 
-export default {
-  components: {
-    CodeEditor,
+const props = defineProps({
+  code: {
+    type: String,
   },
-  props: {
-    code: {
-      type: String,
-    },
-    language: {
-      type: String,
-    },
-    editMode: {
-      type: Boolean,
-    },
+  language: {
+    type: String,
   },
-  data() {
-    return {
-      luaCode: '',
-    };
+  editMode: {
+    type: Boolean,
   },
-  beforeMount() {
-    this.luaCode = this.code;
-  },
+})
+
+const luaCode = ref<string>('');
+
+onBeforeMount(() => {
+  luaCode.value = props.code || '';
+})
+
+/*
+
   methods: {
     highlighterLua(code) {
       return highlight(code, languages.lua);
@@ -61,7 +60,8 @@ export default {
       return highlight(code, languages.javascript);
     },
   },
-};
+
+*/
 </script>
 
 <style lang="scss">

@@ -54,9 +54,9 @@
 
                 <textarea v-else v-text="answer.text" name="entryText" class="dialogue-entry-textarea"></textarea>
 
-                <DialogueEntryResults :editMode="editMode" :code="getLanguage(answer.result, 'Lua (MWSE)')"
+                <DialogueEntryResults :editMode="editMode" :code="getLanguage(answer.script_text, 'Lua (MWSE)')"
                   language="Lua (MWSE)" />
-                <DialogueEntryResults :editMode="editMode" :code="getLanguage(answer.result, 'MWScript')"
+                <DialogueEntryResults :editMode="editMode" :code="getLanguage(answer.script_text, 'MWScript')"
                   language="MWScript" />
 
                 <div class="dialogue-answers-answer__ids" v-if="false">
@@ -122,7 +122,7 @@
 <script setup lang="ts">
 import { useSelectedSpeaker } from '@/stores/selectedSpeaker';
 // import DialogueEntryFilters from '../dialogue/DialogueEntryFilters.vue';
-// import DialogueEntryResults from '../dialogue/DialogueEntryResults.vue';
+import DialogueEntryResults from '../dialogue/DialogueEntryResults.vue';
 import { fetchTopicListByNPC, getOrderedEntriesByTopic } from '@/api/idb.js';
 import { computed, ref, toRefs, watch } from 'vue';
 
@@ -266,7 +266,7 @@ function getSpeakerData(topicType) {
   // return this.$store.getters['getDialogueBySpeaker']([this.speaker.speaker_id, topicType]);
 }
 function getLanguage(code, language) {
-/*   if (!code) return '';
+  if (!code) return '';
   if (language === 'Lua (MWSE)') {
     return code
       .split('\r\n')
@@ -278,7 +278,7 @@ function getLanguage(code, language) {
       .split('\r\n')
       .filter((val) => !val.includes(';lua '))
       .join('\r\n');
-  } */
+  }
 }
 function checkDirtied(entryOne, entryTwo) {
 /*   let entryOneNonId = Object.fromEntries(
