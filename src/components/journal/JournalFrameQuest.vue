@@ -20,7 +20,7 @@
                 <div class="quest-entry__text">Before started</div>
               </div>
               <div class="edit-button">
-                <icon name="pen" scale="1" class="icon_hidden"></icon>
+                <!-- <icon name="pen" scale="1" class="icon_hidden"></icon> -->
               </div>
             </div>
           </div>
@@ -48,12 +48,12 @@
                 </div>
               </div>
               <button class="edit-button">
-                <icon
+<!--                 <icon
                   name="pen"
                   scale="1"
                   class="edit-entry-controls__icon"
                   @click="entryEdit = entry.data.disposition"
-                ></icon>
+                ></icon> -->
               </button>
             </div>
             <div v-else>
@@ -85,7 +85,7 @@
                   /></label>
                 </div>
                 <div class="edit-entry-controls">
-                  <button type="submit">
+<!--                   <button type="submit">
                     <icon name="save" class="edit-entry-controls__icon" scale="1"></icon>
                   </button>
                   <button @click.prevent="entryEdit = ''">
@@ -93,7 +93,7 @@
                   </button>
                   <button @click.prevent="deleteEntry(entry.info_id)">
                     <icon name="trash" class="edit-entry-controls__icon" scale="1"></icon>
-                  </button>
+                  </button> -->
                 </div>
               </form>
             </div>
