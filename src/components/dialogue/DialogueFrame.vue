@@ -68,8 +68,11 @@ watch(currentSpeakerType,
   async (newValue: SpeakerType) => {
     try {
       const speakersResponse = await fetchAllDialogueBySpeaker(newValue);
-      currentSpeakers.value = speakersResponse;
-      console.log('response:', speakersResponse)
+      currentSpeakers.value = [];
+      for (const speaker of speakersResponse) {
+        currentSpeakers.value = [...currentSpeakers.value, speaker]
+        await new Promise((resolve) => setTimeout(resolve, 1))
+      }
     } catch(error) {
       console.error(error);
     }

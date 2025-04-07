@@ -8,13 +8,13 @@
       :src="getNpcFace ? `/images/faces/${getNpcFace}` : ''"
       :alt="speakerData.name || speakerId"
     /> -->
-    <div v-if="loaded" :style="{'width': '160px', 'height': '160px'}">
-      <TresCanvas alpha render-mode="on-demand">
+    <div v-if="loaded && getFaceData" :style="{'width': '160px', 'height': '160px'}">
+      <TresCanvas render-mode="on-demand" :preserveDrawingBuffer="true">
         <!-- <TresDirectionalLight :position="[-4, 8, 4]" :intensity="2" cast-shadow color="#F78B3D"/> -->
         <TresAmbientLight :intensity="1.5" />
         <TresPerspectiveCamera :position="[0, 0, 0.25]" />
         <Suspense >
-          <TresMesh :rotation-y="-0.4">
+          <TresMesh :rotation-y="-0.4" >
             <GLTFModel :path="getFaceData" />
           </TresMesh>
         </Suspense>
@@ -52,7 +52,14 @@ const getFaceData = computed(() => {
     case 'b_n_high elf_f_head_01': return '/meshes/b_n_high elf_f_head_01.glb';
     case 'b_n_high elf_m_head_03': return '/meshes/b_n_high elf_m_head_03.glb';
     case 'b_n_nord_m_head_01': return '/meshes/b_n_nord_m_head_01.glb';
-    default: return '/meshes/Untitled.glb';
+    default: return '';
+  }
+})
+
+const getHairData = computed(() => {
+  switch(speakerData.value.hair) {
+    case 'b_n_dark elf_f_hair_03': return '/meshes/b_n_dark elf_f_hair_03.glb';
+    default: return '';
   }
 })
 
