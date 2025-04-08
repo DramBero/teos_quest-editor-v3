@@ -83,11 +83,11 @@
       >
         <span class="filter__if">if </span>
         <span class="filter__function"
-          >{{ filter.filter_type === 'Function' ? filter.filter_function : filter.filter_type }}
+          >{{ filter.filter_type === 'Function' ? filter.function : filter.filter_type }}
         </span>
         <span class="filter__id">{{ filter.id }} </span>
-        <span class="filter__comparison">{{ parseComparison(filter.filter_comparison) }} </span>
-        <span class="filter__value">{{ Object.values(filter.value)[0] }}</span>
+        <span class="filter__comparison">{{ parseComparison(filter.comparison) }} </span>
+        <span class="filter__value">{{ filter.value.data }}</span>
         <span>
 <!--           <icon
             v-if="editMode"
@@ -256,7 +256,7 @@ const getOtherSpeakers = computed(() => {
       type: 'Player Faction',
       value: props.answer.player_faction,
     },
-  ].filter((val) => val.value && val.value !== props.speaker);
+  ].filter((val) => val.value && val.value !== props.speaker.speakerId);
 })
 
 function handleFilter(filter) {
@@ -322,17 +322,17 @@ function editFilter(filter, index) {
 function parseComparison(comparison) {
   switch (comparison) {
     case 'Equal':
-      return '==';
+      return ' == ';
     case 'GreaterEqual':
-      return '>=';
+      return ' >= ';
     case 'LesserEqual':
-      return '<=';
+      return ' <= ';
     case 'Less':
-      return '<';
+      return ' < ';
     case 'Greater':
-      return '>';
+      return ' > ';
     case 'NotEqual':
-      return '!=';
+      return ' != ';
     default:
       return comparison;
   }
