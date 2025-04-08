@@ -19,7 +19,7 @@
       <span class="filter__comparison">== </span>
       <span class="filter__value">{{ speakerType.value }}</span>
       <span>
-        <icon
+<!--         <icon
           v-if="editMode"
           @click.stop="
             editFilter(
@@ -36,7 +36,7 @@
           name="pen"
           class="filter__edit"
           scale="1"
-        ></icon>
+        ></icon> -->
       </span>
     </div>
 
@@ -53,7 +53,7 @@
       <span class="filter__comparison">> </span>
       <span class="filter__value">{{ answer.data.disposition }}</span>
       <span>
-        <icon
+<!--         <icon
           v-if="editMode"
           @click.stop="
             editFilter(
@@ -70,7 +70,7 @@
           name="pen"
           class="filter__edit"
           scale="1"
-        ></icon>
+        ></icon> -->
       </span>
     </div>
 
@@ -89,13 +89,13 @@
         <span class="filter__comparison">{{ parseComparison(filter.filter_comparison) }} </span>
         <span class="filter__value">{{ Object.values(filter.value)[0] }}</span>
         <span>
-          <icon
+<!--           <icon
             v-if="editMode"
             @click.stop="editFilter(filter, index)"
             name="pen"
             class="filter__edit"
             scale="1"
-          ></icon>
+          ></icon> -->
         </span>
       </div>
       <div class="filter-delete" @click.stop="deleteFilter(filter.slot)">
@@ -110,13 +110,13 @@
       <span class="filter__comparison">? </span>
       <span class="filter__value">{{ newFilterIndex }}</span>
       <span>
-        <icon
+<!--         <icon
           v-if="editMode"
           @click.stop="editFilter(filter, index)"
           name="pen"
           class="filter__edit"
           scale="1"
-        ></icon>
+        ></icon> -->
       </span>
       <div class="comparisons__overlay">
         <div
@@ -149,144 +149,150 @@
       <span class="filter__function">New filter...</span>
     </div>
 
-    <icon
+<!--     <icon
       v-if="editMode && !newFilterType && !dragOver"
       @click="addFilter()"
       name="plus-circle"
       class="icon_gray"
       scale="1.5"
-    ></icon>
+    ></icon> -->
   </div>
 </template>
 
-<script>
-import Icon from 'vue-awesome/components/Icon';
-import 'vue-awesome/icons';
-export default {
-  props: {
-    answer: {
-      type: Object,
-    },
-    speaker: {
-      type: String,
-    },
-    editMode: {
-      type: Boolean,
-    },
-    onlyFilters: {
-      type: Boolean,
-    },
+<script setup lang="ts">
+import { computed, ref } from 'vue';
+
+
+const props = defineProps({
+  answer: {
+    type: Object,
+    default: () => ({})
   },
-  components: {
-    Icon,
+  speaker: {
+    type: String,
   },
-  data() {
-    return {
-      newFilterTopic: '',
-      newFilterIndex: '',
-      newFilterType: '',
-      dragOver: false,
-      showComparisons: false,
-      filterReactivityTrigger: 0,
-      comparisons: [
-        {
-          id: 'Less',
-          text: '<',
-        },
-        {
-          id: 'LesserEqual',
-          text: '<=',
-        },
-        {
-          id: 'Equal',
-          text: '==',
-        },
-        {
-          id: 'NotEqual',
-          text: '!=',
-        },
-        {
-          id: 'GreaterEqual',
-          text: '>=',
-        },
-        {
-          id: 'Greater',
-          text: '>',
-        },
-      ],
-    };
+  editMode: {
+    type: Boolean,
   },
-  computed: {
-    getFiltersByInfoId() {
-      return this.answer.filters;
-      /*       this.filterReactivityTrigger
-      return this.$store.getters['getFiltersByInfoId'](this.answer.info_id) */
-    },
-    getOtherSpeakers() {
-      return [
-        {
-          type: 'Speaker ID',
-          value: this.answer.speaker_id,
-        },
-        {
-          type: 'Speaker Cell',
-          value: this.answer.speaker_cell,
-        },
-        {
-          type: 'Speaker Faction',
-          value: this.answer.speaker_faction,
-        },
-        {
-          type: 'Speaker Class',
-          value: this.answer.speaker_class,
-        },
-        {
-          type: 'Speaker Sex',
-          value: this.answer.data.speaker_sex !== 'Any' ? this.answer.data.speaker_sex : '',
-        },
-        {
-          type: 'Speaker Rank',
-          value: this.answer.data.speaker_race !== -1 ? this.answer.data.speaker_race : '',
-        },
-        {
-          type: 'Speaker Race',
-          value: this.answer.speaker_race,
-        },
-        {
-          type: 'Player Rank',
-          value: this.answer.data.player_rank !== -1 ? this.answer.data.player_rank : '',
-        },
-        {
-          type: 'Player Faction',
-          value: this.answer.player_faction,
-        },
-      ].filter((val) => val.value && val.value !== this.speaker);
-    },
+  onlyFilters: {
+    type: Boolean,
   },
-  methods: {
-    handleFilter(filter) {
-      if (filter.filter_function === 'JournalType') {
-        this.$store.commit('setSidebarActive', 'Journal');
-        this.$store.commit('setJournalHighlight', filter);
-      } else {
-        this.removeHighlight();
-      }
+})
+
+const newFilterTopic = ref<string>('');
+const newFilterIndex = ref<string>('');
+const newFilterType = ref<string>('');
+
+const dragOver = ref<boolean>(false);
+const showComparisons = ref<boolean>(false);
+const filterReactivityTrigger = ref<number>(0);
+
+const comparisons = [
+  {
+    id: 'Less',
+    text: '<',
+  },
+  {
+    id: 'LesserEqual',
+    text: '<=',
+  },
+  {
+    id: 'Equal',
+    text: '==',
+  },
+  {
+    id: 'NotEqual',
+    text: '!=',
+  },
+  {
+    id: 'GreaterEqual',
+    text: '>=',
+  },
+  {
+    id: 'Greater',
+    text: '>',
+  },
+]
+
+const getFiltersByInfoId = computed(() => {
+  return props.answer.filters;
+})
+
+const getOtherSpeakers = computed(() => {
+  return [
+    {
+      type: 'Speaker ID',
+      value: props.answer.speaker_id,
     },
-    removeHighlight() {
-      this.$store.commit('setJournalHighlight', {});
+    {
+      type: 'Speaker Cell',
+      value: props.answer.speaker_cell,
     },
-    addFilter() {
+    {
+      type: 'Speaker Faction',
+      value: props.answer.speaker_faction,
+    },
+    {
+      type: 'Speaker Class',
+      value: props.answer.speaker_class,
+    },
+    {
+      type: 'Speaker Sex',
+      value: props.answer.data.speaker_sex !== 'Any' ? props.answer.data.speaker_sex : '',
+    },
+    {
+      type: 'Speaker Rank',
+      value: props.answer.data.speaker_race !== -1 ? props.answer.data.speaker_race : '',
+    },
+    {
+      type: 'Speaker Race',
+      value: props.answer.speaker_race,
+    },
+    {
+      type: 'Player Rank',
+      value: props.answer.data.player_rank !== -1 ? props.answer.data.player_rank : '',
+    },
+    {
+      type: 'Player Faction',
+      value: props.answer.player_faction,
+    },
+  ].filter((val) => val.value && val.value !== props.speaker);
+})
+
+function handleFilter(filter) {
+/*
+  if (filter.filter_function === 'JournalType') {
+    this.$store.commit('setSidebarActive', 'Journal');
+    this.$store.commit('setJournalHighlight', filter);
+  } else {
+    this.removeHighlight();
+  }
+*/
+}
+
+function removeHighlight() {
+  // this.$store.commit('setJournalHighlight', {});
+}
+
+function addFilter() {
+  /*
       this.$store.commit('setSelectedFilter', {});
       this.$store.commit('setSelectedInfoId', this.answer.info_id);
       this.$store.commit('setSelectedFilterIndex', '');
       this.$store.commit('setPrimaryModal', 'NewFilter');
       this.filterReactivityTrigger++;
-    },
-    deleteFilter(slot) {
+  */
+}
+
+function deleteFilter(slot) {
+/*
       this.$store.commit('deleteDialogueFilter', [this.answer.info_id, slot]);
       this.filterReactivityTrigger++;
-    },
-    addDropFilter(comparison) {
+*/
+}
+
+function addDropFilter(comparison) {
+/*
       if (this.newFilterType === 'Journal') {
         let filter = {
           filter_comparison: comparison,
@@ -301,50 +307,62 @@ export default {
       }
       this.removeTempFilter();
       this.filterReactivityTrigger++;
-    },
-    editFilter(filter, index) {
+*/
+}
+
+function editFilter(filter, index) {
+  /*
       this.$store.commit('setSelectedFilter', filter);
       this.$store.commit('setSelectedInfoId', this.answer.info_id);
       this.$store.commit('setSelectedFilterIndex', index);
       this.$store.commit('setPrimaryModal', 'NewFilter');
-    },
-    parseComparison(comparison) {
-      switch (comparison) {
-        case 'Equal':
-          return '==';
-        case 'GreaterEqual':
-          return '>=';
-        case 'LesserEqual':
-          return '<=';
-        case 'Less':
-          return '<';
-        case 'Greater':
-          return '>';
-        case 'NotEqual':
-          return '!=';
-        default:
-          return comparison;
-      }
-    },
-    handleDragLeave(event) {
-      this.dragOver = false;
-    },
-    handleDragEnter(event) {
-      this.dragOver = true;
-      //dialogue-filters
-    },
-    async handleDrop(event) {
-      if (event.dataTransfer.getData('type') === 'Journal') {
-        this.dragOver = false;
-        (this.newFilterTopic = event.dataTransfer.getData('topic')),
-          (this.newFilterIndex = event.dataTransfer.getData('disposition'));
-        this.newFilterType = event.dataTransfer.getData('type');
-        this.showComparisons = true;
-        await new Promise((resolve) => setTimeout(resolve, 100));
-        this.$refs.comparisons.focus();
-      }
-    },
-    comparisonOver(comparison) {
+  */
+}
+
+function parseComparison(comparison) {
+  switch (comparison) {
+    case 'Equal':
+      return '==';
+    case 'GreaterEqual':
+      return '>=';
+    case 'LesserEqual':
+      return '<=';
+    case 'Less':
+      return '<';
+    case 'Greater':
+      return '>';
+    case 'NotEqual':
+      return '!=';
+    default:
+      return comparison;
+  }
+}
+
+function handleDragLeave(event) {
+  dragOver.value = false;
+}
+
+function handleDragEnter(event) {
+  dragOver.value = true;
+  //dialogue-filters
+}
+
+function handleDrop(event) {
+/*
+  if (event.dataTransfer.getData('type') === 'Journal') {
+    this.dragOver = false;
+    (this.newFilterTopic = event.dataTransfer.getData('topic')),
+      (this.newFilterIndex = event.dataTransfer.getData('disposition'));
+    this.newFilterType = event.dataTransfer.getData('type');
+    this.showComparisons = true;
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    this.$refs.comparisons.focus();
+  }
+*/
+}
+
+function comparisonOver(comparison) {
+  /*
       let filter = {
         id: this.newFilterTopic,
         value: {
@@ -353,14 +371,14 @@ export default {
         filter_comparison: comparison,
       };
       this.$store.commit('setJournalHighlight', filter);
-    },
-    removeTempFilter() {
-      this.newFilterIndex = '';
-      this.newFilterTopic = '';
-      this.newFilterType = '';
-    },
-  },
-};
+  */
+}
+
+function removeTempFilter() {
+  newFilterIndex.value = '';
+  newFilterTopic.value = '';
+  newFilterType.value = '';
+}
 </script>
 
 <style lang="scss">

@@ -121,7 +121,7 @@
 
 <script setup lang="ts">
 import { useSelectedSpeaker } from '@/stores/selectedSpeaker';
-// import DialogueEntryFilters from '../dialogue/DialogueEntryFilters.vue';
+import DialogueEntryFilters from '../dialogue/DialogueEntryFilters.vue';
 import DialogueEntryResults from '../dialogue/DialogueEntryResults.vue';
 import { fetchTopicListByNPC, getOrderedEntriesByTopic } from '@/api/idb.js';
 import { computed, ref, toRefs, watch } from 'vue';
