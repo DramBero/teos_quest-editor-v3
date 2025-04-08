@@ -24,12 +24,12 @@
         </button>
       </form> -->
       </div>
-      <div class="frame-controls-types" v-if="currentSpeakers && currentSpeakers.length">
-        <template v-for="speakerType in speakerTypes">
-          <div :key="speakerType" v-if="getSpeakerLength(speakerType)" class="frame-controls-types__type" :class="{
+      <div class="frame-controls-types">
+        <template v-for="speakerType in speakerTypes" :key="speakerType">
+          <div class="frame-controls-types__type" :class="{
             'frame-controls-types__type_active': currentSpeakerType === speakerType,
           }" @click="currentSpeakerType = speakerType">
-            {{ speakerType }} {{ getSpeakerLength(speakerType) }}
+            {{ speakerType }} {{ speakerTypeAmounts[speakerType] }}
           </div>
         </template>
         <!--         <div
@@ -53,15 +53,24 @@
 
 <script setup lang="ts">
 import DialogueFrameCard from '@/components/dialogue/DialogueFrameCard.vue';
-import { fetchAllDialogueBySpeaker } from '@/api/idb.js';
-import { computed, ref, watch } from 'vue';
+import { fetchAllDialogueBySpeaker, fetchSpeakersAmountBySpeakerType } from '@/api/idb.js';
+import { computed, onMounted, ref, watch } from 'vue';
 import { usePrimaryModal } from '@/stores/modals';
 
 type SpeakerType = 'npc' | 'cell' | 'class' | 'faction' | 'rank' | 'global';
 
-const speakerTypes = ref<SpeakerType[]>(['npc', 'cell', 'class', 'faction', 'rank', 'global']);
+const speakerTypes = ref<SpeakerType[]>(['npc', 'cell', 'class', 'faction', 'rank']);
 const currentSpeakerType = ref<SpeakerType>('npc');
 const speakerSearch = ref<string>('');
+
+const speakerTypeAmounts = ref<Record<SpeakerType, number>>({
+  npc: 0,
+  cell: 0,
+  faction: 0,
+  class: 0,
+  rank: 0,
+  global: 0,
+});
 
 const currentSpeakers = ref([]);
 watch(currentSpeakerType,
@@ -71,7 +80,7 @@ watch(currentSpeakerType,
       currentSpeakers.value = [];
       for (const speaker of speakersResponse) {
         currentSpeakers.value = [...currentSpeakers.value, speaker]
-        await new Promise((resolve) => setTimeout(resolve, 1))
+        await new Promise((resolve) => setTimeout(resolve, 100))
       }
     } catch(error) {
       console.error(error);
@@ -85,9 +94,22 @@ const getDialogueGlobalExist = computed(() => {
   // return this.$store.getters['getDialogueGlobalExist'];
 })
 
-function getSpeakerLength(speakerType: SpeakerType) {
-  return 99;
-  // return this.$store.getters['getAllSpeakers'](speakerType).length;
+onMounted(async () => {
+  for (const speakerType of speakerTypes.value) {
+    try {
+      const speakerLength = await fetchSpeakersAmountBySpeakerType(speakerType);
+      speakerTypeAmounts.value[speakerType] = speakerLength;
+    } catch (error) {
+      console.error(error);
+    }
+  }
+})
+
+async function getSpeakerLength(speakerType: SpeakerType) {
+  await fetchSpeakersAmountBySpeakerType(speakerType)
+    .then((response: number) => {
+      return response;
+    })
 }
 
 function toggleType(speakerType: SpeakerType) {

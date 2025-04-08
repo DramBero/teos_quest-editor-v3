@@ -406,7 +406,7 @@ export default {
               fields: ['race'],
             },
             {
-              id: 'speaker_rank',
+              id: 'speaker_race',
               name: 'Speaker Rank',
               operands: ['Equal'],
               fields: ['rank'],

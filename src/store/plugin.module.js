@@ -280,7 +280,7 @@ const getters = {
                   !val.speaker_cell &&
                   !val.speaker_faction &&
                   !val.speaker_class &&
-                  !val.speaker_rank
+                  !val.speaker_race
               );
               break;
           }
@@ -394,7 +394,7 @@ const getters = {
           !val.speaker_cell &&
           !val.speaker_faction &&
           !val.speaker_class &&
-          !val.speaker_rank
+          !val.speaker_race
       ).length > 0
     );
   },
@@ -417,7 +417,7 @@ const getters = {
                   !topic["speaker_cell"] &&
                   !topic["speaker_faction"] &&
                   !topic["speaker_class"] &&
-                  !topic["speaker_rank"]
+                  !topic["speaker_race"]
               )
           ];
         }
@@ -429,7 +429,7 @@ const getters = {
               !topic["speaker_cell"] &&
               !topic["speaker_faction"] &&
               !topic["speaker_class"] &&
-              !topic["speaker_rank"]
+              !topic["speaker_race"]
           );
         return [...depDialogue, ...activeDialogue];
       }
@@ -446,7 +446,7 @@ const getters = {
                 topic["speaker_cell"],
                 topic["speaker_faction"],
                 topic["speaker_class"],
-                topic["speaker_rank"]
+                topic["speaker_race"]
               ].includes(id)
             )
         ];
@@ -459,7 +459,7 @@ const getters = {
             topic["speaker_cell"],
             topic["speaker_faction"],
             topic["speaker_class"],
-            topic["speaker_rank"]
+            topic["speaker_race"]
           ].includes(id)
         );
       return [...depDialogue, ...activeDialogue];
@@ -760,7 +760,7 @@ const mutations = {
         dialogue_type: "Topic",
         disposition: 0,
         player_rank: -1,
-        speaker_rank: -1,
+        speaker_race: -1,
         speaker_sex: "Any"
       },
       filters: [],
@@ -956,7 +956,7 @@ const mutations = {
       data: {
         dialogue_type: "Journal",
         disposition: 0,
-        speaker_rank: -1,
+        speaker_race: -1,
         speaker_sex: "Any",
         player_rank: -1
       },
@@ -1000,7 +1000,7 @@ const mutations = {
       data: {
         dialogue_type: "Journal",
         disposition: parseInt(entryDisposition),
-        speaker_rank: -1,
+        speaker_race: -1,
         speaker_sex: "Any",
         player_rank: -1
       },

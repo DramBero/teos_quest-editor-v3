@@ -246,11 +246,11 @@ export default {
         },
         {
           type: 'Speaker Rank',
-          value: this.answer.data.speaker_rank !== -1 ? this.answer.data.speaker_rank : '',
+          value: this.answer.data.speaker_race !== -1 ? this.answer.data.speaker_race : '',
         },
         {
           type: 'Speaker Race',
-          value: this.answer.speaker_rank,
+          value: this.answer.speaker_race,
         },
         {
           type: 'Player Rank',

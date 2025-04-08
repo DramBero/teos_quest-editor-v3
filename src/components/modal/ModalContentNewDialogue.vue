@@ -191,7 +191,7 @@ export default {
         },
         {
           typeName: 'Race',
-          typeId: 'speaker_rank',
+          typeId: 'speaker_race',
         },
         {
           typeName: 'Global',
@@ -299,7 +299,7 @@ export default {
           return this.$store.getters['getCellList'].filter(
             (val) => val && val.toUpperCase().includes(this.inputName.toUpperCase()),
           );
-        case 'speaker_rank':
+        case 'speaker_race':
           return this.$store.getters['getRaceList'].filter(
             (val) => val && val.toUpperCase().includes(this.inputName.toUpperCase()),
           );

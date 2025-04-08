@@ -1,20 +1,13 @@
 <template>
-  <div class="dialogue-card" @click="openDialogueModal">
+  <div class="dialogue-card" @click="openDialogueModal" ref="hoverable">
     <span class="dialogue-card__name">{{ speakerData.name || speakerId }}</span>
-<!--     <div v-if="getNpcFace" class="dialogue-card__decoration"></div>
-    <img
-      class="dialogue-card__image"
-      v-if="getNpcFace"
-      :src="getNpcFace ? `/images/faces/${getNpcFace}` : ''"
-      :alt="speakerData.name || speakerId"
-    /> -->
     <div v-if="loaded && getFaceData" :style="{'width': '160px', 'height': '160px'}">
       <TresCanvas render-mode="on-demand" :preserveDrawingBuffer="true">
-        <!-- <TresDirectionalLight :position="[-4, 8, 4]" :intensity="2" cast-shadow color="#F78B3D"/> -->
-        <TresAmbientLight :intensity="1.5" />
-        <TresPerspectiveCamera :position="[0, 0, 0.25]" />
+        <!-- <TresDirectionalLight :position="[-4, 8, 4]" :intensity="2" color="#F78B3D"/> -->
+        <TresAmbientLight :intensity="1.7" />
+        <TresPerspectiveCamera :position="[0, 0, 0.27]" />
         <Suspense >
-          <TresMesh :rotation-y="-0.4" >
+          <TresMesh :rotation-y="-0.3" >
             <GLTFModel :path="getFaceData" />
           </TresMesh>
         </Suspense>
@@ -25,6 +18,14 @@
         </Suspense> -->
       </TresCanvas>
     </div>
+    <template v-else-if="false && loaded && getNpcFace">
+      <!-- <div class="dialogue-card__decoration"></div> -->
+      <img
+        class="dialogue-card__image"
+        :src="getNpcFace ? `/images/faces/${getNpcFace}` : ''"
+        :alt="speakerData.name || speakerId"
+      />
+    </template>
 
   </div>
 </template>
@@ -32,12 +33,16 @@
 <script setup lang="ts">
 import { fetchNPCData } from '@/api/idb';
 import { useSelectedSpeaker } from '@/stores/selectedSpeaker';
-import { computed, onMounted, ref, watch } from 'vue';
+import { computed, onMounted, ref, watch, useTemplateRef  } from 'vue';
 
 import { TresCanvas } from '@tresjs/core';
-import { OrbitControls, GLTFModel } from '@tresjs/cientos';
+import { GLTFModel } from '@tresjs/cientos';
+import { useElementHover } from '@vueuse/core'
 
 // import { EffectComposerPmndrs, KuwaharaPmndrs } from '@tresjs/post-processing';
+
+const myHoverableElement = useTemplateRef<HTMLButtonElement>('hoverable')
+const isHovered = useElementHover(myHoverableElement)
 
 const speakerData = ref({});
 

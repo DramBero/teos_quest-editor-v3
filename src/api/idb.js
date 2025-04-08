@@ -30,7 +30,7 @@ export const initPlugin = async function (pluginName) {
   let activePlugin = getDB(pluginName);
   activePlugin.version(1).stores({
     pluginData:
-      'TMP_index,type,TMP_is_active,TMP_topic,TMP_type,TMP_info_id,TMP_prev_id,TMP_next_id,TMP_speaker_id,TMP_speaker_cell,TMP_speaker_faction,TMP_speaker_class,TMP_speaker_rank,TMP_id,name',
+      'TMP_index,type,TMP_is_active,TMP_topic,TMP_type,TMP_info_id,TMP_prev_id,TMP_next_id,TMP_speaker_id,TMP_speaker_cell,TMP_speaker_faction,TMP_speaker_class,TMP_speaker_race,TMP_id,name',
   });
   await activePlugin.open().catch((err) => {
     console.error(err.stack || err);
@@ -261,9 +261,9 @@ function getSpeakerTypeKey(speakerType) {
     case 'faction':
       return 'TMP_speaker_faction';
     case 'rank':
-      return 'TMP_speaker_rank';
+      return 'TMP_speaker_race';
     default:
-      return speakerType;
+      return '';
   }
 }
 
@@ -285,6 +285,33 @@ export const fetchAllDialogueBySpeaker = async function (speakerType) {
         resp = response;
       });
     return resp;
+  } catch (error) {
+    throw error;
+  }
+};
+
+export const fetchSpeakersAmountBySpeakerType = async function (speakerType) {
+  console.log(`Searching for amount of speakers with type "${speakerType}"`)
+  const speakerTypeKey = getSpeakerTypeKey(speakerType);
+  if (!speakerTypeKey) return;
+  if (!databases['activePlugin']) {
+    await initPlugin('activePlugin');
+  }
+  const activePlugin = databases['activePlugin'];
+  try {
+    if (speakerTypeKey === 'global') {
+      console.log('NOT SUPPORTED YET');
+    }
+    let amount = 0;
+    await activePlugin.pluginData
+      .orderBy(speakerTypeKey)
+      .eachUniqueKey((key) => {
+        if (key !== '') {
+          amount += 1;
+        }
+      })
+    console.log(`Speaker type: "${speakerType}". Amount: "${amount}"`);
+    return amount;
   } catch (error) {
     throw error;
   }
@@ -475,7 +502,7 @@ export const importPlugin = async function (pluginData, pluginName, isActive) {
         TMP_speaker_cell: pluginData[index].speaker_cell,
         TMP_speaker_faction: pluginData[index].speaker_faction,
         TMP_speaker_class: pluginData[index].speaker_class,
-        TMP_speaker_rank: pluginData[index].speaker_rank,
+        TMP_speaker_race: pluginData[index].speaker_race,
         TMP_dep: pluginName,
         TMP_is_active: isActive,
         TMP_index: parseInt(index),
@@ -494,7 +521,7 @@ export const importPlugin = async function (pluginData, pluginName, isActive) {
         TMP_speaker_cell: '',
         TMP_speaker_faction: '',
         TMP_speaker_class: '',
-        TMP_speaker_rank: '',
+        TMP_speaker_race: '',
         TMP_dep: pluginName,
         TMP_is_active: isActive,
         TMP_index: parseInt(index),

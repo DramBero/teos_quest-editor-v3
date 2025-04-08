@@ -184,10 +184,10 @@
             </label>
 
             <label class="modal-field modal-field_dark modal-field_speaker-edit"
-              v-if="showEmptySpeakers || currentSpeakerData.speaker_rank">
+              v-if="showEmptySpeakers || currentSpeakerData.speaker_race">
               <span>Speaker Rank:</span>
-              <input class="modal-field__input" name="speaker_rank" autocomplete="off" :placeholder="'Speaker Rank'"
-                v-model="currentSpeakerData.speaker_rank" />
+              <input class="modal-field__input" name="speaker_race" autocomplete="off" :placeholder="'Speaker Rank'"
+                v-model="currentSpeakerData.speaker_race" />
             </label>
 
             <label class="modal-field modal-field_dark modal-field_speaker-edit"
@@ -293,7 +293,7 @@ export default {
         speaker_class: '',
         speaker_race: '',
         speaker_sex: '',
-        speaker_rank: '',
+        speaker_race: '',
         player_faction: '',
         player_rank: '',
       },
@@ -681,11 +681,11 @@ export default {
       this.currentSpeakerData.speaker_cell = currentEntry.speaker_cell || '';
       this.currentSpeakerData.speaker_faction = currentEntry.speaker_faction || '';
       this.currentSpeakerData.speaker_class = currentEntry.speaker_class || '';
-      this.currentSpeakerData.speaker_race = currentEntry.speaker_rank || '';
+      this.currentSpeakerData.speaker_race = currentEntry.speaker_race || '';
       this.currentSpeakerData.speaker_sex =
         currentEntry.data.speaker_sex !== 'Any' ? this.answer.data?.speaker_sex : '';
-      this.currentSpeakerData.speaker_rank =
-        currentEntry.data.speaker_rank !== -1 ? this.answer.data.speaker_rank : '';
+      this.currentSpeakerData.speaker_race =
+        currentEntry.data.speaker_race !== -1 ? this.answer.data.speaker_race : '';
       this.currentFilters = currentEntry.filters;
       this.currentDisp = currentEntry.data && currentEntry.data.disposition;
       this.currentResult = currentEntry.result;

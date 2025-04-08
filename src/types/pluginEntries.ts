@@ -10,7 +10,7 @@ export interface BaseEntry {
     TMP_speaker_class: string;
     TMP_speaker_faction: string;
     TMP_speaker_id: string;
-    TMP_speaker_rank: string;
+    TMP_speaker_race: string;
     TMP_topic: string;
     TMP_type: string;
 }
@@ -55,7 +55,7 @@ export interface InfoData {
     dialogue_type: DialogueType;
     disposition: number;
     player_rank: number;
-    speaker_rank: number;
+    speaker_race: number;
     speaker_sex: SpeakerSex;
 }
 

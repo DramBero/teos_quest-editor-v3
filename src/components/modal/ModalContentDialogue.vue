@@ -176,7 +176,7 @@ const currentAnswers = computed(() => {
           topic['speaker_cell'],
           topic['speaker_faction'],
           topic['speaker_class'],
-          topic['speaker_rank'],
+          topic['speaker_race'],
         ].includes(speaker.value.speakerId),
       );
   } else {
@@ -188,7 +188,7 @@ const currentAnswers = computed(() => {
           !topic['speaker_cell'] &&
           !topic['speaker_faction'] &&
           !topic['speaker_class'] &&
-          !topic['speaker_rank'],
+          !topic['speaker_race'],
       );
   }
   return answers;
