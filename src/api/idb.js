@@ -52,6 +52,11 @@ export const getDependencies = async function () {
   }
   const header = headers[0];
   const dependecies = header.masters.map((val) => val[0]);
+  for (let dependency of dependecies) {
+    if (!databases[dependency]) {
+      await initPlugin(dependency);
+    }
+  }
   return dependecies;
 };
 
@@ -106,7 +111,7 @@ export const fetchNPCData = async function (npcID) {
         }
         continue;
       }
-      throw 'NPC_NOT_FOUND';
+      throw `NPC_NOT_FOUND: ${npcID}`;
     }
   } catch (error) {
     throw error;

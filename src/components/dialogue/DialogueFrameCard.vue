@@ -18,7 +18,7 @@
         </Suspense> -->
       </TresCanvas>
     </div>
-    <template v-else-if="false && loaded && getNpcFace">
+    <template v-else-if="loaded && getNpcFace">
       <!-- <div class="dialogue-card__decoration"></div> -->
       <img
         class="dialogue-card__image"
@@ -49,8 +49,10 @@ const speakerData = ref({});
 const getFaceData = computed(() => {
   switch (speakerData.value.head) {
     case 'b_n_wood elf_m_head_02': return '/meshes/b_n_wood elf_m_head_02.glb';
+    case 'b_n_breton_f_head_05': return '/meshes/b_n_breton_f_head_05.glb';
     case 'B_N_Breton_M_Head_08': return '/meshes/B_N_Breton_M_Head_08.glb';
     case 'b_n_imperial_m_head_01': return '/meshes/b_n_imperial_m_head_01.glb';
+    case 'b_n_imperial_m_head_02': return '/meshes/b_n_imperial_m_head_02.glb';
     case 'b_n_imperial_m_head_04': return '/meshes/b_n_imperial_m_head_04.glb';
     case 'b_n_dark elf_f_head_02': return '/meshes/b_n_dark elf_f_head_02.glb';
     case 'b_n_dark elf_m_head_03': return '/meshes/b_n_dark elf_m_head_03.glb';
