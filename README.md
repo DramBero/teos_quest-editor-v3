@@ -23,3 +23,8 @@ npm run build
 ```sh
 npm run tauri build
 ```
+
+Stack: Vue3, Pinia, Tauri, TresJS (ThreeJS)
+
+Uses Greatness7 TES3 WASM module.
+Uses the Pelagiad font, as well as some assets from mods like Caleb's faces and Facelift.
