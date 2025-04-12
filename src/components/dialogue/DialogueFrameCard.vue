@@ -1,15 +1,13 @@
 <template>
   <div class="dialogue-card" @click="openDialogueModal" ref="hoverable">
-    <span class="dialogue-card__name">{{ speakerData.name || speakerId }}</span>
+    <span class="dialogue-card__name">{{ speakerData?.name || speakerId }}</span>
     <div v-if="loaded && getFaceData" :style="{'width': '160px', 'height': '160px'}">
-      <TresCanvas render-mode="on-demand" :preserveDrawingBuffer="true">
-        <!-- <TresDirectionalLight :position="[-4, 8, 4]" :intensity="2" color="#F78B3D"/> -->
+      <TresCanvas alpha render-mode="on-demand" :preserveDrawingBuffer="true" ref="ctxRef" v-if="!canvasLoaded">
+        <!-- <TresDirectionalLight :position="[-4, 8, 4]" :intensity="2" color="#FFFFFF"/> -->
         <TresAmbientLight :intensity="1.7" />
         <TresPerspectiveCamera :position="[0, 0, 0.27]" />
         <Suspense >
-          <TresMesh :rotation-y="-0.3" >
-            <GLTFModel :path="getFaceData" />
-          </TresMesh>
+          <DialogueFrameCardModel :head="getFaceData" :hair="getHairData" />
         </Suspense>
   <!--       <Suspense>
           <EffectComposerPmndrs>
@@ -17,13 +15,17 @@
           </EffectComposerPmndrs>
         </Suspense> -->
       </TresCanvas>
+      <img
+        v-else
+        :src="canvasImage"
+      >
     </div>
     <template v-else-if="loaded && getNpcFace">
       <!-- <div class="dialogue-card__decoration"></div> -->
       <img
         class="dialogue-card__image"
         :src="getNpcFace ? `/images/faces/${getNpcFace}` : ''"
-        :alt="speakerData.name || speakerId"
+        :alt="speakerData?.name || speakerId"
       />
     </template>
 
@@ -33,25 +35,71 @@
 <script setup lang="ts">
 import { fetchNPCData } from '@/api/idb';
 import { useSelectedSpeaker } from '@/stores/selectedSpeaker';
-import { computed, onMounted, ref, watch, useTemplateRef  } from 'vue';
+import { computed, onMounted, ref, shallowRef, watch } from 'vue';
+import DialogueFrameCardModel from './DialogueFrameCardModel.vue';
+
+import type { NpcEntry } from '@/types/pluginEntries.ts';
 
 import { TresCanvas } from '@tresjs/core';
-import { GLTFModel } from '@tresjs/cientos';
-import { useElementHover } from '@vueuse/core'
+
 
 // import { EffectComposerPmndrs, KuwaharaPmndrs } from '@tresjs/post-processing';
 
-const myHoverableElement = useTemplateRef<HTMLButtonElement>('hoverable')
-const isHovered = useElementHover(myHoverableElement)
+const ctxRef = shallowRef();
+const canvas = ref();
 
-const speakerData = ref({});
+watch(ctxRef, (ctx) => {
+  if (!ctx) return;
+  if(ctx.context.renderer.value) {
+    canvas.value = ctx.context.renderer.value;
+    console.log('ctxRef change', props.speakerId)
+    handleLoaded();
+  }
+})
+
+const canvasImage = ref<string>();
+const canvasLoaded = ref<boolean>(false);
+const redrawTrigger = ref<number>(0);
+async function handleLoaded() {
+  let meshLoaded = false;
+  let iteration = 0;
+  while (!meshLoaded) {
+    const dataURL = canvas.value?.domElement.toDataURL('image/png');
+    const canvasImageLength = canvasImage.value?.length || 0;
+    if (iteration > 1000) {
+      redrawTrigger.value = 1;
+    }
+    if ((dataURL?.length > 1500) && (dataURL.length > canvasImageLength)) {
+      canvasImage.value = dataURL;
+    }
+    if (dataURL.length <= canvasImageLength) {
+      if (canvasImageLength > 2000) {
+        meshLoaded = true;
+        canvasLoaded.value = true;
+      }
+    }
+    await new Promise((resolve) => setTimeout(resolve, 5));
+    iteration += 1;
+  }
+}
+
+const speakerData = ref<NpcEntry | null>(null);
 
 const getFaceData = computed(() => {
-  switch (speakerData.value.head) {
+  switch (speakerData.value?.head) {
+    case 'b_n_argonian_f_head_01': return '/meshes/b_n_argonian_f_head_01.glb';
+    case 'b_n_argonian_f_head_02': return '/meshes/b_n_argonian_f_head_02.glb';
+    case 'b_n_argonian_f_head_03': return '/meshes/b_n_argonian_f_head_03.glb';
+    case 'b_n_argonian_m_head_01': return '/meshes/b_n_argonian_m_head_01.glb';
+    case 'b_n_argonian_m_head_02': return '/meshes/b_n_argonian_m_head_02.glb';
+    case 'b_n_argonian_m_head_03': return '/meshes/b_n_argonian_m_head_03.glb';
+    case 'b_v_argonian_f_head_01': return '/meshes/b_v_argonian_f_head_01.glb';
+    case 'b_v_argonian_m_head_01': return '/meshes/b_v_argonian_m_head_01.glb';
+
     case 'b_n_wood elf_m_head_02': return '/meshes/b_n_wood elf_m_head_02.glb';
     case 'b_n_breton_f_head_03': return '/meshes/b_n_breton_f_head_03.glb';
     case 'b_n_breton_f_head_05': return '/meshes/b_n_breton_f_head_05.glb';
-    case 'B_N_Breton_M_Head_08': return '/meshes/B_N_Breton_M_Head_08.glb';
+    case 'b_n_Breton_m_head_08': return '/meshes/b_n_Breton_m_head_08.glb';
     case 'b_n_imperial_m_head_01': return '/meshes/b_n_imperial_m_head_01.glb';
     case 'b_n_imperial_m_head_02': return '/meshes/b_n_imperial_m_head_02.glb';
     case 'b_n_imperial_m_head_04': return '/meshes/b_n_imperial_m_head_04.glb';
@@ -66,8 +114,10 @@ const getFaceData = computed(() => {
 })
 
 const getHairData = computed(() => {
-  switch(speakerData.value.hair) {
+  switch(speakerData.value?.hair) {
     case 'b_n_dark elf_f_hair_03': return '/meshes/b_n_dark elf_f_hair_03.glb';
+    case 'b_n_imperial_m_hair_01': return '/meshes/b_n_imperial_m_hair_01.glb';
+    case 'b_n_imperial_m_hair_04': return '/meshes/b_n_imperial_m_hair_04.glb';
     default: return '';
   }
 })
@@ -90,18 +140,19 @@ onMounted(async () => {
   loaded.value = false;
   let speakerDataResponse;
   await fetchNPCData(props.speakerId)
-    .then((response) => {
+    .then((response: NpcEntry) => {
       speakerDataResponse = response;
     })
-    .catch((error) => {
+    .catch((error: string) => {
       console.log('err: ', error);
     });
-  speakerData.value = speakerDataResponse || {};
+  speakerData.value = speakerDataResponse || null;
   loaded.value = true;
 });
 
 const getNpcFace = computed(() => {
-  let sex = speakerData.value.npc_flags?.includes('FEMALE') ? 'f' : 'm';
+  if (!speakerData.value) return '';
+  const sex = speakerData.value.npc_flags?.includes('FEMALE') ? 'f' : 'm';
   switch (speakerData.value.race) {
     case 'Argonian':
       return 'argonian-' + sex + '.png';

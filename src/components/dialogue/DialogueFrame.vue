@@ -80,7 +80,7 @@ watch(currentSpeakerType,
       currentSpeakers.value = [];
       for (const speaker of speakersResponse) {
         currentSpeakers.value = [...currentSpeakers.value, speaker]
-        await new Promise((resolve) => setTimeout(resolve, 10))
+        await new Promise((resolve) => setTimeout(resolve, 5))
       }
     } catch(error) {
       console.error(error);

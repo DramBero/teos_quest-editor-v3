@@ -82,9 +82,7 @@
         @focusout="removeHighlight"
       >
         <span class="filter__if">if </span>
-        <span class="filter__function"
-          >{{ filter.filter_type === 'Function' ? filter.function : filter.filter_type }}
-        </span>
+        <span class="filter__function">{{ filter.filter_type === 'Function' ? filter.function + ' ' : filter.filter_type + ' ' }}</span>
         <span class="filter__id">{{ filter.id }} </span>
         <span class="filter__comparison">{{ parseComparison(filter.comparison) }} </span>
         <span class="filter__value">{{ filter.value.data }}</span>

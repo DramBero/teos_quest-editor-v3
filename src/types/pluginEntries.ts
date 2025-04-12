@@ -46,7 +46,69 @@ export interface InfoEntry extends BaseEntry {
     text: string;
     flags: number[];
     filters: InfoFilter;
+}
 
+export interface NpcAiData {
+    alarm: number;
+    fight: number;
+    flee: number;
+    hello: number;
+    services: string;
+}
+
+export type NpcAiPackageType = 'Travel' | 'Wander' | 'Escort' | 'Follow' | 'Activate';
+
+export interface NpcAiPackage {
+    distance: number;
+    duration: number;
+    game_hour: number;
+    idle2: number;
+    idle3: number;
+    idle4: number;
+    idle5: number;
+    idle6: number;
+    idle7: number;
+    idle8: number;
+    idle9: number;
+    reset: number;
+    type: NpcAiPackageType;
+}
+
+export interface NpcStats {
+    attributes: number[];
+    fatigue: number;
+    health: number;
+    magicka: number;
+    skills: number[];
+}
+
+export interface NpcData {
+    disposition: number;
+    gold: number;
+    level: number;
+    rank: number;
+    reputation: number;
+    stats: NpcStats;
+}
+
+export interface NpcEntry extends BaseEntry {
+    head: string;
+    hair: string;
+    ai_data: NpcAiData;
+    ai_packages: NpcAiPackage[];
+    blood_type: number;
+    class: string;
+    faction: string;
+    flags: string;
+    id: string;
+    mesh: string;
+    name: string;
+    npc_flags: string;
+    race: string;
+    script: string;
+    inventory: Array<Array<number | string>>;
+    spells: string[];
+    travel_destinations: string[];
 }
 
 export type SpeakerSex = 'Any' | 'Male' | 'Female';
