@@ -17,7 +17,10 @@
           </div> -->
         </div>
       </div>
-      <div>
+      <div v-if="dialogueInfoLoading" class="dialogue-answers__loading">
+        <SVGSpinners90RingWithBg :scale="10"/>
+      </div>
+      <div v-else>
         <transition-group name="fadeHeight" class="dialogue-answers__frame" mode="out-in" :style="{ width: '100%' }">
           <div v-for="answer in currentAnswers" :key="answer.id" :class="{ 'highlight-even': !editMode }">
             <div class="dialogue-answers-answer__above" v-if="!editMode"></div>
@@ -125,6 +128,7 @@ import DialogueEntryFilters from '../dialogue/DialogueEntryFilters.vue';
 import DialogueEntryResults from '../dialogue/DialogueEntryResults.vue';
 import { fetchTopicListByNPC, getOrderedEntriesByTopic } from '@/api/idb.js';
 import { computed, ref, toRefs, watch } from 'vue';
+import SVGSpinners90RingWithBg from '~icons/svg-spinners/90-ring-with-bg';
 
 const props = defineProps({
   speaker: {
@@ -335,10 +339,18 @@ watch(getSpeakerData, (() => {
   ]); */
 }))
 
+const dialogueInfoLoading = ref<boolean>(false);
 watch(currentTopic, (async (newValue) => {
   if (newValue.trim()) {
-    const orderedEntriesResponse = await getOrderedEntriesByTopic(newValue);
-    orderedEntries.value = orderedEntriesResponse;
+    dialogueInfoLoading.value = true;
+    try {
+      const orderedEntriesResponse = await getOrderedEntriesByTopic(newValue);
+      orderedEntries.value = orderedEntriesResponse;
+    } catch (error) {
+      console.error(error);
+    } finally {
+      dialogueInfoLoading.value = false;
+    }
   } else {
     orderedEntries.value = [];
   }
@@ -363,6 +375,18 @@ watch(currentTopic, (async (newValue) => {
     position: relative;
     overflow-x: hidden;
     overflow-y: scroll;
+
+    &__loading {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      width: 100%;
+      svg {
+        width: 30px;
+        height: 30px;
+      }
+    }
 
     &__info {
       background: rgba(43, 117, 36, 0.8);

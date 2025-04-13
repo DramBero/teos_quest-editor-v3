@@ -22,7 +22,7 @@
           <div class="window-header__right">
             <div class="window-header__close" @click="closeModal">
               <!-- <icon name="times" scale="1.3"></icon> -->
-               close
+              <TdesignClose />
             </div>
           </div>
         </div>
@@ -38,6 +38,7 @@
 import { useSelectedSpeaker } from '@/stores/selectedSpeaker';
 import { useWindowSize } from '@vueuse/core';
 import { computed, onMounted, ref } from 'vue';
+import TdesignClose from '~icons/tdesign/close';
 
 const initW = 1000;
 const initH = 600;

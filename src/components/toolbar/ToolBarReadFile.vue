@@ -21,6 +21,7 @@ import init, { load_objects } from '@/tes3_wasm/tes3_wasm.js';
 import { importPlugin, getActiveHeader, getHeader, deleteDB } from '@/api/idb.js';
 import { usePluginHeader } from '@/stores/pluginHeader';
 import SVGSpinners90RingWithBg from '~icons/svg-spinners/90-ring-with-bg';
+import { useReloadTrigger } from '@/stores/reloadTrigger';
 
 interface Props {
   dep?: string;
@@ -72,6 +73,8 @@ onMounted(async () => {
 
 const headerStore = usePluginHeader();
 const stage = ref<string>('');
+
+const reloadTriggerStore = useReloadTrigger();
 async function loadTextFromFile(event: InputEvent) {
   try {
     stage.value = '0%';
@@ -90,7 +93,7 @@ async function loadTextFromFile(event: InputEvent) {
     stage.value = '85%';
     const objects = await load_objects(bytes);
     stage.value = '90%';
-    
+
     if (!props.dep) {
       await importPlugin(objects, fileName.value, true);
       stage.value = '98%';
@@ -99,6 +102,7 @@ async function loadTextFromFile(event: InputEvent) {
     } else {
       await importPlugin(objects, props.dep, false);
     }
+    reloadTriggerStore.triggerReload();
     stage.value = '';
   } catch (error) {
     console.error(error);
