@@ -9,9 +9,9 @@
         <Suspense >
           <DialogueFrameCardModel :head="getFaceData" :hair="getHairData" />
         </Suspense>
-  <!--       <Suspense>
+<!--         <Suspense>
           <EffectComposerPmndrs>
-            <KuwaharaPmndrs :radius="1" :sectorCount="2" />
+            <KuwaharaPmndrs :radius="2" :sectorCount="4" />
           </EffectComposerPmndrs>
         </Suspense> -->
       </TresCanvas>
@@ -86,7 +86,7 @@ async function handleLoaded() {
 const speakerData = ref<NpcEntry | null>(null);
 
 const getFaceData = computed(() => {
-  switch (speakerData.value?.head) {
+  switch (speakerData.value?.head?.toLowerCase()) {
     case 'b_n_argonian_f_head_01': return '/meshes/b_n_argonian_f_head_01.glb';
     case 'b_n_argonian_f_head_02': return '/meshes/b_n_argonian_f_head_02.glb';
     case 'b_n_argonian_f_head_03': return '/meshes/b_n_argonian_f_head_03.glb';
@@ -96,10 +96,29 @@ const getFaceData = computed(() => {
     case 'b_v_argonian_f_head_01': return '/meshes/b_v_argonian_f_head_01.glb';
     case 'b_v_argonian_m_head_01': return '/meshes/b_v_argonian_m_head_01.glb';
 
+    case 'b_n_khajiit_f_head_01': return '/meshes/b_n_khajiit_f_head_01.glb';
+    case 'b_n_khajiit_f_head_02': return '/meshes/b_n_khajiit_f_head_02.glb';
+    case 'b_n_khajiit_f_head_03': return '/meshes/b_n_khajiit_f_head_03.glb';
+    case 'b_n_khajiit_f_head_04': return '/meshes/b_n_khajiit_f_head_04.glb';
+    case 'b_n_khajiit_m_head_01': return '/meshes/b_n_khajiit_m_head_01.glb';
+    case 'b_n_khajiit_m_head_02': return '/meshes/b_n_khajiit_m_head_02.glb';
+    case 'b_n_khajiit_m_head_03': return '/meshes/b_n_khajiit_m_head_03.glb';
+    case 'b_n_khajiit_m_head_04': return '/meshes/b_n_khajiit_m_head_04.glb';
+    case 'b_v_khajiit_f_head_01': return '/meshes/b_v_khajiit_f_head_01.glb';
+    case 'b_v_khajiit_m_head_01': return '/meshes/b_v_khajiit_m_head_01.glb';
+
+    case 'b_n_high elf_m_head_01': return '/meshes/b_n_high elf_m_head_01.glb';
+    case 'b_n_high elf_m_head_02': return '/meshes/b_n_high elf_m_head_02.glb';
+    case 'b_n_high elf_m_head_03': return '/meshes/b_n_high elf_m_head_03.glb';
+    case 'b_n_high elf_m_head_04': return '/meshes/b_n_high elf_m_head_04.glb';
+    case 'b_n_high elf_m_head_05': return '/meshes/b_n_high elf_m_head_05.glb';
+    case 'b_n_high elf_m_head_06': return '/meshes/b_n_high elf_m_head_06.glb';
+    case 'b_v_high elf_m_head_01': return '/meshes/b_v_high elf_m_head_01.glb';
+
     case 'b_n_wood elf_m_head_02': return '/meshes/b_n_wood elf_m_head_02.glb';
     case 'b_n_breton_f_head_03': return '/meshes/b_n_breton_f_head_03.glb';
     case 'b_n_breton_f_head_05': return '/meshes/b_n_breton_f_head_05.glb';
-    case 'b_n_Breton_m_head_08': return '/meshes/b_n_Breton_m_head_08.glb';
+    case 'b_n_breton_m_head_08': return '/meshes/b_n_breton_m_head_08.glb';
     case 'b_n_imperial_m_head_01': return '/meshes/b_n_imperial_m_head_01.glb';
     case 'b_n_imperial_m_head_02': return '/meshes/b_n_imperial_m_head_02.glb';
     case 'b_n_imperial_m_head_04': return '/meshes/b_n_imperial_m_head_04.glb';
@@ -107,14 +126,14 @@ const getFaceData = computed(() => {
     case 'b_n_dark elf_m_head_03': return '/meshes/b_n_dark elf_m_head_03.glb';
     case 'b_n_dark elf_m_head_11': return '/meshes/b_n_dark elf_m_head_11.glb'
     case 'b_n_high elf_f_head_01': return '/meshes/b_n_high elf_f_head_01.glb';
-    case 'b_n_high elf_m_head_03': return '/meshes/b_n_high elf_m_head_03.glb';
+    
     case 'b_n_nord_m_head_01': return '/meshes/b_n_nord_m_head_01.glb';
     default: return '';
   }
 })
 
 const getHairData = computed(() => {
-  switch(speakerData.value?.hair) {
+  switch(speakerData.value?.hair?.toLowerCase()) {
     case 'b_n_dark elf_f_hair_03': return '/meshes/b_n_dark elf_f_hair_03.glb';
     case 'b_n_imperial_m_hair_01': return '/meshes/b_n_imperial_m_hair_01.glb';
     case 'b_n_imperial_m_hair_04': return '/meshes/b_n_imperial_m_hair_04.glb';

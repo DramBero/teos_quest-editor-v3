@@ -24,7 +24,7 @@ npm run build
 npm run tauri build
 ```
 
-Stack: Vue3, Pinia, Tauri, TresJS (ThreeJS)
+Stack: Vue3 (Composition API + TS), Pinia, Tauri, TresJS (ThreeJS), Dexie (for IndexedDB)
 
 Uses Greatness7 TES3 WASM module.
 Uses the Pelagiad font, as well as some assets from mods like Caleb's faces and Facelift.
