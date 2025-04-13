@@ -1,7 +1,7 @@
 <template>
   <div class="dialogue-card" @click="openDialogueModal" ref="hoverable">
     <span class="dialogue-card__name">{{ speakerData?.name || speakerId }}</span>
-    <div v-if="loaded && getFaceData" :style="{'width': '160px', 'height': '160px'}">
+    <div v-if="!redrawTrigger && loaded && getFaceData" :style="{'width': '160px', 'height': '160px'}">
       <TresCanvas alpha render-mode="on-demand" :preserveDrawingBuffer="true" ref="ctxRef" v-if="!canvasLoaded">
         <!-- <TresDirectionalLight :position="[-4, 8, 4]" :intensity="2" color="#FFFFFF"/> -->
         <TresAmbientLight :intensity="1.7" />
@@ -20,7 +20,7 @@
         :src="canvasImage"
       >
     </div>
-    <template v-else-if="loaded && getNpcFace">
+    <template v-else-if="!redrawTrigger && loaded && getNpcFace">
       <!-- <div class="dialogue-card__decoration"></div> -->
       <img
         class="dialogue-card__image"
@@ -59,7 +59,9 @@ watch(ctxRef, (ctx) => {
 
 const canvasImage = ref<string>();
 const canvasLoaded = ref<boolean>(false);
-const redrawTrigger = ref<number>(0);
+
+const redrawCounter = ref<number>(0);
+const redrawTrigger = ref<boolean>(false);
 async function handleLoaded() {
   let meshLoaded = false;
   let iteration = 0;
@@ -67,7 +69,7 @@ async function handleLoaded() {
     const dataURL = canvas.value?.domElement.toDataURL('image/png');
     const canvasImageLength = canvasImage.value?.length || 0;
     if (iteration > 1000) {
-      redrawTrigger.value = 1;
+      redrawCounter.value += 1;
     }
     if ((dataURL?.length > 1500) && (dataURL.length > canvasImageLength)) {
       canvasImage.value = dataURL;
@@ -80,6 +82,20 @@ async function handleLoaded() {
     }
     await new Promise((resolve) => setTimeout(resolve, 5));
     iteration += 1;
+  }
+}
+
+watch(redrawCounter, async () => {
+  redrawTrigger.value = true;
+  await new Promise((resolve) => setTimeout(resolve, 5));
+  redrawTrigger.value = false;
+})
+
+async function redrawWatcher() {
+  if (!getFaceData.value) return;
+  while ((canvasImage.value?.length || 0) < 1000) {
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+    redrawCounter.value += 1;
   }
 }
 
@@ -96,6 +112,14 @@ const getFaceData = computed(() => {
     case 'b_n_argonian_m_head_02': return '/meshes/b_n_argonian_m_head_02.glb';
     case 'b_n_argonian_m_head_03': return '/meshes/b_n_argonian_m_head_03.glb';
     case 'b_v_argonian_m_head_01': return '/meshes/b_v_argonian_m_head_01.glb';
+
+    case 'b_n_breton_f_head_01': return '/meshes/b_n_breton_f_head_01.glb';
+    case 'b_n_breton_f_head_02': return '/meshes/b_n_breton_f_head_02.glb';
+    case 'b_n_breton_f_head_03': return '/meshes/b_n_breton_f_head_03.glb';
+    case 'b_n_breton_f_head_04': return '/meshes/b_n_breton_f_head_04.glb';
+    case 'b_n_breton_f_head_05': return '/meshes/b_n_breton_f_head_05.glb';
+    case 'b_n_breton_f_head_05': return '/meshes/b_n_breton_f_head_05.glb';
+    case 'b_v_breton_f_head_01': return '/meshes/b_v_breton_f_head_01.glb';
 
 
     case 'b_n_khajiit_f_head_01': return '/meshes/b_n_khajiit_f_head_01.glb';
@@ -170,8 +194,6 @@ const getFaceData = computed(() => {
     case 'b_v_imperial_m_head_01': return '/meshes/b_v_imperial_m_head_01.glb';
 
     case 'b_n_wood elf_m_head_02': return '/meshes/b_n_wood elf_m_head_02.glb';
-    case 'b_n_breton_f_head_03': return '/meshes/b_n_breton_f_head_03.glb';
-    case 'b_n_breton_f_head_05': return '/meshes/b_n_breton_f_head_05.glb';
     case 'b_n_breton_m_head_08': return '/meshes/b_n_breton_m_head_08.glb';
     
     
@@ -215,6 +237,7 @@ onMounted(async () => {
     });
   speakerData.value = speakerDataResponse || null;
   loaded.value = true;
+  redrawWatcher();
 });
 
 const getNpcFace = computed(() => {

@@ -1,5 +1,5 @@
 <template>
-  <TresGroup :rotation-y="-0.3">
+  <TresGroup :rotation-y="'-0.3'">
     <TresMesh v-if="head">
       <GLTFModel :path="head" />
     </TresMesh>
