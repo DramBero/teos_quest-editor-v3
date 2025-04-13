@@ -35,7 +35,7 @@
 <script setup lang="ts">
 import { fetchNPCData } from '@/api/idb';
 import { useSelectedSpeaker } from '@/stores/selectedSpeaker';
-import { computed, onMounted, ref, shallowRef, watch } from 'vue';
+import { computed, ref, shallowRef, watch, useTemplateRef } from 'vue';
 import DialogueFrameCardModel from './DialogueFrameCardModel.vue';
 
 import type { NpcEntry } from '@/types/pluginEntries.ts';
@@ -44,6 +44,11 @@ import { TresCanvas } from '@tresjs/core';
 
 
 // import { EffectComposerPmndrs, KuwaharaPmndrs } from '@tresjs/post-processing';
+
+import { useElementVisibility } from '@vueuse/core'
+
+const target = useTemplateRef<HTMLDivElement>('hoverable')
+const targetIsVisible = useElementVisibility(target)
 
 const ctxRef = shallowRef();
 const canvas = ref();
@@ -55,6 +60,14 @@ watch(ctxRef, (ctx) => {
     console.log('ctxRef change', props.speakerId)
     handleLoaded();
   }
+})
+
+watch(targetIsVisible, () => {
+  if (targetIsVisible.value) {
+    fetchCardData();
+  }
+}, {
+  immediate: true,
 })
 
 const canvasImage = ref<string>();
@@ -118,7 +131,7 @@ const getFaceData = computed(() => {
     case 'b_n_breton_f_head_03': return '/meshes/b_n_breton_f_head_03.glb';
     case 'b_n_breton_f_head_04': return '/meshes/b_n_breton_f_head_04.glb';
     case 'b_n_breton_f_head_05': return '/meshes/b_n_breton_f_head_05.glb';
-    case 'b_n_breton_f_head_05': return '/meshes/b_n_breton_f_head_05.glb';
+    case 'b_n_breton_f_head_06': return '/meshes/b_n_breton_f_head_06.glb';
     case 'b_v_breton_f_head_01': return '/meshes/b_v_breton_f_head_01.glb';
 
 
@@ -193,11 +206,16 @@ const getFaceData = computed(() => {
     case 'b_n_imperial_m_head_07': return '/meshes/b_n_imperial_m_head_07.glb';
     case 'b_v_imperial_m_head_01': return '/meshes/b_v_imperial_m_head_01.glb';
 
+
+    case 'b_n_nord_m_head_01': return '/meshes/b_n_nord_m_head_01.glb';
+    case 'b_n_nord_m_head_02': return '/meshes/b_n_nord_m_head_02.glb';
+    case 'b_n_nord_m_head_03': return '/meshes/b_n_nord_m_head_03.glb';
+    case 'b_n_nord_m_head_04': return '/meshes/b_n_nord_m_head_04.glb';
+    case 'b_n_nord_m_head_05': return '/meshes/b_n_nord_m_head_05.glb';
+
     case 'b_n_wood elf_m_head_02': return '/meshes/b_n_wood elf_m_head_02.glb';
     case 'b_n_breton_m_head_08': return '/meshes/b_n_breton_m_head_08.glb';
     
-    
-    case 'b_n_nord_m_head_01': return '/meshes/b_n_nord_m_head_01.glb';
     default: return '';
   }
 })
@@ -225,7 +243,7 @@ const props = defineProps({
 })
 
 const loaded = ref<boolean>(false);
-onMounted(async () => {
+async function fetchCardData() {
   loaded.value = false;
   let speakerDataResponse;
   await fetchNPCData(props.speakerId)
@@ -238,7 +256,7 @@ onMounted(async () => {
   speakerData.value = speakerDataResponse || null;
   loaded.value = true;
   redrawWatcher();
-});
+}
 
 const getNpcFace = computed(() => {
   if (!speakerData.value) return '';

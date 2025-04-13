@@ -78,7 +78,7 @@ watch(currentSpeakerType,
     try {
       const speakersResponse = await fetchAllDialogueBySpeaker(newValue);
       currentSpeakers.value = [];
-      for (const speaker of speakersResponse.slice(0, 30)) {
+      for (const speaker of speakersResponse) {
         currentSpeakers.value = [...currentSpeakers.value, speaker]
         await new Promise((resolve) => setTimeout(resolve, 5))
       }
