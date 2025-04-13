@@ -22,6 +22,7 @@
     "@vueuse/components": "^13.1.0",
     "@vueuse/core": "^13.1.0",
     "dexie": "^4.0.11",
+    "legacy-encoding": "^3.0.0",
     "pinia": "^3.0.1",
     "simple-code-editor": "^2.0.9",
     "three": "^0.175.0",

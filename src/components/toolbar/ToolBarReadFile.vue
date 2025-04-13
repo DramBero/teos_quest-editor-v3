@@ -90,6 +90,7 @@ async function loadTextFromFile(event: InputEvent) {
     stage.value = '85%';
     const objects = await load_objects(bytes);
     stage.value = '90%';
+    
     if (!props.dep) {
       await importPlugin(objects, fileName.value, true);
       stage.value = '98%';
