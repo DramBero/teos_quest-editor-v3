@@ -8,11 +8,11 @@
         v-model="luaCode"
         :read-only="!editMode"
         :display-language="false"
-        theme="vs2015"
         :height="'100%'"
         :width="'100%'"
         font-size="14px"
         :border-radius="'0'"
+        theme="github-dark-dimmed"
       >
       </CodeEditor>
       <!--       <prism-editor

@@ -11,11 +11,11 @@
       <div v-show="isCollapsed">
         <div name="fadeHeight" mode="out-in" class="entries-list">
           <!-- transition-group -->
-          <div class="entries-list__child" key="TMP_quest-start" v-if="getIsHighlighted(-1)">
+          <div class="entries-list__child" key="TMP_quest-start">
             <div class="entry-wrapper">
               <div
                 class="quest-entry quest-entry_start"
-                :class="{ 'quest-entry_highlighted': getIsHighlighted(-1) }"
+                :class="{ 'quest-entry_highlighted': getIsHighlighted(0) }"
               >
                 <div class="quest-entry__text">Before started</div>
               </div>
@@ -165,12 +165,13 @@ function editEntry(event, info_id) {
       this.entryEdit = ''; */
 }
 
-watch(getHighlight, (newValue) => {
+watch(getHighlight, async (newValue) => {
   if (!newValue?.id) {
     highlightedId.value = '';
     highlightedComparison.value = '';
   }
   else if (newValue.id === props.quest?.id) {
+    await new Promise((resolve) => setTimeout(resolve, 10));
     isCollapsed.value = true;
     highlightedComparison.value = newValue.comparison;
     highlightedId.value = parseInt(newValue.value.data);

@@ -1,9 +1,10 @@
 <template>
-  <div class="classic-view-frame" v-if="getActive">
+  <div class="classic-view-frame" v-if="getActive" @click="closeClassicView">
     <button class="classic-view-frame__close" @click="closeClassicView">
-      <icon name="times" class="classic-view-frame__close-icon" scale="1.5"></icon>
+      <!-- <icon name="times" class="classic-view-frame__close-icon" scale="1.5"></icon> -->
+      <TdesignClose />
     </button>
-    <div class="classic-view-frame__wrapper">
+    <div class="classic-view-frame__wrapper" @click.stop>
       <div class="classic-view-frame__header"></div>
       <div class="classic-view-frame__containter container" :class="{ container_half: currentId }">
         <div class="container-topics">
@@ -43,84 +44,87 @@
                 Filter {{ v }}
               </th>
             </tr>
-            <transition-group is="draggable" tag="tbody" :list="rows" :name="!drag ? 'flip-list' : null"
+            <!-- is:draggable -->
+<!--             <transition-group tag="tbody" :list="rows" :name="!drag ? 'flip-list' : null"
               :handle="'.container-entries__grip'" @start="drag = true" @end="drag = false" @change="handleReorder"
-              :scroll-sensitivity="500" animation="200">
+              :scroll-sensitivity="500" animation="200"> -->
+            <tbody>
               <tr class="container-entries__entry" :class="{
-                'container-entries__entry_active': currentId === entry.info_id,
+                'container-entries__entry_active': currentId === entry.id,
                 'container-entries__entry_new':
-                  findDialogue(entry.info_id).TMP_dep === getPluginName,
+                  findDialogue(entry.id).TMP_dep === getPluginName,
                 'container-entries__entry_mod':
-                  !findDialogue(entry.info_id).TMP_dep &&
-                  findDialogue(entry.info_id).old_values &&
-                  findDialogue(entry.info_id).old_values.length,
-                'container-entries__entry_del': findDialogue(entry.info_id).deleted !== undefined,
+                  !findDialogue(entry.id).TMP_dep &&
+                  findDialogue(entry.id).old_values &&
+                  findDialogue(entry.id).old_values.length,
+                'container-entries__entry_del': findDialogue(entry.id).deleted !== undefined,
                 'container-entries__entry_dirty':
-                  !findDialogue(entry.info_id).TMP_dep &&
-                  findDialogue(entry.info_id).old_values &&
+                  !findDialogue(entry.id).TMP_dep &&
+                  findDialogue(entry.id).old_values &&
                   checkDirtied(
-                    findDialogue(entry.info_id).old_values.at(-1),
-                    findDialogue(entry.info_id),
+                    findDialogue(entry.id).old_values.at(-1),
+                    findDialogue(entry.id),
                   ),
               }" v-for="entry in dialogueList" @click="currentId === entry ? cancelEdit() : editEntry(entry)"
-                :key="entry.info_id">
+                :key="entry.id">
                 <td class="container-entries__grip" @click.stop>
-                  <icon name="grip-horizontal" class="classic-view-frame__close-icon" scale="1"></icon>
+                  <!-- <icon name="grip-horizontal" class="classic-view-frame__close-icon" scale="1"></icon> -->
+                  
                 </td>
                 <td class="container-entries__text">
                   {{
                     (
-                      findDialogue(entry.info_id).text &&
-                      findDialogue(entry.info_id).text.length > 150
+                      findDialogue(entry.id).text &&
+                      findDialogue(entry.id).text.length > 150
                     ) ?
-                      findDialogue(entry.info_id).text.slice(0, 150) + '...'
-                      : findDialogue(entry.info_id).text
+                      findDialogue(entry.id).text.slice(0, 150) + '...'
+                      : findDialogue(entry.id).text
                   }}
                 </td>
                 <td>
                   {{
-                    (findDialogue(entry.info_id).data &&
-                      findDialogue(entry.info_id).data.disposition) ||
+                    (findDialogue(entry.id).data &&
+                      findDialogue(entry.id).data.disposition) ||
                     ''
                   }}
                 </td>
                 <td class="container-entries__speaker" v-if="dialogueList[0] && dialogueList[0].TMP_type !== 'Journal'">
-                  {{ findDialogue(entry.info_id).speaker_id }}
+                  {{ findDialogue(entry.id).speaker_id }}
                 </td>
                 <td class="container-entries__speaker" v-if="dialogueList[0] && dialogueList[0].TMP_type !== 'Journal'">
-                  {{ findDialogue(entry.info_id).speaker_faction }}
+                  {{ findDialogue(entry.id).speaker_faction }}
                 </td>
                 <td class="container-entries__speaker" v-if="dialogueList[0] && dialogueList[0].TMP_type !== 'Journal'">
-                  {{ findDialogue(entry.info_id).speaker_cell }}
+                  {{ findDialogue(entry.id).speaker_cell }}
                 </td>
                 <td v-for="v in dialogueList[0] && dialogueList[0].TMP_type !== 'Journal' ? 6 : 0" :key="v">
                   <div v-if="
-                    findDialogue(entry.info_id).filters &&
-                    findDialogue(entry.info_id).filters.find(
+                    findDialogue(entry.id).filters &&
+                    findDialogue(entry.id).filters.find(
                       (val) => val.slot === 'Slot' + (v - 1).toString(),
                     )
                   " class="classic-filter">
                     <span class="classic-filter__type">{{
-                      findDialogue(entry.info_id).filters.find(
+                      findDialogue(entry.id).filters.find(
                         (val) => val.slot === 'Slot' + (v - 1).toString(),
                       ).function ||
-                      findDialogue(entry.info_id).filters.find(
+                      findDialogue(entry.id).filters.find(
                         (val) => val.slot === 'Slot' + (v - 1).toString(),
                       ).filter_type
                     }}</span>
                     <span class="classic-filter__id">{{
-                      findDialogue(entry.info_id).filters.find(
+                      findDialogue(entry.id).filters.find(
                         (val) => val.slot === 'Slot' + (v - 1).toString(),
                       ).id
                     }}</span>
                     <span class="classic-filter__compare">{{
-                      findDialogue(entry.info_id).filters.find(
+                      findDialogue(entry.id).filters.find(
                         (val) => val.slot === 'Slot' + (v - 1).toString(),
                       ).comparison
                     }}</span>
                     <span class="classic-filter__value">{{
                       Object.values(
-                        findDialogue(entry.info_id).filters.find(
+                        findDialogue(entry.id).filters.find(
                           (val) => val.slot === 'Slot' + (v - 1).toString(),
                         ).value,
                       )[0]
@@ -128,18 +132,21 @@
                   </div>
                 </td>
               </tr>
-            </transition-group>
+            <!-- </transition-group> -->
+            </tbody>
           </table>
         </div>
       </div>
       <div class="classic-view-frame__edit" v-if="currentId">
         <button class="edit__close" :disabled="!checkChanges" @click="saveEdit()">
-          <icon name="save" class="edit__close-icon" :class="{ 'edit__close-icon_disabled': !checkChanges }"
-            scale="1.5"></icon>
+<!--           <icon name="save" class="edit__close-icon" :class="{ 'edit__close-icon_disabled': !checkChanges }"
+            scale="1.5"></icon> -->
+          Save
         </button>
         <button class="edit__cancel" :disabled="!checkChanges" @click="editEntry(currentId)">
-          <icon name="ban" class="edit__close-icon" :class="{ 'edit__close-icon_disabled': !checkChanges }" scale="1.5">
-          </icon>
+<!--           <icon name="ban" class="edit__close-icon" :class="{ 'edit__close-icon_disabled': !checkChanges }" scale="1.5">
+          </icon> -->
+          Delete
         </button>
         <div class="edit__text">
           <textarea class="modal-field__input" v-model="currentText"></textarea>
@@ -250,491 +257,481 @@
           </div>
         </div>
         <div class="edit__result">
-          <CodeEditor class="edit__result-code" v-model="currentResult" :hide_header="true" :height="'100%'"
+<!--           <CodeEditor class="edit__result-code" v-model="currentResult" :hide_header="true" :height="'100%'"
             :width="'100%'" font-size="12px" :border_radius="'0'">
-          </CodeEditor>
+          </CodeEditor> -->
         </div>
       </div>
     </div>
   </div>
 </template>
 
-<script>
-import Icon from 'vue-awesome/components/Icon';
-import draggable from 'vuedraggable';
-import CodeEditor from 'simple-code-editor';
-import vSelect from 'vue-select';
-
-import 'vue-awesome/icons';
+<script setup lang="ts">
+import { computed, onMounted, reactive, ref, watch } from 'vue';
 import DialogueEntryFilters from '../dialogue/DialogueEntryFilters.vue';
-import { getAllTopicsByType } from '@/api/idb';
+import { getAllTopicsByType, getOrderedEntriesByTopic } from '@/api/idb';
+import { useClassicView, useClassicViewTopic } from '@/stores/classicView';
+import { usePluginHeader } from '@/stores/pluginHeader';
+import TdesignClose from '~icons/tdesign/close';
 
-export default {
-  data() {
-    return {
-      rows: [],
-      updateTrigger: 0,
-      drag: false,
-      currentId: '',
-      editCode: '',
-      topicType: 'Topic',
-      currentFilters: [],
-      currentDisp: '',
-      showEmptySpeakers: false,
-      showEmptyPlayerFilters: false,
-      showEmptyDialogueFilters: false,
-      showDisp: false,
-      currentText: '',
-      currentResult: '',
-      currentSpeakerData: {
-        speaker_id: '',
-        speaker_cell: '',
-        speaker_faction: '',
-        speaker_class: '',
-        speaker_race: '',
-        speaker_sex: '',
-        speaker_race: '',
-        player_faction: '',
-        player_rank: '',
+const rows = ref([]);
+const updateTrigger = ref<number>(0);
+const drag = ref<boolean>(false);
+const currentId = ref<string>('');
+const editCode = ref<string>('');
+const topicType = ref<string>('Topic');
+const currentFilters = ref([]);
+const currentDisp = ref<string>('');
+const showEmptySpeakers = ref<boolean>(false);
+const showEmptyPlayerFilters = ref<boolean>(false);
+const showEmptyDialogueFilters = ref<boolean>(false);
+const showDisp = ref<boolean>(false);
+const currentText = ref<string>('');
+const currentResult = ref<string>('');
+const currentSpeakerData = reactive({
+  speaker_id: '',
+  speaker_cell: '',
+  speaker_faction: '',
+  speaker_class: '',
+  speaker_race: '',
+  speaker_sex: '',
+  player_faction: '',
+  player_rank: '',
+})
+
+const filterGroups = [
+  {
+    name: 'Major filters',
+    types: [
+      {
+        name: 'Journal',
+        functions: ['JournalType'],
       },
-      filterGroups: [
-        {
-          name: 'Major filters',
-          types: [
-            {
-              name: 'Journal',
-              functions: ['JournalType'],
-            },
-            {
-              name: 'Function',
-              functions: ['Choice', 'Pcgold'],
-            },
-            {
-              name: 'Dead',
-              functions: ['DeadType'],
-            },
-            {
-              name: 'Item',
-              functions: ['ItemType'],
-            },
-          ],
-        },
-        {
-          name: 'Variables',
-          types: [
-            {
-              name: 'Global',
-              functions: ['CompareGlobal'],
-            },
-            {
-              name: 'Local',
-              functions: ['CompareLocal'],
-            },
-          ],
-        },
-        {
-          name: 'Not',
-          types: [
-            {
-              name: 'NotId',
-              functions: ['NotIdType'],
-            },
-            {
-              name: 'NotCell',
-              functions: ['NotCell'],
-            },
-            {
-              name: 'NotFaction',
-              functions: ['NotFaction'],
-            },
-            {
-              name: 'NotClass',
-              functions: ['NotClass'],
-            },
-            {
-              name: 'NotRace',
-              functions: ['NotRace'],
-            },
-            {
-              name: 'NotLocal',
-              functions: ['Global'],
-            },
-          ],
-        },
-        {
-          name: 'Player filters',
-          types: [
-            {
-              name: 'Function',
-              functions: [
-                'PcReputation',
-                'PcLevel',
-                'PcHealthPercent',
-                'PcMagicka',
-                'PcFatigue',
-                'PcStrength',
-                'PcBlock',
-                'PcArmorer',
-                'PcMediumArmor',
-                'PcHeavyArmor',
-                'PcBluntWeapon',
-                'PcLongBlade',
-                'PcAxe',
-                'PcSpear',
-                'PcAthletics',
-                'PcEnchant',
-                'PcDestruction',
-                'PcAlteration',
-                'PcIllusion',
-                'PcConjuration',
-                'PcMysticism',
-                'PcRestoration',
-                'PcAlchemy',
-                'PcUnarmored',
-                'PcSecurity',
-                'PcSneak',
-                'PcAcrobatics',
-                'PcLightArmor',
-                'PcShortBlade',
-                'PcMarksman',
-                'PcMercantile',
-                'PcSpeechcraft',
-                'PcHandToHand',
-                'PcSex',
-                'PcExpelled',
-                'PcCommonDisease',
-                'PcBlightDisease',
-                'PcClothingModifier',
-                'PcCrimeLevel',
-                'PcIntelligence',
-                'PcWillpower',
-                'PcAgility',
-                'PcSpeed',
-                'PcEndurance',
-                'PcPersonality',
-                'PcLuck',
-                'PcCorprus',
-                'PcVampire',
-                'PcHealth',
-              ],
-            },
-          ],
-        },
-        {
-          name: 'Other filters',
-          types: [
-            {
-              name: 'Function',
-              functions: [
-                'ReactionLow',
-                'ReactionHigh',
-                'RankRequirement',
-                'Reputation',
-                'HealthPercent',
-                'SameSex',
-                'SameRace',
-                'SameFaction',
-                'FactionRankDifference',
-                'Detected',
-                'Alarmed',
-                'Weather',
-                'Level',
-                'Attacked',
-                'TalkedToPc',
-                'CreatureTarget',
-                'FriendHit',
-                'Fight',
-                'Hello',
-                'Alarm',
-                'Flee',
-                'ShouldAttack',
-                'Werewolf',
-                'WerewolfKills',
-              ],
-            },
-          ],
-        },
-      ],
-      filterTypes: [
-        'None',
-        'Function',
-        'Global',
-        'Local',
-        //"Journal",
-        //"Item",
-        //"Dead",
-        'NotId',
-        'NotCell',
-        'NotFaction',
-        'NotClass',
-        'NotRace',
-        'NotLocal',
-      ],
-      filterFunctions: [
-        /*         "PcReputation",
-        "PcLevel",
-        "PcHealthPercent",
-        "PcMagicka",
-        "PcFatigue",
-        "PcStrength",
-        "PcBlock",
-        "PcArmorer",
-        "PcMediumArmor",
-        "PcHeavyArmor",
-        "PcBluntWeapon",
-        "PcLongBlade",
-        "PcAxe",
-        "PcSpear",
-        "PcAthletics",
-        "PcEnchant",
-        "PcDestruction",
-        "PcAlteration",
-        "PcIllusion",
-        "PcConjuration",
-        "PcMysticism",
-        "PcRestoration",
-        "PcAlchemy",
-        "PcUnarmored",
-        "PcSecurity",
-        "PcSneak",
-        "PcAcrobatics",
-        "PcLightArmor",
-        "PcShortBlade",
-        "PcMarksman",
-        "PcMercantile",
-        "PcSpeechcraft",
-        "PcHandToHand",
-        "PcSex",
-        "PcExpelled",
-        "PcCommonDisease",
-        "PcBlightDisease",
-        "PcClothingModifier",
-        "PcCrimeLevel",
-        "PcIntelligence",
-        "PcWillpower",
-        "PcAgility",
-        "PcSpeed",
-        "PcEndurance",
-        "PcPersonality",
-        "PcLuck",
-        "PcCorprus",
-        "PcVampire",
-        "PcHealth", */
-
-        /*         "ReactionLow",
-        "ReactionHigh",
-        "RankRequirement",
-        "Reputation",
-        "HealthPercent",
-        "SameSex",
-        "SameRace",
-        "SameFaction",
-        "FactionRankDifference",
-        "Detected",
-        "Alarmed", */
-        //"Choice",
-        /*         "Weather",
-        "Level",
-        "Attacked",
-        "TalkedToPc",
-        "CreatureTarget",
-        "FriendHit",
-        "Fight",
-        "Hello",
-        "Alarm",
-        "Flee",
-        "ShouldAttack",
-        "Werewolf",
-        "WerewolfKills", */
-        //"Pcgold",
-
-        'NotClass',
-        //"DeadType",
-        'NotFaction',
-        //"ItemType",
-        //"JournalType",
-        'NotCell',
-        'NotRace',
-        'NotIdType',
-        'Global',
-
-        'CompareGlobal',
-        'CompareLocal',
-      ],
-      filterComparisons: ['Less', 'LesserEqual', 'NotEqual', 'Equal', 'GreaterEqual', 'Greater'],
-      topicsList: [],
-      dialogueList: [],
-    };
-  },
-  components: {
-    Icon,
-    draggable,
-    CodeEditor,
-    vSelect,
-    DialogueEntryFilters,
-  },
-  mounted() {
-    this.rows = this.getOrderedEntries.map((val) => val.info_id);
-    //this.topicType = this.getOrderedEntries[0] ? this.getOrderedEntries[0].TMP_type : 'Topic'
-  },
-  watch: {
-    getOrderedEntries(newValue) {
-      this.rows = newValue.map((val) => val.info_id);
-    },
-    topicType: {
-      async handler(newValue) {
-        const topicsResponse = await getAllTopicsByType(newValue);
-        this.topicsList = topicsResponse;
+      {
+        name: 'Function',
+        functions: ['Choice', 'Pcgold'],
       },
-      immediate: true,
-    },
-    /*     rowsClone: {
-      handler: function (newValue, oldValue) {
-        if (newValue.length === oldValue.length) {
-          var idx = 0;
-          var len = oldValue.length;
-          while (
-            (oldValue[idx] === newValue[idx] ||
-              oldValue[idx] === newValue[idx + 1]) &&
-            idx < len
-          ) {
-            idx++;
-          }
-          if (idx < newValue.length) {
-            console.log("")
-            console.log("OLD: ", oldValue)
-            console.log("NEW: ", newValue)
-            console.log('====================================================================================')
-            console.log(`Entry moved. ID: ${oldValue[idx]}, Text: ${this.getOrderedEntries.find(val => val.info_id === oldValue[idx]).text}`);
-            console.log(`Old prev_id: ${this.getOrderedEntries.find(val => val.info_id === oldValue[idx]).prev_id}, Old next_id: ${this.getOrderedEntries.find(val => val.info_id === oldValue[idx]).next_id}`)
-            console.log(`New index: ${newValue.findIndex(id => id === oldValue[idx])},`)
-            console.log('====================================================================================')
-            console.log("")
-          }
-        }
-      }
-    } */
+      {
+        name: 'Dead',
+        functions: ['DeadType'],
+      },
+      {
+        name: 'Item',
+        functions: ['ItemType'],
+      },
+    ],
   },
-  computed: {
-    getActive() {
-      return this.$store.getters['getClassicView'];
-    },
-    getCurrentTopic() {
-      return this.$store.getters['getClassicViewTopic'];
-    },
-    getAllTopics() {
-      return this.$store.getters['getAllTopics'](this.topicType);
-    },
-    /*     getOrderedEntriesUncached: {
-      cache: false,
-      get() {
-        return this.$store.getters["getOrderedEntriesByTopic"]([
-          this.getCurrentTopic,
-          this.topicType
-        ]);
-      }
-    }, */
-    getOrderedEntries() {
-      this.updateTrigger;
-      return this.$store.getters['getOrderedEntriesByTopic']([
-        this.getCurrentTopic,
-        this.topicType,
-      ]);
-    },
-    getPluginName() {
-      return this.$store.getters['getActiveHeader'].TMP_dep;
-    },
-    getTopicFilterAmount() {
-      return 6;
-    },
-    checkChanges() {
-      let oldEntry = this.findDialogue(this.currentId);
-      if (!oldEntry) return false;
-      if (oldEntry.text !== this.currentText) return [oldEntry.text, this.currentText];
-      else return false;
-    },
+  {
+    name: 'Variables',
+    types: [
+      {
+        name: 'Global',
+        functions: ['CompareGlobal'],
+      },
+      {
+        name: 'Local',
+        functions: ['CompareLocal'],
+      },
+    ],
   },
-  methods: {
-    async fetchDialogue(topic) {
-      try {
-        const dialogueResponse = await this.$store.dispatch('fetchOrderedEntriesByTopic', [topic]);
-        this.dialogueList = dialogueResponse.flat();
-      } catch (error) {
-        console.error(error);
-      }
-    },
-    findDialogue(entry) {
-      if (!this.dialogueList) return {};
-      return this.dialogueList.find((val) => val.info_id == entry) || {};
-    },
-    closeClassicView() {
-      this.$store.commit('setClassicView', false);
-    },
-    setCurrentTopic(topic) {
-      this.$store.commit('setClassicViewTopic', topic);
-    },
-    editEntry(entry_id) {
-      this.currentId = entry_id;
-      this.updateTrigger++;
-      let currentEntry = this.findDialogue(entry_id);
-      this.currentSpeakerData.speaker_id = currentEntry.speaker_id || '';
-      this.currentSpeakerData.speaker_cell = currentEntry.speaker_cell || '';
-      this.currentSpeakerData.speaker_faction = currentEntry.speaker_faction || '';
-      this.currentSpeakerData.speaker_class = currentEntry.speaker_class || '';
-      this.currentSpeakerData.speaker_race = currentEntry.speaker_race || '';
-      this.currentSpeakerData.speaker_sex =
-        currentEntry.data.speaker_sex !== 'Any' ? this.answer.data?.speaker_sex : '';
-      this.currentSpeakerData.speaker_race =
-        currentEntry.data.speaker_race !== -1 ? this.answer.data.speaker_race : '';
-      this.currentFilters = currentEntry.filters;
-      this.currentDisp = currentEntry.data && currentEntry.data.disposition;
-      this.currentResult = currentEntry.result;
-      this.currentText = currentEntry.text;
-    },
-    cancelEdit() {
-      this.currentId = '';
-    },
-    saveEdit() {
-      this.updateTrigger++;
-      let entry = this.findDialogue(this.currentId);
-      entry.text = this.currentText;
-      if (this.currentResult) entry.result = this.currentResult.replace(/\r?\n/g, '\r\n');
-      this.$store.dispatch('replaceDialogueEntry', [this.currentId, entry]);
-      this.rows = this.getOrderedEntries.map((val) => val.info_id);
-      this.editEntry(this.currentId);
-    },
-    handleReorder(event) {
-      let info_id = event.moved.element;
-      let old_prev_id = this.findDialogue(event.moved.element).prev_id;
-      let old_next_id = this.findDialogue(event.moved.element).next_id;
-      let new_prev_id = this.rows[event.moved.newIndex - 1] || '';
-      let new_next_id = this.rows[event.moved.newIndex + 1] || '';
-      this.$store.commit('moveDialogueEntry', [
-        info_id,
-        old_prev_id,
-        old_next_id,
-        new_prev_id,
-        new_next_id,
-      ]);
-      this.updateTrigger++;
-      this.rows = this.getOrderedEntries.map((val) => val.info_id);
-    },
-    checkDirtied(entryOne, entryTwo) {
-      if (!entryOne || !entryTwo) return false;
-      let entryOneNonId = Object.fromEntries(
-        Object.entries(entryOne).filter(
-          ([key]) => !key.includes('_id') && !key.includes('TMP_') && !key.includes('old_values'),
-        ),
-      );
-      let entryTwoNonId = Object.fromEntries(
-        Object.entries(entryTwo).filter(
-          ([key]) => !key.includes('_id') && !key.includes('TMP_') && !key.includes('old_values'),
-        ),
-      );
-      return JSON.stringify(entryOneNonId) === JSON.stringify(entryTwoNonId);
-    },
+  {
+    name: 'Not',
+    types: [
+      {
+        name: 'NotId',
+        functions: ['NotIdType'],
+      },
+      {
+        name: 'NotCell',
+        functions: ['NotCell'],
+      },
+      {
+        name: 'NotFaction',
+        functions: ['NotFaction'],
+      },
+      {
+        name: 'NotClass',
+        functions: ['NotClass'],
+      },
+      {
+        name: 'NotRace',
+        functions: ['NotRace'],
+      },
+      {
+        name: 'NotLocal',
+        functions: ['Global'],
+      },
+    ],
   },
-};
+  {
+    name: 'Player filters',
+    types: [
+      {
+        name: 'Function',
+        functions: [
+          'PcReputation',
+          'PcLevel',
+          'PcHealthPercent',
+          'PcMagicka',
+          'PcFatigue',
+          'PcStrength',
+          'PcBlock',
+          'PcArmorer',
+          'PcMediumArmor',
+          'PcHeavyArmor',
+          'PcBluntWeapon',
+          'PcLongBlade',
+          'PcAxe',
+          'PcSpear',
+          'PcAthletics',
+          'PcEnchant',
+          'PcDestruction',
+          'PcAlteration',
+          'PcIllusion',
+          'PcConjuration',
+          'PcMysticism',
+          'PcRestoration',
+          'PcAlchemy',
+          'PcUnarmored',
+          'PcSecurity',
+          'PcSneak',
+          'PcAcrobatics',
+          'PcLightArmor',
+          'PcShortBlade',
+          'PcMarksman',
+          'PcMercantile',
+          'PcSpeechcraft',
+          'PcHandToHand',
+          'PcSex',
+          'PcExpelled',
+          'PcCommonDisease',
+          'PcBlightDisease',
+          'PcClothingModifier',
+          'PcCrimeLevel',
+          'PcIntelligence',
+          'PcWillpower',
+          'PcAgility',
+          'PcSpeed',
+          'PcEndurance',
+          'PcPersonality',
+          'PcLuck',
+          'PcCorprus',
+          'PcVampire',
+          'PcHealth',
+        ],
+      },
+    ],
+  },
+  {
+    name: 'Other filters',
+    types: [
+      {
+        name: 'Function',
+        functions: [
+          'ReactionLow',
+          'ReactionHigh',
+          'RankRequirement',
+          'Reputation',
+          'HealthPercent',
+          'SameSex',
+          'SameRace',
+          'SameFaction',
+          'FactionRankDifference',
+          'Detected',
+          'Alarmed',
+          'Weather',
+          'Level',
+          'Attacked',
+          'TalkedToPc',
+          'CreatureTarget',
+          'FriendHit',
+          'Fight',
+          'Hello',
+          'Alarm',
+          'Flee',
+          'ShouldAttack',
+          'Werewolf',
+          'WerewolfKills',
+        ],
+      },
+    ],
+  },
+]
+
+const filterTypes = [
+  'None',
+  'Function',
+  'Global',
+  'Local',
+  //"Journal",
+  //"Item",
+  //"Dead",
+  'NotId',
+  'NotCell',
+  'NotFaction',
+  'NotClass',
+  'NotRace',
+  'NotLocal',
+]
+
+const filterFunctions = [
+  /*         "PcReputation",
+  "PcLevel",
+  "PcHealthPercent",
+  "PcMagicka",
+  "PcFatigue",
+  "PcStrength",
+  "PcBlock",
+  "PcArmorer",
+  "PcMediumArmor",
+  "PcHeavyArmor",
+  "PcBluntWeapon",
+  "PcLongBlade",
+  "PcAxe",
+  "PcSpear",
+  "PcAthletics",
+  "PcEnchant",
+  "PcDestruction",
+  "PcAlteration",
+  "PcIllusion",
+  "PcConjuration",
+  "PcMysticism",
+  "PcRestoration",
+  "PcAlchemy",
+  "PcUnarmored",
+  "PcSecurity",
+  "PcSneak",
+  "PcAcrobatics",
+  "PcLightArmor",
+  "PcShortBlade",
+  "PcMarksman",
+  "PcMercantile",
+  "PcSpeechcraft",
+  "PcHandToHand",
+  "PcSex",
+  "PcExpelled",
+  "PcCommonDisease",
+  "PcBlightDisease",
+  "PcClothingModifier",
+  "PcCrimeLevel",
+  "PcIntelligence",
+  "PcWillpower",
+  "PcAgility",
+  "PcSpeed",
+  "PcEndurance",
+  "PcPersonality",
+  "PcLuck",
+  "PcCorprus",
+  "PcVampire",
+  "PcHealth", */
+
+  /*         "ReactionLow",
+  "ReactionHigh",
+  "RankRequirement",
+  "Reputation",
+  "HealthPercent",
+  "SameSex",
+  "SameRace",
+  "SameFaction",
+  "FactionRankDifference",
+  "Detected",
+  "Alarmed", */
+  //"Choice",
+  /*         "Weather",
+  "Level",
+  "Attacked",
+  "TalkedToPc",
+  "CreatureTarget",
+  "FriendHit",
+  "Fight",
+  "Hello",
+  "Alarm",
+  "Flee",
+  "ShouldAttack",
+  "Werewolf",
+  "WerewolfKills", */
+  //"Pcgold",
+
+  'NotClass',
+  //"DeadType",
+  'NotFaction',
+  //"ItemType",
+  //"JournalType",
+  'NotCell',
+  'NotRace',
+  'NotIdType',
+  'Global',
+
+  'CompareGlobal',
+  'CompareLocal',
+]
+
+const filterComparisons = ['Less', 'LesserEqual', 'NotEqual', 'Equal', 'GreaterEqual', 'Greater'];
+
+const topicsList = ref([]);
+const dialogueList = ref([]);
+
+const classicViewStore = useClassicView();
+const classicViewTopicStore = useClassicViewTopic();
+const getActive = computed(() => {
+  return classicViewStore.getClassicView;
+})
+
+const getCurrentTopic = computed(() => {
+  return classicViewTopicStore.getClassicViewTopic;
+})
+
+const pluginHeaderStore = usePluginHeader();
+const getPluginName = computed(() => {
+  return pluginHeaderStore.getPluginHeader?.TMP_dep;
+})
+
+const getOrderedEntries = computed(() => {
+  return [];
+/*   this.updateTrigger;
+  return this.$store.getters['getOrderedEntriesByTopic']([
+    this.getCurrentTopic,
+    this.topicType,
+  ]); */
+})
+
+const checkChanges = computed(() => {
+  return false;
+ /*  let oldEntry = this.findDialogue(this.currentId);
+  if (!oldEntry) return false;
+  if (oldEntry.text !== this.currentText) return [oldEntry.text, this.currentText];
+  else return false; */
+})
+
+watch(getOrderedEntries, (newValue) => {
+  rows.value = newValue.map((val) => val.id);
+})
+
+watch(topicType, async (newValue) => {
+  const topicsResponse = await getAllTopicsByType(newValue);
+  topicsList.value = topicsResponse;
+}, {
+  immediate: true,
+})
+
+onMounted(() => {
+  rows.value = getOrderedEntries.value.map((val) => val.id);
+})
+
+function checkDirtied(entryOne, entryTwo) {
+/*   if (!entryOne || !entryTwo) return false;
+  let entryOneNonId = Object.fromEntries(
+    Object.entries(entryOne).filter(
+      ([key]) => !key.includes('_id') && !key.includes('TMP_') && !key.includes('old_values'),
+    ),
+  );
+  let entryTwoNonId = Object.fromEntries(
+    Object.entries(entryTwo).filter(
+      ([key]) => !key.includes('_id') && !key.includes('TMP_') && !key.includes('old_values'),
+    ),
+  );
+  return JSON.stringify(entryOneNonId) === JSON.stringify(entryTwoNonId); */
+}
+
+async function fetchDialogue(topic: string) {
+  try {
+    const dialogueResponse = await getOrderedEntriesByTopic(topic);
+    dialogueList.value = dialogueResponse.flat();
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+function findDialogue(entry) {
+  if (!dialogueList.value) return {};
+  return dialogueList.value.find((val) => val.id == entry) || {};
+}
+
+function closeClassicView() {
+  classicViewStore.setClassicView(false);
+}
+
+function setCurrentTopic(topic) {
+  classicViewTopicStore.setClassicViewTopic(topic);
+}
+
+function editEntry(entry_id) {
+/*   this.currentId = entry_id;
+  this.updateTrigger++;
+  let currentEntry = this.findDialogue(entry_id);
+  this.currentSpeakerData.speaker_id = currentEntry.speaker_id || '';
+  this.currentSpeakerData.speaker_cell = currentEntry.speaker_cell || '';
+  this.currentSpeakerData.speaker_faction = currentEntry.speaker_faction || '';
+  this.currentSpeakerData.speaker_class = currentEntry.speaker_class || '';
+  this.currentSpeakerData.speaker_race = currentEntry.speaker_race || '';
+  this.currentSpeakerData.speaker_sex =
+    currentEntry.data.speaker_sex !== 'Any' ? this.answer.data?.speaker_sex : '';
+  this.currentSpeakerData.speaker_race =
+    currentEntry.data.speaker_race !== -1 ? this.answer.data.speaker_race : '';
+  this.currentFilters = currentEntry.filters;
+  this.currentDisp = currentEntry.data && currentEntry.data.disposition;
+  this.currentResult = currentEntry.result;
+  this.currentText = currentEntry.text; */
+}
+
+function cancelEdit() {
+  currentId.value = '';
+}
+
+function saveEdit() {
+/*   this.updateTrigger++;
+  let entry = this.findDialogue(this.currentId);
+  entry.text = this.currentText;
+  if (this.currentResult) entry.result = this.currentResult.replace(/\r?\n/g, '\r\n');
+  this.$store.dispatch('replaceDialogueEntry', [this.currentId, entry]);
+  this.rows = this.getOrderedEntries.map((val) => val.id);
+  this.editEntry(this.currentId); */
+}
+
+function handleReorder(event) {
+/*   let id = event.moved.element;
+  let old_prev_id = this.findDialogue(event.moved.element).prev_id;
+  let old_next_id = this.findDialogue(event.moved.element).next_id;
+  let new_prev_id = this.rows[event.moved.newIndex - 1] || '';
+  let new_next_id = this.rows[event.moved.newIndex + 1] || '';
+  this.$store.commit('moveDialogueEntry', [
+    id,
+    old_prev_id,
+    old_next_id,
+    new_prev_id,
+    new_next_id,
+  ]);
+  this.updateTrigger++;
+  this.rows = this.getOrderedEntries.map((val) => val.id); */
+}
+
+
+/*  watch   rowsClone: {
+  handler: function (newValue, oldValue) {
+    if (newValue.length === oldValue.length) {
+      var idx = 0;
+      var len = oldValue.length;
+      while (
+        (oldValue[idx] === newValue[idx] ||
+          oldValue[idx] === newValue[idx + 1]) &&
+        idx < len
+      ) {
+        idx++;
+      }
+      if (idx < newValue.length) {
+        console.log("")
+        console.log("OLD: ", oldValue)
+        console.log("NEW: ", newValue)
+        console.log('====================================================================================')
+        console.log(`Entry moved. ID: ${oldValue[idx]}, Text: ${this.getOrderedEntries.find(val => val.id === oldValue[idx]).text}`);
+        console.log(`Old prev_id: ${this.getOrderedEntries.find(val => val.id === oldValue[idx]).prev_id}, Old next_id: ${this.getOrderedEntries.find(val => val.id === oldValue[idx]).next_id}`)
+        console.log(`New index: ${newValue.findIndex(id => id === oldValue[idx])},`)
+        console.log('====================================================================================')
+        console.log("")
+      }
+    }
+  }
+} */
 </script>
 
 <style lang="scss">
@@ -762,14 +759,13 @@ export default {
     top: 15px;
     right: 20px;
 
-    &-icon {
-      fill: rgb(202, 165, 96);
+    svg {
+      color: rgb(202, 165, 96);
+      width: 30px;
+      height: 30px;
       transition: fill 0.15s ease-in;
-    }
-
-    &:hover {
-      .classic-view-frame__close-icon {
-        fill: rgb(223, 200, 157);
+      &:hover {
+        color: rgb(223, 200, 157);
       }
     }
   }

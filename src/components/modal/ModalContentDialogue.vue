@@ -129,6 +129,7 @@ import DialogueEntryResults from '../dialogue/DialogueEntryResults.vue';
 import { fetchTopicListByNPC, getOrderedEntriesByTopic } from '@/api/idb.js';
 import { computed, ref, toRefs, watch } from 'vue';
 import SVGSpinners90RingWithBg from '~icons/svg-spinners/90-ring-with-bg';
+import { useClassicView, useClassicViewTopic } from '@/stores/classicView';
 
 const props = defineProps({
   speaker: {
@@ -325,9 +326,12 @@ function pasteDialogueFromClipboard(location) {
     'next',
   ]); */
 }
+
+const classicViewStore = useClassicView();
+const classicViewTopicStore = useClassicViewTopic();
 function openClassicView() {
-/*   this.$store.commit('setClassicViewTopic', this.currentTopic);
-  this.$store.commit('setClassicView', true); */
+  classicViewTopicStore.setClassicViewTopic(currentTopic.value);
+  classicViewStore.setClassicView(true);
 }
 
 watch(getSpeakerData, (() => {

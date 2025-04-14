@@ -56,6 +56,7 @@ import DialogueFrameCard from '@/components/dialogue/DialogueFrameCard.vue';
 import { fetchAllDialogueBySpeaker, fetchSpeakersAmountBySpeakerType } from '@/api/idb.js';
 import { computed, onMounted, ref, watch } from 'vue';
 import { usePrimaryModal } from '@/stores/modals';
+import { useClassicView } from '@/stores/classicView';
 
 type SpeakerType = 'npc' | 'cell' | 'class' | 'faction' | 'rank' | 'global';
 
@@ -116,8 +117,9 @@ function toggleType(speakerType: SpeakerType) {
   return null;
 }
 
+const classicViewStore = useClassicView();
 function openClassicView() {
-  // this.$store.commit('setClassicView', true);
+  classicViewStore.setClassicView(true);
 }
 
 const primaryModalStore = usePrimaryModal();

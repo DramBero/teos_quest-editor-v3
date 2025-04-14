@@ -9,6 +9,7 @@ import { usePluginHeader } from './stores/pluginHeader.js';
 import ModalMain from './components/modal/ModalMain.vue';
 import ModalContentDialogue from './components/modal/ModalContentDialogue.vue';
 import { useSelectedSpeaker } from './stores/selectedSpeaker.js';
+import ModalClassicView from './components/modal/ModalClassicView.vue';
 
 const headerStore = usePluginHeader();
 onMounted(async () => {
@@ -29,6 +30,7 @@ const getSpeakerData = computed(() => {
   <header></header>
   <div>
     <ModalFrame />
+    <ModalClassicView />
     <CWorkspace />
     <ModalMain v-show="getSpeakerData.speakerId" :header="getSpeakerData.speakerId">
       <ModalContentDialogue :speaker="getSpeakerData"/>
