@@ -217,6 +217,10 @@ export interface InfoFilter {
     id: string;
     slot: string;
     filter_type: string;
-    filter_function: string;
-    filter_comparison: FilterComparison;
+    function: string;
+    comparison: FilterComparison;
+    value: {
+        data: number | string;
+        type: string;
+    };
 }

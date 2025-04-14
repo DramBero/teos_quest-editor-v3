@@ -112,6 +112,7 @@
 import { computed, onMounted, ref, watch } from 'vue';
 import { fetchQuestByID } from '@/api/idb.js'; 
 import type { FilterComparison } from '@/types/pluginEntries.ts';
+import { useJournalHighlight } from '@/stores/journalHighlights';
 
 const props = defineProps({
   quest: Object,
@@ -119,7 +120,7 @@ const props = defineProps({
 
 const isCollapsed = ref<boolean>(false);
 const highlightedComparison = ref<FilterComparison | ''>('');
-const highlightedId = ref('');
+const highlightedId = ref<number | string>('');
 const entryEdit = ref('');
 
 const questDataLoaded = ref<boolean>(false);
@@ -138,9 +139,9 @@ async function loadQuestData() {
 
 loadQuestData();
 
+const journalHighlightStore = useJournalHighlight();
 const getHighlight = computed(() => {
-  return '';
-  // return this.$store.getters['getJournalHighlight'];
+  return journalHighlightStore.getJournalHighlight;
 })
 
 const getLatestDisposition = computed(() => {
@@ -165,16 +166,18 @@ function editEntry(event, info_id) {
 }
 
 watch(getHighlight, (newValue) => {
-  if (newValue.id === props.quest?.id) {
+  if (!newValue?.id) {
+    highlightedId.value = '';
+    highlightedComparison.value = '';
+  }
+  else if (newValue.id === props.quest?.id) {
     isCollapsed.value = true;
-    highlightedComparison.value = newValue.filter_comparison;
-    highlightedId.value = newValue.value.Integer;
+    highlightedComparison.value = newValue.comparison;
+    highlightedId.value = parseInt(newValue.value.data);
   } else {
-    if (newValue.id) {
-      isCollapsed.value = false;
-      highlightedComparison.value = '';
-      highlightedId.value = '';
-    }
+    isCollapsed.value = false;
+    highlightedComparison.value = '';
+    highlightedId.value = '';
   }
 });
 

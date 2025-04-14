@@ -13,7 +13,7 @@
           v-if="currentFilter.name"
           @click="editable = 'name'"
           >{{
-            currentFilter.name === 'Function' ? currentFilter.filter_function : currentFilter.name
+            currentFilter.name === 'Function' ? currentFilter.function : currentFilter.name
           }}
         </span>
         <span
@@ -88,7 +88,7 @@
               <span class="filter__function"
                 >{{
                   filter.name === "Function"
-                    ? filter.filter_function
+                    ? filter.function
                     : filter.name
                 }}
               </span>
@@ -454,14 +454,14 @@ export default {
             {
               id: 'function_journal',
               name: 'Journal',
-              filter_function: 'JournalType',
+              function: 'JournalType',
               operands: ['Less', 'LesserEqual', 'NotEqual', 'Equal', 'GreaterEqual', 'Greater'],
               fields: ['journal_id', 'journal_disposition'],
             },
             {
               id: 'function_item',
               name: 'Item',
-              filter_function: 'ItemType',
+              function: 'ItemType',
               operands: ['Less', 'LesserEqual', 'NotEqual', 'Equal', 'GreaterEqual', 'Greater'],
               fields: ['item_id', 'item_amount'],
             },
@@ -469,13 +469,13 @@ export default {
               id: 'function_dead',
               name: 'Dead',
               operands: ['Less', 'LesserEqual', 'NotEqual', 'Equal', 'GreaterEqual', 'Greater'],
-              filter_function: 'DeadType',
+              function: 'DeadType',
               fields: ['npc'],
             },
             {
               id: 'function_choice',
               name: 'Function',
-              filter_function: 'Choice',
+              function: 'Choice',
               operands: ['Less', 'LesserEqual', 'NotEqual', 'Equal', 'GreaterEqual', 'Greater'],
               fields: ['choice'],
             },
@@ -487,14 +487,14 @@ export default {
             {
               id: 'function_global',
               name: 'Global',
-              filter_function: 'VariableCompare',
+              function: 'VariableCompare',
               operands: ['Less', 'LesserEqual', 'NotEqual', 'Equal', 'GreaterEqual', 'Greater'],
               fields: ['global_dropdown', 'global_value'],
             },
             {
               id: 'function_local',
               name: 'Local',
-              filter_function: 'VariableCompare',
+              function: 'VariableCompare',
               operands: ['Less', 'LesserEqual', 'NotEqual', 'Equal', 'GreaterEqual', 'Greater'],
               fields: ['local_input', 'local_value'],
             },
@@ -506,42 +506,42 @@ export default {
             {
               id: 'function_not_id',
               name: 'NotId',
-              filter_function: 'NotIdType',
+              function: 'NotIdType',
               operands: ['Less', 'LesserEqual', 'NotEqual', 'Equal', 'GreaterEqual', 'Greater'],
               fields: ['npc', 'value'],
             },
             {
               id: 'function_not_cell',
               name: 'NotCell',
-              filter_function: 'NotCell',
+              function: 'NotCell',
               operands: ['Less', 'LesserEqual', 'NotEqual', 'Equal', 'GreaterEqual', 'Greater'],
               fields: ['cell', 'value'],
             },
             {
               id: 'function_not_class',
               name: 'NotClass',
-              filter_function: 'NotClass',
+              function: 'NotClass',
               operands: ['Less', 'LesserEqual', 'NotEqual', 'Equal', 'GreaterEqual', 'Greater'],
               fields: ['class', 'value'],
             },
             {
               id: 'function_not_faction',
               name: 'NotFaction',
-              filter_function: 'NotFaction',
+              function: 'NotFaction',
               operands: ['Less', 'LesserEqual', 'NotEqual', 'Equal', 'GreaterEqual', 'Greater'],
               fields: ['faction', 'value'],
             },
             {
               id: 'function_not_race',
               name: 'NotRace',
-              filter_function: 'NotRace',
+              function: 'NotRace',
               operands: ['Less', 'LesserEqual', 'NotEqual', 'Equal', 'GreaterEqual', 'Greater'],
               fields: ['race', 'value'],
             },
             {
               id: 'function_not_local',
               name: 'NotLocal',
-              filter_function: 'VariableCompare',
+              function: 'VariableCompare',
               operands: ['Less', 'LesserEqual', 'NotEqual', 'Equal', 'GreaterEqual', 'Greater'],
               fields: ['local', 'value'],
             },
@@ -565,8 +565,8 @@ Creature Target
       if (this.currentFilter.id.includes('function')) {
         if (this.getSelectedFilterIndex === '') {
           let filter = {
-            filter_comparison: this.currentOperand,
-            filter_function: this.currentFilter.filter_function,
+            comparison: this.currentOperand,
+            function: this.currentFilter.function,
             filter_type: this.currentFilter.name,
             id: this.currentValueSecondary,
             //slot: "Slot1",
@@ -630,7 +630,7 @@ Creature Target
       this.currentValue = '';
       this.inputValue = '';
     } else {
-      this.currentOperand = filter.filter_comparison;
+      this.currentOperand = filter.comparison;
       this.currentFilter = this.filterGroups
         .map((val) => val.filters)
         .flat(1)

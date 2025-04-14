@@ -11,8 +11,6 @@
       v-for="speakerType in !onlyFilters ? getOtherSpeakers : []"
       :key="speakerType.value + speakerType.type"
       tabindex="0"
-      @focus="handleFilter(filter)"
-      @focusout="handleFilter({})"
     >
       <span class="filter__if">if </span>
       <span class="filter__function">{{ speakerType.type }} </span>
@@ -24,7 +22,7 @@
           @click.stop="
             editFilter(
               {
-                filter_comparison: 'Equal',
+                comparison: 'Equal',
                 filter_type: speakerType.type,
                 value: {
                   Integer: speakerType.value,
@@ -45,8 +43,6 @@
       v-if="!onlyFilters && answer.data.disposition > 0"
       key="disposition"
       tabindex="0"
-      @focus="handleFilter(filter)"
-      @focusout="handleFilter({})"
     >
       <span class="filter__if">if </span>
       <span class="filter__function">Disposition </span>
@@ -58,7 +54,7 @@
           @click.stop="
             editFilter(
               {
-                filter_comparison: 'Greater',
+                comparison: 'Greater',
                 filter_type: 'Disposition',
                 value: {
                   Integer: speakerType.value,
@@ -158,6 +154,8 @@
 </template>
 
 <script setup lang="ts">
+import { useJournalHighlight } from '@/stores/journalHighlights';
+import { useSidebar } from '@/stores/sidebar';
 import { computed, ref } from 'vue';
 
 
@@ -257,19 +255,22 @@ const getOtherSpeakers = computed(() => {
   ].filter((val) => val.value && val.value !== props.speaker.speakerId);
 })
 
+const journalHighlightStore = useJournalHighlight();
+const sidebarStore = useSidebar();
 function handleFilter(filter) {
-/*
-  if (filter.filter_function === 'JournalType') {
-    this.$store.commit('setSidebarActive', 'Journal');
-    this.$store.commit('setJournalHighlight', filter);
+  console.log('handleFilter:', filter)
+  if (filter.function === 'JournalType') {
+    if (sidebarStore.getActiveItem !== 'Journal') {
+      sidebarStore.setActiveItem('Journal');
+    }
+    journalHighlightStore.setJournalHighlight(filter);
   } else {
-    this.removeHighlight();
+    removeHighlight();
   }
-*/
 }
 
 function removeHighlight() {
-  // this.$store.commit('setJournalHighlight', {});
+  journalHighlightStore.setJournalHighlight(null);
 }
 
 function addFilter() {
@@ -293,8 +294,8 @@ function addDropFilter(comparison) {
 /*
       if (this.newFilterType === 'Journal') {
         let filter = {
-          filter_comparison: comparison,
-          filter_function: 'JournalType',
+          comparison: comparison,
+          function: 'JournalType',
           filter_type: 'Journal',
           id: this.newFilterTopic,
           value: {
@@ -360,16 +361,15 @@ function handleDrop(event) {
 }
 
 function comparisonOver(comparison) {
-  /*
-      let filter = {
-        id: this.newFilterTopic,
-        value: {
-          Integer: this.newFilterIndex,
-        },
-        filter_comparison: comparison,
-      };
-      this.$store.commit('setJournalHighlight', filter);
-  */
+  let filter = {
+    id: newFilterTopic.value,
+    value: {
+      data: newFilterIndex.value,
+      type: 'Integer',
+    },
+    comparison: comparison,
+  };
+  journalHighlightStore.setJournalHighlight(filter);
 }
 
 function removeTempFilter() {

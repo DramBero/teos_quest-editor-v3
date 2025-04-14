@@ -19,8 +19,9 @@
 <script setup lang="ts">
 import { fetchAllQuestIDs } from '@/api/idb.js';
 import { usePrimaryModal } from '@/stores/modals';
-import { onMounted, ref } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import JournalFrameQuest from './JournalFrameQuest.vue';
+import { useJournalHighlight } from '@/stores/journalHighlights';
 
 const primaryModalStore = usePrimaryModal();
 function addQuest() {
@@ -36,7 +37,24 @@ onMounted(async () => {
   }
 })
 
+const journalHighlightStore = useJournalHighlight();
+const getHighlighted = computed(() => {
+  return journalHighlightStore.getJournalHighlight;
+})
+const getHighlightedId = computed(() => {
+  if (!getHighlighted.value) return '';
+  const valueObj = getHighlighted.value.value;
+  if (valueObj) return getHighlighted.value.id + valueObj.data;
+  else return '';
+})
 
+watch(getHighlightedId, async (newValue) => {
+  await new Promise((resolve) => setTimeout(resolve, 300));
+  if (newValue) {
+    const el = document.getElementById(newValue);
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
+  }
+})
 
 /* import Icon from 'vue-awesome/components/Icon';
 import 'vue-awesome/icons';
@@ -50,23 +68,6 @@ export default {
         (val) => `["${val.id.toLowerCase()}"]: "${val.name || 'skip'}",`,
       );
       return questNames;
-    },
-    getHighlighted() {
-      return this.$store.getters['getJournalHighlight'];
-    },
-    getHighlightedId() {
-      let valueObj = this.getHighlighted.value;
-      if (valueObj) return this.getHighlighted.id + Object.values(valueObj)[0];
-    },
-  },
-  watch: {
-    async getHighlightedId(newValue) {
-      console.log(newValue);
-      await new Promise((resolve) => setTimeout(resolve, 300));
-      if (newValue) {
-        const el = document.getElementById(newValue);
-        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
-      }
     },
   },
   components: { Icon },

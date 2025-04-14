@@ -103,7 +103,7 @@
                     <span class="classic-filter__type">{{
                       findDialogue(entry.info_id).filters.find(
                         (val) => val.slot === 'Slot' + (v - 1).toString(),
-                      ).filter_function ||
+                      ).function ||
                       findDialogue(entry.info_id).filters.find(
                         (val) => val.slot === 'Slot' + (v - 1).toString(),
                       ).filter_type
@@ -116,7 +116,7 @@
                     <span class="classic-filter__compare">{{
                       findDialogue(entry.info_id).filters.find(
                         (val) => val.slot === 'Slot' + (v - 1).toString(),
-                      ).filter_comparison
+                      ).comparison
                     }}</span>
                     <span class="classic-filter__value">{{
                       Object.values(
@@ -244,8 +244,8 @@
             <DialogueEntryFilters editMode onlyFilters :answer="findDialogue(currentId)" speaker="" />
             <!--             <div class="edit-dialogue-filter" v-for="filter, index in currentFilters" :key="index">
                 <v-select v-model="currentFilters[index].filter_type" :options="filterTypes"></v-select>
-                <v-select v-model="currentFilters[index].filter_function" :options="filterFunctions"></v-select>
-                <v-select v-model="currentFilters[index].filter_comparison" :options="filterComparisons"></v-select>
+                <v-select v-model="currentFilters[index].function" :options="filterFunctions"></v-select>
+                <v-select v-model="currentFilters[index].comparison" :options="filterComparisons"></v-select>
             </div> -->
           </div>
         </div>
