@@ -212,6 +212,10 @@ const getFaceData = computed(() => {
     case 'b_n_nord_m_head_03': return '/meshes/b_n_nord_m_head_03.glb';
     case 'b_n_nord_m_head_04': return '/meshes/b_n_nord_m_head_04.glb';
     case 'b_n_nord_m_head_05': return '/meshes/b_n_nord_m_head_05.glb';
+    case 'b_n_nord_m_head_06': return '/meshes/b_n_nord_m_head_06.glb';
+    case 'b_n_nord_m_head_07': return '/meshes/b_n_nord_m_head_07.glb';
+    case 'b_n_nord_m_head_08': return '/meshes/b_n_nord_m_head_08.glb';
+    case 'b_n_nord_m_head_09': return '/meshes/b_n_nord_m_head_09.glb';
 
     case 'b_n_wood elf_m_head_02': return '/meshes/b_n_wood elf_m_head_02.glb';
     case 'b_n_breton_m_head_08': return '/meshes/b_n_breton_m_head_08.glb';
