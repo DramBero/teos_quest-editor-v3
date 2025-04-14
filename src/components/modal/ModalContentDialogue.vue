@@ -38,8 +38,8 @@
                 'dialogue-answers-answer_modified': answer.old_values && answer.old_values.length,
                 'dialogue-answers-answer_edit': editMode,
               }">
-                <div class="dialogue-answers-answer-modified" v-if="answer.old_values && answer.old_values.length">
-                  * Modified in {{ answer.old_values.slice(-1)[0].TMP_dep }}
+                <div class="dialogue-answers-answer-modified" v-if="answer.old_values && answer.old_values.length > 1">
+                  * Modified in {{ answer.old_values.slice(-2)[0].TMP_dep }}
                   <span class="dialogue-answers-answer-modified_dirty"
                     v-if="checkDirtied(answer.old_values.slice(-1)[0], answer)">
                     (possibly dirtied by CS)
@@ -285,7 +285,7 @@ function getLanguage(code, language) {
   }
 }
 function checkDirtied(entryOne, entryTwo) {
-/*   let entryOneNonId = Object.fromEntries(
+  let entryOneNonId = Object.fromEntries(
     Object.entries(entryOne).filter(
       ([key]) => !key.includes('_id') && !key.includes('TMP_') && !key.includes('old_values'),
     ),
@@ -295,13 +295,13 @@ function checkDirtied(entryOne, entryTwo) {
       ([key]) => !key.includes('_id') && !key.includes('TMP_') && !key.includes('old_values'),
     ),
   );
-  return JSON.stringify(entryOneNonId) === JSON.stringify(entryTwoNonId); */
+  return JSON.stringify(entryOneNonId) === JSON.stringify(entryTwoNonId);
 }
 function handleAnswerClick(e) {
-/*   if (e.target.className == 'dialogue-answers-answer__text_hyperlink') {
-    this.setCurrentAnswers(e.target.innerText, 'Topic');
-    this.currentTopic = e.target.innerText;
-  } */
+  if (e.target.className == 'dialogue-answers-answer__text_hyperlink') {
+    setCurrentAnswers(e.target.innerText, 'Topic');
+    currentTopic.value = e.target.innerText;
+  }
 }
 function getHyperlinkedAnswer(text) {
   let hyperlinkedAnswer = text;
