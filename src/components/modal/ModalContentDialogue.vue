@@ -18,12 +18,30 @@
           </div>
         </div>
       </div>
+      <div class="dialogue__filtrations" v-if="Object.keys(appliedFiltration).length">
+        <button 
+          v-if="appliedFiltration.choice"
+          type="button"
+          class="dialogue__filtration"
+          @click="deleteFilter('choice')"
+        >
+          <div class="filtration__key">
+            Choice:
+          </div>
+          <div class="filtration__value">
+            {{ appliedFiltration.choice }}
+          </div>
+          <div class="filtration__cancel">
+            <TdesignClose />
+          </div>
+        </button>
+      </div>
       <div v-if="dialogueInfoLoading" class="dialogue-answers__loading">
         <SVGSpinners90RingWithBg :scale="10"/>
       </div>
       <div v-else>
         <transition-group name="fadeHeight" class="dialogue-answers__frame" mode="out-in" :style="{ width: '100%' }">
-          <div v-for="answer in currentAnswers" :key="answer.id" :class="{ 'highlight-even': !editMode }">
+          <div v-for="answer in currentFilteredAnswers" :key="answer.id" :class="{ 'highlight-even': !editMode }">
             <div class="dialogue-answers-answer__above" v-if="!editMode"></div>
             <div class="dialogue-answers-answer__above-add" v-if="editMode">
               <button class="entry-control-button" @click="addEntry([answer.prev_id, answer.id])">
@@ -51,7 +69,7 @@
                   <div class="curr-id">id: {{ answer.id }}</div>
                 </div>
 
-                <DialogueEntryFilters :answer="answer" :speaker="speaker" :editMode="editMode" />
+                <DialogueEntryFilters :answer :speaker :editMode :topicChoices />
 
                 <div v-if="editedEntry !== answer.id" class="dialogue-answers-answer__text"
                   v-html="getHyperlinkedAnswer(answer.text)" @click="handleAnswerClick($event)"></div>
@@ -59,12 +77,17 @@
                 <textarea v-else v-text="answer.text" name="entryText" class="dialogue-entry-textarea"></textarea>
 
                 <div class="dialogue-entry__choices">
-                  <div class="dialogue-entry__choice" v-for="choice in topicChoices.filter(val => val.entryId === answer.id)">
+                  <div 
+                    v-for="choice, choiceIndex in topicChoices.filter(val => val.entryId === answer.id)"
+                    :key="choiceIndex"
+                    class="dialogue-entry__choice"
+                    @click="applyFilter({key: 'choice', value: choice.id})"
+                  >
+                    <div class="choice__id">
+                      {{ `[${choice.id}]` }}
+                    </div>
                     <div class="choice__text">
                       {{ choice.text }}
-                    </div>
-                    <div class="choice__id">
-                      ({{ choice.id }})
                     </div>
                   </div>
                 </div>
@@ -139,9 +162,10 @@ import { useSelectedSpeaker } from '@/stores/selectedSpeaker';
 import DialogueEntryFilters from '../dialogue/DialogueEntryFilters.vue';
 import DialogueEntryResults from '../dialogue/DialogueEntryResults.vue';
 import { fetchTopicListByNPC, getOrderedEntriesByTopic } from '@/api/idb.js';
-import { computed, ref, toRefs, watch } from 'vue';
+import { computed, reactive, ref, toRefs, watch } from 'vue';
 import SVGSpinners90RingWithBg from '~icons/svg-spinners/90-ring-with-bg';
 import { useClassicView, useClassicViewTopic } from '@/stores/classicView';
+import TdesignClose from '~icons/tdesign/close';
 
 const props = defineProps({
   speaker: {
@@ -162,6 +186,18 @@ const greetingsList = ref([]);
 const persuasionsList = ref([]);
 const topicsList = ref([]);
 const orderedEntries = ref([]);
+
+interface DialogueFiltration {
+  key: string;
+  value: string | number;
+}
+const appliedFiltration = reactive<Object>({});
+function applyFilter(filter: DialogueFiltration) {
+  appliedFiltration[filter.key] = filter.value;
+}
+function deleteFilter(key: string) {
+  delete appliedFiltration[key];
+}
 
 watch(speaker, async (newValue) => {
   if (!newValue.speakerId) {
@@ -211,6 +247,23 @@ const currentAnswers = computed(() => {
   return answers;
 });
 
+const currentFilteredAnswers = computed(() => {
+  let answers = [...currentAnswers.value];
+  if (appliedFiltration.choice) {
+    const filteredAnswers = answers
+      .filter(
+        val => val.filters
+          .find(
+            filter => 
+              filter.function === 'Choice' && 
+              filter.value.data === appliedFiltration.choice
+          )
+      );
+    answers = filteredAnswers;
+  }
+  return answers;
+})
+
 const getClipboardDialogue = computed(() => {
   return {};
   // return this.$store.getters['getClipboardDialogue'];
@@ -239,7 +292,7 @@ function transformChoiceStringToObjects(input: string, entryId: string) {
 
 const topicChoices = computed(() => {
   const choices = [];
-  for (let answer of currentAnswers.value) {
+  for (const answer of currentAnswers.value) {
     if (answer.script_text?.includes('Choice ')) {
       const regex = /Choice\s+(.*?)(?:\n|$)/g;
       let match;
@@ -413,6 +466,46 @@ watch(currentTopic, (async (newValue) => {
   height: 100%;
   padding: 2px;
 
+  &__filtrations {
+    width: 100%;
+    position: sticky;
+    top: 40px;
+    z-index: 5;
+    background-color: rgba(0, 0, 0, 0.8);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 40px;
+    margin-bottom: 2px;
+  }
+
+  &__filtration {
+    display: flex;
+    gap: 5px;
+    align-items: center;
+    border-radius: 4px;
+    padding: 5px 10px;
+    border: solid 2px rgb(202, 165, 96, 0.4);
+    &:hover {
+      .filtration__cancel {
+        color: rgb(202, 96, 96);
+      }
+    }
+    .filtration {
+      &__key {
+
+      }
+      &__value {
+
+      }
+      &__cancel {
+        display: flex;
+        align-items: center;
+        transition: color ease-in 0.15s;
+      }
+    }
+  }
+
   &-answers {
     //padding: 0 5px 5px 5px;
     flex-grow: 1;
@@ -474,7 +567,7 @@ watch(currentTopic, (async (newValue) => {
       justify-content: center;
       align-items: center;
       border-bottom: 2px solid rgb(202, 165, 96);
-      min-height: 40px;
+      height: 40px;
       margin-bottom: 2px;
     }
 
@@ -560,7 +653,7 @@ watch(currentTopic, (async (newValue) => {
         display: flex;
         align-items: center;
         gap: 5px;
-        margin-bottom: 20px;
+        padding-bottom: 20px;
       }
 
       &_edit {
@@ -618,17 +711,25 @@ watch(currentTopic, (async (newValue) => {
       flex-direction: column;
       gap: 4px;
       padding-left: 50px;
-      padding: 10px 10px 10px 50px;
+      padding: 10px 10px 10px 30px;
     }
     &__choice {
       display: flex;
-      gap: 5px;
+      gap: 10px;
+      align-items: center;
       .choice {
         &__text {
           color: rgb(165, 96, 96);
+          font-size: 18px;
+          cursor: pointer;
+          &:hover {
+            color: rgb(202, 96, 96);
+          }
         }
         &__id {
-          color: white;
+          color: rgb(222, 222, 222);
+          font-family: 'Consolas';
+          font-size: 14px;
         }
       }
     }

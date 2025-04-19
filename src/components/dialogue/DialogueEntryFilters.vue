@@ -71,7 +71,25 @@
     </div>
 
     <div class="filter-wrapper" v-for="(filter, index) in getFiltersByInfoId" :key="index">
+      <div 
+        v-if="filter.function === 'Choice'" 
+        class="dialogue-filters__filter dialogue-filters__filter_choices"
+      >
+        <div class="choice__id">
+          [{{ filter.value.data }}]
+        </div>
+        <div class="choice__texts">
+          <div 
+            v-for="text in getChoiceFilters(filter.value.data)" 
+            :key="text" 
+            class="choice__text"
+          >
+            {{ text }}
+          </div>
+        </div>
+      </div>
       <div
+        v-else
         class="dialogue-filters__filter"
         tabindex="0"
         @click="handleFilter(filter)"
@@ -173,6 +191,10 @@ const props = defineProps({
   onlyFilters: {
     type: Boolean,
   },
+  topicChoices: {
+    type: Array,
+    default: () => [],
+  }
 })
 
 const newFilterTopic = ref<string>('');
@@ -209,6 +231,13 @@ const comparisons = [
     text: '>',
   },
 ]
+
+function getChoiceFilters(choiceId: number) {
+  const texts = props.topicChoices
+    .filter(val => val.id === choiceId)
+    .map(val => val.text);
+  return [...new Set(texts)];
+};
 
 const getFiltersByInfoId = computed(() => {
   return props.answer.filters;
@@ -403,6 +432,33 @@ function removeTempFilter() {
     &_speaker {
       background: rgba(121, 105, 82, 0.6);
       color: rgb(185, 185, 166);
+    }
+    &_choices {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      background: rgba(165, 96, 96, 0.1);
+      border: solid 1px rgba(165, 165, 165, 0.5);
+      .choice {
+        &__id {
+          color: rgb(222, 222, 222);
+          font-family: 'Consolas';
+          font-size: 14px;
+        }
+        &__texts {
+          display: flex;
+          flex-direction: column;
+          gap: 3px;
+        }
+        &__text {
+          color: rgb(165, 96, 96);
+          border-top: solid 1px rgba(165, 165, 165, 0.5);
+          padding: 3px;
+          &:first-child {
+            border-top: none;
+          }
+        }
+      }
     }
   }
 }

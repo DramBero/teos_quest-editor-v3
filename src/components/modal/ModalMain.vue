@@ -209,7 +209,7 @@ function closeModal() {
       background-color: rgb(202, 165, 96);
       border-radius: 4px;
       padding: 0 10px;
-      right: 15px;
+      right: 0px;
       &:hover {
         background-color: rgba(0, 0, 0, 0);
       }
