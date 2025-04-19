@@ -189,7 +189,7 @@ const comparisons = [
     text: '<',
   },
   {
-    id: 'LesserEqual',
+    id: 'LessEqual',
     text: '<=',
   },
   {
@@ -324,7 +324,7 @@ function parseComparison(comparison) {
       return ' == ';
     case 'GreaterEqual':
       return ' >= ';
-    case 'LesserEqual':
+    case 'LessEqual':
       return ' <= ';
     case 'Less':
       return ' < ';

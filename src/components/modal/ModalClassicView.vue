@@ -23,11 +23,14 @@
               topic.filter((val) => val && val.TMP_dep === getPluginName).length &&
               topic.length > 1,
             'container-topics__topic_current': getCurrentTopic === topic[0].id,
-          }" v-for="topic in topicsList" :key="topic[0].id" @click="fetchDialogue(topic[0].id)">
+          }" v-for="topic in topicsList" :key="topic[0].id" @click="setTopic(topic[0].id)">
             {{ topic[0].id }}
           </div>
         </div>
-        <div class="container-entries">
+        <div class="container-entries_loading" v-if="dialogueLoading">
+          <SVGSpinners90RingWithBg />
+        </div>
+        <div class="container-entries" v-else>
           <table border="0" cellspacing="0" cellpadding="0" v-if="dialogueList.length">
             <tr class="container-entries__header">
               <th></th>
@@ -273,6 +276,7 @@ import { getAllTopicsByType, getOrderedEntriesByTopic } from '@/api/idb';
 import { useClassicView, useClassicViewTopic } from '@/stores/classicView';
 import { usePluginHeader } from '@/stores/pluginHeader';
 import TdesignClose from '~icons/tdesign/close';
+import SVGSpinners90RingWithBg from '~icons/svg-spinners/90-ring-with-bg';
 
 const rows = ref([]);
 const updateTrigger = ref<number>(0);
@@ -285,6 +289,7 @@ const currentDisp = ref<string>('');
 const showEmptySpeakers = ref<boolean>(false);
 const showEmptyPlayerFilters = ref<boolean>(false);
 const showEmptyDialogueFilters = ref<boolean>(false);
+const dialogueLoading = ref<boolean>(false);
 const showDisp = ref<boolean>(false);
 const currentText = ref<string>('');
 const currentResult = ref<string>('');
@@ -566,7 +571,7 @@ const filterFunctions = [
   'CompareLocal',
 ]
 
-const filterComparisons = ['Less', 'LesserEqual', 'NotEqual', 'Equal', 'GreaterEqual', 'Greater'];
+const filterComparisons = ['Less', 'LessEqual', 'NotEqual', 'Equal', 'GreaterEqual', 'Greater'];
 
 const topicsList = ref([]);
 const dialogueList = ref([]);
@@ -633,12 +638,26 @@ function checkDirtied(entryOne, entryTwo) {
   return JSON.stringify(entryOneNonId) === JSON.stringify(entryTwoNonId); */
 }
 
+function setTopic(topic: string) {
+  classicViewTopicStore.setClassicViewTopic(topic);
+}
+
+watch(getCurrentTopic, (newValue: string) => {
+  fetchDialogue(newValue);
+})
+
 async function fetchDialogue(topic: string) {
+  if (!topic) {
+    dialogueList.value = [];
+  }
   try {
+    dialogueLoading.value = true;
     const dialogueResponse = await getOrderedEntriesByTopic(topic);
     dialogueList.value = dialogueResponse.flat();
   } catch (error) {
     console.error(error);
+  } finally {
+    dialogueLoading.value = false;
   }
 }
 
@@ -945,6 +964,9 @@ function handleReorder(event) {
       &_current {
         color: white;
         cursor: default;
+        &:hover {
+          color: white;
+        }
       }
     }
   }
@@ -962,6 +984,18 @@ function handleReorder(event) {
         td {
           border-bottom: 1px solid rgba(202, 165, 96, 0.5);
         }
+      }
+    }
+
+    &_loading {
+      display: flex;
+      width: 100%;
+      align-items: center;
+      justify-content: center;
+      svg {
+        width: 30px;
+        height: 30px;
+        color: rgb(202, 165, 96);
       }
     }
 

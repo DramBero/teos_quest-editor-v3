@@ -455,20 +455,20 @@ export default {
               id: 'function_journal',
               name: 'Journal',
               function: 'JournalType',
-              operands: ['Less', 'LesserEqual', 'NotEqual', 'Equal', 'GreaterEqual', 'Greater'],
+              operands: ['Less', 'LessEqual', 'NotEqual', 'Equal', 'GreaterEqual', 'Greater'],
               fields: ['journal_id', 'journal_disposition'],
             },
             {
               id: 'function_item',
               name: 'Item',
               function: 'ItemType',
-              operands: ['Less', 'LesserEqual', 'NotEqual', 'Equal', 'GreaterEqual', 'Greater'],
+              operands: ['Less', 'LessEqual', 'NotEqual', 'Equal', 'GreaterEqual', 'Greater'],
               fields: ['item_id', 'item_amount'],
             },
             {
               id: 'function_dead',
               name: 'Dead',
-              operands: ['Less', 'LesserEqual', 'NotEqual', 'Equal', 'GreaterEqual', 'Greater'],
+              operands: ['Less', 'LessEqual', 'NotEqual', 'Equal', 'GreaterEqual', 'Greater'],
               function: 'DeadType',
               fields: ['npc'],
             },
@@ -476,7 +476,7 @@ export default {
               id: 'function_choice',
               name: 'Function',
               function: 'Choice',
-              operands: ['Less', 'LesserEqual', 'NotEqual', 'Equal', 'GreaterEqual', 'Greater'],
+              operands: ['Less', 'LessEqual', 'NotEqual', 'Equal', 'GreaterEqual', 'Greater'],
               fields: ['choice'],
             },
           ],
@@ -488,14 +488,14 @@ export default {
               id: 'function_global',
               name: 'Global',
               function: 'VariableCompare',
-              operands: ['Less', 'LesserEqual', 'NotEqual', 'Equal', 'GreaterEqual', 'Greater'],
+              operands: ['Less', 'LessEqual', 'NotEqual', 'Equal', 'GreaterEqual', 'Greater'],
               fields: ['global_dropdown', 'global_value'],
             },
             {
               id: 'function_local',
               name: 'Local',
               function: 'VariableCompare',
-              operands: ['Less', 'LesserEqual', 'NotEqual', 'Equal', 'GreaterEqual', 'Greater'],
+              operands: ['Less', 'LessEqual', 'NotEqual', 'Equal', 'GreaterEqual', 'Greater'],
               fields: ['local_input', 'local_value'],
             },
           ],
@@ -507,42 +507,42 @@ export default {
               id: 'function_not_id',
               name: 'NotId',
               function: 'NotIdType',
-              operands: ['Less', 'LesserEqual', 'NotEqual', 'Equal', 'GreaterEqual', 'Greater'],
+              operands: ['Less', 'LessEqual', 'NotEqual', 'Equal', 'GreaterEqual', 'Greater'],
               fields: ['npc', 'value'],
             },
             {
               id: 'function_not_cell',
               name: 'NotCell',
               function: 'NotCell',
-              operands: ['Less', 'LesserEqual', 'NotEqual', 'Equal', 'GreaterEqual', 'Greater'],
+              operands: ['Less', 'LessEqual', 'NotEqual', 'Equal', 'GreaterEqual', 'Greater'],
               fields: ['cell', 'value'],
             },
             {
               id: 'function_not_class',
               name: 'NotClass',
               function: 'NotClass',
-              operands: ['Less', 'LesserEqual', 'NotEqual', 'Equal', 'GreaterEqual', 'Greater'],
+              operands: ['Less', 'LessEqual', 'NotEqual', 'Equal', 'GreaterEqual', 'Greater'],
               fields: ['class', 'value'],
             },
             {
               id: 'function_not_faction',
               name: 'NotFaction',
               function: 'NotFaction',
-              operands: ['Less', 'LesserEqual', 'NotEqual', 'Equal', 'GreaterEqual', 'Greater'],
+              operands: ['Less', 'LessEqual', 'NotEqual', 'Equal', 'GreaterEqual', 'Greater'],
               fields: ['faction', 'value'],
             },
             {
               id: 'function_not_race',
               name: 'NotRace',
               function: 'NotRace',
-              operands: ['Less', 'LesserEqual', 'NotEqual', 'Equal', 'GreaterEqual', 'Greater'],
+              operands: ['Less', 'LessEqual', 'NotEqual', 'Equal', 'GreaterEqual', 'Greater'],
               fields: ['race', 'value'],
             },
             {
               id: 'function_not_local',
               name: 'NotLocal',
               function: 'VariableCompare',
-              operands: ['Less', 'LesserEqual', 'NotEqual', 'Equal', 'GreaterEqual', 'Greater'],
+              operands: ['Less', 'LessEqual', 'NotEqual', 'Equal', 'GreaterEqual', 'Greater'],
               fields: ['local', 'value'],
             },
           ],
@@ -589,7 +589,7 @@ Creature Target
           return '==';
         case 'GreaterEqual':
           return '>=';
-        case 'LesserEqual':
+        case 'LessEqual':
           return '<=';
         case 'Less':
           return '<';

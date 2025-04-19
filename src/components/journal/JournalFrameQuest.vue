@@ -199,7 +199,7 @@ function getIsHighlighted(entryId) {
       return intEntryId == intHighlightedId;
     case 'GreaterEqual':
       return intEntryId >= intHighlightedId;
-    case 'LesserEqual':
+    case 'LessEqual':
       return intEntryId <= intHighlightedId;
     case 'Less':
       return intEntryId < intHighlightedId;

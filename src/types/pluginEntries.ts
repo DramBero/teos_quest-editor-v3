@@ -121,7 +121,7 @@ export interface InfoData {
     speaker_sex: SpeakerSex;
 }
 
-export type FilterComparison = 'Less' | 'LesserEqual' | 'Equal' | 'NotEqual' | 'GreaterEqual' | 'Greater';
+export type FilterComparison = 'Less' | 'LessEqual' | 'Equal' | 'NotEqual' | 'GreaterEqual' | 'Greater';
 export type FilterFunction =
     'ReactionLow' |
     'ReactionHigh' |

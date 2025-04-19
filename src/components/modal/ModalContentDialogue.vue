@@ -7,14 +7,15 @@
           <span v-show="currentTopic.trim().length">{{ currentTopic }}</span>
         </transition>
         <div class="dialogue-answers__edit">
-<!--           <icon name="list" color="#E1FF00" class="icon_gold" scale="1" @click="openClassicView"></icon>
+          <button @click="openClassicView">Classic view</button>
+          <!-- <icon name="list" color="#E1FF00" class="icon_gold" scale="1" @click="openClassicView"></icon> -->
           <icon v-if="!editMode" name="pen" color="#E1FF00" class="icon_gold" scale="1" @click="editMode = true"></icon>
           <div v-else>
             <icon name="ban" color="#E1FF00" class="icon_gold" scale="1" @click="
               editMode = false;
             editedEntry = '';
             "></icon>
-          </div> -->
+          </div>
         </div>
       </div>
       <div v-if="dialogueInfoLoading" class="dialogue-answers__loading">
@@ -56,6 +57,17 @@
                   v-html="getHyperlinkedAnswer(answer.text)" @click="handleAnswerClick($event)"></div>
 
                 <textarea v-else v-text="answer.text" name="entryText" class="dialogue-entry-textarea"></textarea>
+
+                <div class="dialogue-entry__choices">
+                  <div class="dialogue-entry__choice" v-for="choice in topicChoices.filter(val => val.entryId === answer.id)">
+                    <div class="choice__text">
+                      {{ choice.text }}
+                    </div>
+                    <div class="choice__id">
+                      ({{ choice.id }})
+                    </div>
+                  </div>
+                </div>
 
                 <DialogueEntryResults :editMode="editMode" :code="getLanguage(answer.script_text, 'Lua (MWSE)')"
                   language="Lua (MWSE)" />
@@ -207,7 +219,38 @@ const getClipboardDialogue = computed(() => {
 const getLastEntryId = computed(() => {
   return '';
   // return this.currentAnswers.at(-1).id;
-})
+});
+
+function transformChoiceStringToObjects(input: string, entryId: string) {
+    const regex = /"(.*?)"\s*(\d+)/g;
+    const results = [];
+    let match;
+
+    while ((match = regex.exec(input)) !== null) {
+        results.push({
+            text: match[1],
+            id: parseInt(match[2], 10),
+            entryId,
+        });
+    }
+
+    return results;
+}
+
+const topicChoices = computed(() => {
+  const choices = [];
+  for (let answer of currentAnswers.value) {
+    if (answer.script_text?.includes('Choice ')) {
+      const regex = /Choice\s+(.*?)(?:\n|$)/g;
+      let match;
+
+      while ((match = regex.exec(answer.script_text)) !== null) {
+        choices.push(...transformChoiceStringToObjects(match[1].trim(), answer.id))
+      }
+    }
+  }
+  return choices;
+});
 
 async function setClipboard(entry) {
 /*   this.$store.commit('setClipboardDialogue', [entry, this.speaker.speakerId]);
@@ -304,9 +347,9 @@ function handleAnswerClick(e) {
     currentTopic.value = e.target.innerText;
   }
 }
-function getHyperlinkedAnswer(text) {
+function getHyperlinkedAnswer(text: string) {
   let hyperlinkedAnswer = text;
-  for (let topic of topicsList.value) {
+  for (const topic of topicsList.value) {
     if (hyperlinkedAnswer.includes(topic)) {
       hyperlinkedAnswer = hyperlinkedAnswer.replace(
         topic,
@@ -566,6 +609,28 @@ watch(currentTopic, (async (newValue) => {
 
     &:focus {
       outline: none !important;
+    }
+  }
+
+  &-entry {
+    &__choices {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      padding-left: 50px;
+      padding: 10px 10px 10px 50px;
+    }
+    &__choice {
+      display: flex;
+      gap: 5px;
+      .choice {
+        &__text {
+          color: rgb(165, 96, 96);
+        }
+        &__id {
+          color: white;
+        }
+      }
     }
   }
 
