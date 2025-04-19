@@ -59,10 +59,10 @@
               }">
                 <div class="dialogue-answers-answer-modified" v-if="answer.old_values && answer.old_values.length > 1">
                   * Modified in {{ answer.old_values.slice(-2)[0].TMP_dep }}
-                  <span class="dialogue-answers-answer-modified_dirty"
+<!--                   <span class="dialogue-answers-answer-modified_dirty"
                     v-if="checkDirtied(answer.old_values.slice(-1)[0], answer)">
                     (possibly dirtied by CS)
-                  </span>
+                  </span> -->
                 </div>
                 <div class="dialogue-answers-answer__ids" v-if="false">
                   <div class="prev-id">{{ answer.prev_id || '-' }} (before)</div>
@@ -294,11 +294,20 @@ const topicChoices = computed(() => {
   const choices = [];
   for (const answer of currentAnswers.value) {
     if (answer.script_text?.includes('Choice ')) {
-      const regex = /Choice\s+(.*?)(?:\n|$)/g;
+      const regex = /Choice\s+(.*?)(?:\\n|$)/g;
       let match;
 
-      while ((match = regex.exec(answer.script_text)) !== null) {
-        choices.push(...transformChoiceStringToObjects(match[1].trim(), answer.id))
+      const scriptStrings = answer.script_text.split('\r\n');
+
+      for (const scriptString of scriptStrings) {
+        while ((match = regex.exec(scriptString)) !== null) {
+          if (answer.id == '206641278520424260') {
+            console.log('MATCH STRING', scriptString)
+            console.log('MATCH:', match)
+          }
+
+          choices.push(...transformChoiceStringToObjects(match[1].trim(), answer.id))
+        } 
       }
     }
   }
@@ -473,10 +482,11 @@ watch(currentTopic, (async (newValue) => {
     z-index: 5;
     background-color: rgba(0, 0, 0, 0.8);
     display: flex;
-    justify-content: center;
+    // justify-content: center;
     align-items: center;
-    min-height: 40px;
-    margin-bottom: 2px;
+    min-height: 45px;
+    // margin-bottom: 2px;
+    padding: 3px;
   }
 
   &__filtration {
@@ -486,6 +496,8 @@ watch(currentTopic, (async (newValue) => {
     border-radius: 4px;
     padding: 5px 10px;
     border: solid 2px rgb(202, 165, 96, 0.4);
+    background-color: rgb(202, 165, 96, 0.4);
+    color: white;
     &:hover {
       .filtration__cancel {
         color: rgb(202, 96, 96);
@@ -502,6 +514,7 @@ watch(currentTopic, (async (newValue) => {
         display: flex;
         align-items: center;
         transition: color ease-in 0.15s;
+        color: white;
       }
     }
   }
@@ -568,6 +581,7 @@ watch(currentTopic, (async (newValue) => {
       align-items: center;
       border-bottom: 2px solid rgb(202, 165, 96);
       height: 40px;
+      min-height: 40px;
       margin-bottom: 2px;
     }
 
