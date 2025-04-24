@@ -207,4 +207,17 @@ input::-webkit-outer-spin-button,
 input::-webkit-inner-spin-button {
   -webkit-appearance: none;
 }
+
+.mx-context-menu {
+  font-size: 20px;
+  &-item {
+    .label {
+      font-size: 20px !important;
+    }
+  }
+  --mx-menu-backgroud: rgb(204, 187, 153);
+  --mx-menu-hover-backgroud: rgb(235, 218, 184);
+  --mx-menu-open-backgroud: rgb(235, 218, 184);
+  --mx-menu-open-hover-backgroud: rgb(235, 218, 184);
+}
 </style>

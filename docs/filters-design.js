@@ -1,17 +1,61 @@
 
-Choice
-Speakers
+- Choice (opens current choice select, or lets write a custom number)
++ Speakers
+    - ID (opens speaker search, or lets write custom string) (has a button to set to exclusion mode for NOT filters)
+    - Cell (same but with cells)
+    - Class ---
+    - Faction ---
+    - Race ---
+    - Rank --- (doesnt have NOT)
 
-Current Speaker
++ Current Actor
+    - Is werewolf (only 1 as true)
 
-Journal
-Faction
-Items
-Actor
-Player
-Scripting
+- Journal (opens search for quest names, and shows quest names and id)
++ Faction 
+    - Player faction/rank
+    - 
+- Items (opens item search or input id)
+- Dead (opens NPC or creature search or input id)
 
-Weather
++ Player (boa tarde nerevarine)
+    healthbar with percent near (red heart or red heart with percent)
+    magickabar (blue potion)
+    staminabar (green legs)
+
+    - Level (int) 
+    - Reputation (int) [boa tarde statue or with crown]
+    - Bounty (int) [boa tarde wanted poster]
+    - Sex (1/0, 1 - female) [boa tarde with mars or venus symbol]
+    + Skills (int) 
+    + Attributes (int)
+    + Disease
+        - Common (1/0) [boa tarde sick] (no - is crossed)
+        - Blight (1/0) [sick gray boa tarde]
+        - Corprus (1/0) [corprus walker with boa tarde hat]
+    - Vampire (1/0) [boa tarde as vampire]
+    - Clothes on (int) [boa tarde and crassius]
+    - Werewolf Kills (int) [??]
+    - Gold (int) [??]
+    - Other item (item search or input and enter int) [??]
+    
++ Scripting 
+    + Global var 
+    + Local var 
+    + No local var 
+
++ Weather
+    - Clear (0)
+    - Cloudy (1)
+    - Foggy (2)
+    - Overcast (3)
+    - Rain (4)
+    - Thunder (5)
+    - Ash (6)
+    - Blight (7)
+    - Snow (8)
+    - Blizzrd (9)
+    - Other (int)
 
 
 
@@ -44,6 +88,7 @@ NPC characteristics:
     Same sex
 
 NPC interaction:
+    Disposition
     Alarm Level (Alarm)
     Is Alarmed 1/0 (Alarmed)
     Attacked 1/0 (Attacked)

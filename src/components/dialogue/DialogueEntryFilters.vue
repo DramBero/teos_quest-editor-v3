@@ -76,7 +76,7 @@
         class="dialogue-filters__filter dialogue-filters__filter_choices"
       >
         <div class="choice__id">
-          [{{ filter.value.data }}]
+          {{ filter.value.data }}
         </div>
         <div class="choice__texts">
           <div 
@@ -111,7 +111,7 @@
         </span>
       </div>
       <div class="filter-delete" @click.stop="deleteFilter(filter.slot)">
-        <icon v-if="editMode" name="times" class="filter-delete__icon" scale="0.8"></icon>
+        <!-- <icon v-if="editMode" name="times" class="filter-delete__icon" scale="0.8"></icon> -->
       </div>
     </div>
 
@@ -161,6 +161,10 @@
       <span class="filter__function">New filter...</span>
     </div>
 
+    <button type="button" @click.prevent="handleAddFilter">
+      Add
+    </button>
+
 <!--     <icon
       v-if="editMode && !newFilterType && !dragOver"
       @click="addFilter()"
@@ -175,6 +179,7 @@
 import { useJournalHighlight } from '@/stores/journalHighlights';
 import { useSidebar } from '@/stores/sidebar';
 import { computed, ref } from 'vue';
+import ContextMenu from '@imengyu/vue3-context-menu';
 
 
 const props = defineProps({
@@ -204,6 +209,75 @@ const newFilterType = ref<string>('');
 const dragOver = ref<boolean>(false);
 const showComparisons = ref<boolean>(false);
 const filterReactivityTrigger = ref<number>(0);
+
+function handleAddFilter(e: MouseEvent) {
+  ContextMenu.showContextMenu({
+    x: e.x,
+    y: e.y,
+    items: [
+      { 
+        label: "Choice", 
+      },
+      { 
+        label: "Journal", 
+      },
+      { 
+        label: "Dead", 
+      },
+      { 
+        label: "Speakers", 
+        children: [
+          { label: "ID" },
+          { label: "Cell" },
+          { label: "Class" },
+          { label: "Faction" },
+          { label: "Race" },
+          { label: "Rank" },
+        ]
+      },
+      { 
+        label: "Player", 
+        children: [
+          { label: "Health" },
+          { label: "Health percent" },
+          { label: "Magicka" },
+          { label: "Level" },
+          { label: "Reputation" },
+          { label: "Bounty" },
+          { label: "Sex" },
+          { label: "Attributes", 
+            children: [
+              { label: 'Strength' },
+              { label: 'Intelligence' },
+              { label: 'Willpower' },
+              { label: 'Agility' },
+              { label: 'Speed' },
+              { label: 'Endurance' },
+              { label: 'Personality' },
+              { label: 'Luck' },
+            ]
+          },
+          {
+            label: 'Skills'
+          },
+          {
+            label: 'Disease',
+            children: [
+              { label: 'Common' },
+              { label: 'Blight' },
+              { label: 'Corprus' }
+            ]
+          },
+          { label: 'Vampire' },
+          { label: 'Clothes on' },
+          { label: 'Werewolf kills' },
+          { label: 'Gold' },
+          { label: 'Inventory item' },
+        ]
+      },
+    ]
+  }); 
+}
 
 const comparisons = [
   {
@@ -441,9 +515,14 @@ function removeTempFilter() {
       border: solid 1px rgba(165, 165, 165, 0.5);
       .choice {
         &__id {
-          color: rgb(222, 222, 222);
+          color: black;
+          background-color: rgba(202, 165, 96, 0.8);
           font-family: 'Consolas';
           font-size: 14px;
+          padding: 3px;
+          border-radius: 5px;
+          min-width: 20px;
+          text-align: center;
         }
         &__texts {
           display: flex;

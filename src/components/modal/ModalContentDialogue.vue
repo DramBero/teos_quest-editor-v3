@@ -9,13 +9,17 @@
         <div class="dialogue-answers__edit">
           <button @click="openClassicView">Classic view</button>
           <!-- <icon name="list" color="#E1FF00" class="icon_gold" scale="1" @click="openClassicView"></icon> -->
-          <icon v-if="!editMode" name="pen" color="#E1FF00" class="icon_gold" scale="1" @click="editMode = true"></icon>
-          <div v-else>
-            <icon name="ban" color="#E1FF00" class="icon_gold" scale="1" @click="
+          <button v-if="!editMode" @click="editMode = true">Edit</button>
+          <button v-else @click="
+            editMode = false;
+            editedEntry = '';
+          ">
+            Cancel
+<!--             <icon name="ban" color="#E1FF00" class="icon_gold" scale="1" @click="
               editMode = false;
             editedEntry = '';
-            "></icon>
-          </div>
+            "></icon> -->
+          </button>
         </div>
       </div>
       <div class="dialogue__filtrations" v-if="Object.keys(appliedFiltration).length">
@@ -84,7 +88,7 @@
                     @click="applyFilter({key: 'choice', value: choice.id})"
                   >
                     <div class="choice__id">
-                      {{ `[${choice.id}]` }}
+                      {{ choice.id }}
                     </div>
                     <div class="choice__text">
                       {{ choice.text }}
@@ -486,7 +490,7 @@ watch(currentTopic, (async (newValue) => {
     align-items: center;
     min-height: 45px;
     // margin-bottom: 2px;
-    padding: 3px;
+    padding: 3px 10px;
   }
 
   &__filtration {
@@ -498,6 +502,8 @@ watch(currentTopic, (async (newValue) => {
     border: solid 2px rgb(202, 165, 96, 0.4);
     background-color: rgb(202, 165, 96, 0.4);
     color: white;
+    position: relative;
+    margin-right: 30px;
     &:hover {
       .filtration__cancel {
         color: rgb(202, 96, 96);
@@ -508,13 +514,22 @@ watch(currentTopic, (async (newValue) => {
 
       }
       &__value {
-
+        color: black;
+        background-color: rgba(202, 165, 96, 0.8);
+        font-family: 'Consolas';
+        font-size: 14px;
+        padding: 3px;
+        border-radius: 5px;
+        min-width: 20px;
+        text-align: center;
       }
       &__cancel {
         display: flex;
         align-items: center;
         transition: color ease-in 0.15s;
         color: white;
+        position: absolute;
+        right: -30px;
       }
     }
   }
@@ -723,7 +738,7 @@ watch(currentTopic, (async (newValue) => {
     &__choices {
       display: flex;
       flex-direction: column;
-      gap: 4px;
+      gap: 6px;
       padding-left: 50px;
       padding: 10px 10px 10px 30px;
     }
@@ -741,9 +756,14 @@ watch(currentTopic, (async (newValue) => {
           }
         }
         &__id {
-          color: rgb(222, 222, 222);
+          color: black;
+          background-color: rgba(202, 165, 96, 0.8);
           font-family: 'Consolas';
           font-size: 14px;
+          padding: 3px;
+          border-radius: 5px;
+          min-width: 20px;
+          text-align: center;
         }
       }
     }
