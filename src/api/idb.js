@@ -175,34 +175,6 @@ export const findNPCByName = async function (npcName, size = 20) {
   }
 };
 
-export const fetchQuestByID = async function (questID) {
-  if (!databases['activePlugin']) {
-    await initPlugin('activePlugin');
-  }
-  const activePlugin = databases['activePlugin'];
-  try {
-    let entries = await activePlugin.pluginData
-      .where('TMP_topic')
-      .equals(questID)
-      .and((val) => val.type === 'DialogueInfo' && val.quest_state !== 'Name')
-      .toArray();
-    let name = await activePlugin.pluginData
-      .where('TMP_topic')
-      .equals(questID)
-      .and((val) => val.type === 'DialogueInfo' && val.quest_state === 'Name')
-      .toArray();
-    if (!name.length) {
-      name = '';
-    } else {
-      name = name[0].text;
-    }
-
-    return { name, entries };
-  } catch (error) {
-    throw error;
-  }
-};
-
 export const fetchTopicListByNPC = async function (npcID, speakerType) {
   console.log('started:', npcID, speakerType)
   const speakerTypeKey = getSpeakerTypeKey(speakerType);
@@ -272,6 +244,66 @@ function getSpeakerTypeKey(speakerType) {
   }
 }
 
+export const addChoiceFilter = async function (entryId, choiceId) {
+  const newFilter = {
+    comparison: 'Equal',
+    filter_type: 'Function',
+    function: 'Choice',
+    id: '',
+    value: {
+      type: 'Integer',
+      data: choiceId,
+    },
+  }
+  const entries = await getDialogueByTMPInfoId(entryId);
+  let entry = JSON.parse(JSON.stringify(entries.flat().at(-1)));
+  entry.filters = [
+    ...entry.filters,
+    {
+      ...newFilter,
+      index: entry.filters?.length || 0,
+    }
+  ]
+  if (entry.TMP_is_active) {
+    modifyEntry(entry)
+  }
+}
+
+export const editTopicText = async function (entryId, text) {
+  const entries = await getDialogueByTMPInfoId(entryId);
+  let entry = JSON.parse(JSON.stringify(entries.flat().at(-1)));
+  if (entry.text === text) return;
+  entry.text = text;
+  if (entry.TMP_is_active) {
+    modifyEntry(entry)
+  } else {
+    
+  }
+}
+
+export const deleteFilter = async function (entryId, filterIndex) {
+  const entries = await getDialogueByTMPInfoId(entryId);
+  let entry = JSON.parse(JSON.stringify(entries.flat().at(-1)));
+  entry.filters = entry.filters.filter((val) => val.index !== filterIndex);
+  if (entry.TMP_is_active) {
+    modifyEntry(entry)
+  } else {
+    
+  }
+}
+
+export const modifyEntry = async function (entry) {
+  const activePlugin = databases['activePlugin'];
+  try {
+    await activePlugin.pluginData
+      .where('TMP_index')
+      .equals(entry.TMP_index)
+      .modify(entry);
+  } catch(error) {
+    console.error(error);
+  }
+}
+
 export const fetchAllDialogueBySpeaker = async function (speakerType) {
   const speakerTypeKey = getSpeakerTypeKey(speakerType);
   if (!databases['activePlugin']) {
@@ -322,22 +354,136 @@ export const fetchSpeakersAmountBySpeakerType = async function (speakerType) {
   }
 };
 
-export const fetchAllQuestIDs = async function () {
+export const fetchAllQuestIDs = async function (masters = false) {
+  let resp = [];
   if (!databases['activePlugin']) {
     await initPlugin('activePlugin');
   }
   const activePlugin = databases['activePlugin'];
   try {
-    let resp = await activePlugin.pluginData
+    const response = await activePlugin.pluginData
       .where('type')
       .equals('Dialogue')
       .and((val) => val.TMP_type === 'Journal')
       .toArray();
-    return resp;
+    resp = [...resp, ...response]
   } catch (error) {
     throw error;
   }
+  if (masters) {
+    const dependecies = await getDependencies();
+    for (let dep of dependecies.reverse()) {
+      let dependencyDB = databases[dep];
+      if (!dependencyDB) {
+        continue;
+      }
+      let depResponse = await dependencyDB.pluginData
+        .where('type')
+        .equals('Dialogue')
+        .and((val) => val.TMP_type === 'Journal')
+        .toArray();
+        resp = [...resp, ...depResponse];
+    }
+  }
+  return resp;
 };
+
+export const fetchQuestByID = async function (questID) {
+  if (!databases['activePlugin']) {
+    await initPlugin('activePlugin');
+  }
+  let quest = {
+    name: '',
+    old_names: [],
+    entries: [],
+    entry_ids: [],
+  }
+  const activePlugin = databases['activePlugin'];
+  try {
+    let entries = await activePlugin.pluginData
+      .where('TMP_topic')
+      .equals(questID)
+      .and((val) => val.type === 'DialogueInfo' && val.quest_state !== 'Name')
+      .toArray();
+    let name = await activePlugin.pluginData
+      .where('TMP_topic')
+      .equals(questID)
+      .and((val) => val.type === 'DialogueInfo' && val.quest_state === 'Name')
+      .toArray();
+    if (!name.length) {
+      name = '';
+    } else {
+      name = name[0].text;
+    }
+    quest.name = name;
+    quest.entries = [...quest.entries, ...entries];
+  } catch (error) {
+    throw error;
+  }
+
+  const dependecies = await getDependencies();
+  for (let dep of dependecies.reverse()) {
+    const currentEntryIds = quest.entries.map(val => val.TMP_info_id);
+    let dependencyDB = databases[dep];
+    let name = await dependencyDB.pluginData
+      .where('TMP_topic')
+      .equals(questID)
+      .and((val) => val.type === 'DialogueInfo' && val.quest_state === 'Name')
+      .toArray();
+    if (name[0]?.text) {
+      if (!quest.name) {
+        quest.name = name[0]?.text || '';
+      }
+      quest.old_names = [...quest.old_names, name[0].text];
+    }
+    let entries = await dependencyDB.pluginData
+      .where('TMP_topic')
+      .equals(questID)
+      .and((val) => val.type === 'DialogueInfo' && val.quest_state !== 'Name')
+      .toArray();
+    for (let entry of entries) {
+      if (currentEntryIds.includes(entry.TMP_info_id)) {
+        let questEntry = quest.entries.find(val => val.TMP_info_id === entry.TMP_info_id);
+        if (questEntry.old_entries?.length) {
+          questEntry.old_entries = [...questEntry.old_entries, entry];
+        } else {
+          questEntry.old_entries = [entry];
+        }
+      } else {
+        quest.entries = [...quest.entries, entry];
+      }
+    }
+  }
+
+  return quest;
+};
+
+export const getDialogueByTMPInfoId = async function (TMPInfoId) {
+  const dependecies = await getDependencies();
+  let dialogue = [];
+  try {
+    for (let dep of dependecies) {
+      let dependencyDB = databases[dep];
+      if (!dependencyDB) {
+        continue;
+      }
+      let depResponse = await dependencyDB.pluginData
+        .where('TMP_info_id')
+        .equals(TMPInfoId)
+        .toArray();
+      dialogue = [...dialogue, depResponse];
+    }
+    const activePlugin = databases['activePlugin'];
+    const response = await activePlugin.pluginData
+      .where('TMP_info_id')
+      .equals(TMPInfoId)
+      .toArray();
+    dialogue = [...dialogue, response];
+    return dialogue;
+  } catch (error) {
+    throw error;
+  }
+}
 
 export const getAllDialogue = async function (topicId) {
   const dependecies = await getDependencies();

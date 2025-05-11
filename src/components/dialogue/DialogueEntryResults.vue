@@ -4,7 +4,7 @@
       <span class="script-language" :class="{ 'script-language_lua': language === 'Lua (MWSE)' }">{{
         language
       }}</span>
-      <CodeEditor
+<!--       <CodeEditor
         v-model="luaCode"
         :read-only="!editMode"
         :display-language="false"
@@ -14,7 +14,7 @@
         :border-radius="'0'"
         theme="github-dark-dimmed"
       >
-      </CodeEditor>
+      </CodeEditor> -->
       <!--       <prism-editor
         class="editor-code"
         v-model="luaCode"
@@ -28,8 +28,8 @@
 </template>
 
 <script setup lang="ts">
-import hljs from 'highlight.js';
-import CodeEditor from 'simple-code-editor';
+// import hljs from 'highlight.js';
+// import CodeEditor from 'simple-code-editor';
 import { onBeforeMount, ref } from 'vue';
 
 const props = defineProps({

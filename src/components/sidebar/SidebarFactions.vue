@@ -3,13 +3,13 @@
     <div class="journal-frame__header" v-if="true">
       <div class="frame-title">Factions</div>
       <div class="journal-frame__controls">
-        <div class="add-quest" @click="addQuest()">
+        <div class="add-quest" @click="() => {}">
           New <icon name="plus-circle" class="add-quest__button" scale="1"></icon>
         </div>
       </div>
     </div>
     <div class="header-content">
-      <div class="faction" v-for="faction in getFactions" :key="faction.id">
+      <div class="faction" v-for="faction in []" :key="faction.id">
         <h3>{{ faction.name }}</h3>
         <!--       <div class="faction-rank" v-for="rank, index in faction.rank_names" :key="rank">
         <span class="faction-rank__index">{{ index + 1 }}. </span>
@@ -148,23 +148,7 @@
   </div>
 </template>
 
-<script>
-import Icon from 'vue-awesome/components/Icon';
-import draggable from 'vuedraggable';
-import 'vue-awesome/icons';
-export default {
-  data() {
-    return {};
-  },
-  watch: {},
-  computed: {
-    getFactions() {
-      return this.$store.getters['getFactions'];
-    },
-  },
-  components: { Icon, draggable },
-  methods: {},
-};
+<script setup lang="ts">
 </script>
 
 <style lang="scss">

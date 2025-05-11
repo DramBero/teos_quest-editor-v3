@@ -1,11 +1,18 @@
 <template>
-  <div class="quest">
-    <div class="quest-title" @click="toggleCollapse">
-      {{ questData.name }}
+  <div class="quest" :class="{
+    'quest_new': props.quest?.TMP_is_active,
+    'quest_mod': props.quest?.TMP_is_active && questData.old_names?.length,
+  }">
+    <div v-if="questDataLoaded" class="quest-title" @click="toggleCollapse">
+      <div v-if="props.quest?.TMP_is_active" class="quest-status">
+        {{ questData.old_names?.length ? 'Mod' : 'New' }}
+      </div>
+      {{ questData.name || quest.id }}
     </div>
     <div class="quest-id" @click="toggleCollapse">
       {{ quest.id }}
     </div>
+
     <div v-if="questDataLoaded && questData.entries.length">
       <!-- collapse-transition -->
       <div v-show="isCollapsed">
@@ -334,7 +341,12 @@ input[type='reset'] {
   padding: 15px;
   margin: 5px;
   background-color: rgba(255, 255, 255, 0.3);
-  // border-top: 6px solid red;
+  &_new {
+    background-color: rgba(200, 255, 200, 0.5);
+  }
+  &_mod {
+    background-color: rgba(200, 200, 255, 0.5);
+  }
   &-title {
     color: rgb(150, 50, 30);
     cursor: pointer;
@@ -344,9 +356,19 @@ input[type='reset'] {
     user-select: none;
     padding: 5px 0 8px 0;
     transition: all 0.1s ease-out;
+    display: flex;
+    gap: 10px;
     &:hover {
       color: rgb(180, 80, 60);
     }
+  }
+  &-status {
+    font-size: 15px;
+    line-height: 15px;
+    background-color: rgb(202, 96, 96);
+    color: white;
+    padding: 5px;
+    border-radius: 8px;
   }
   &-id {
     color: black;

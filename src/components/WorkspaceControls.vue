@@ -12,8 +12,10 @@
        <GameIconsGears />
       <span>Header</span>
     </div> -->
-    <div class="workspace-controls__button" disabled
-      :class="{ 'workspace-controls__button_active': getSidebarActive === 'Factions' }">
+    <div class="workspace-controls__button"
+      :class="{ 'workspace-controls__button_active': getSidebarActive === 'Factions' }"
+      @click="toggleSidebarActive('Factions')"
+      >
       <GameIconsOrganigram />
       <span>Factions</span>
     </div>
@@ -79,7 +81,7 @@ const getSidebarActive = computed(() => {
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.1s ease-in;
+    transition: all 0.05s ease-in;
     display: flex;
     flex-direction: column;
     position: relative;
@@ -168,6 +170,6 @@ const getSidebarActive = computed(() => {
 
 .icon-controls {
   fill: rgba(216, 216, 216, 0.5);
-  transition: fill 0.2s ease-out;
+  transition: fill 0.05s ease-out;
 }
 </style>

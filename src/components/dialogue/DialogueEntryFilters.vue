@@ -110,9 +110,15 @@
           ></icon> -->
         </span>
       </div>
-      <div class="filter-delete" @click.stop="deleteFilter(filter.slot)">
+      <button 
+        class="filter-delete" 
+        @click.stop="handleDeleteFilter(filter.index)" 
+        aria-label="Delete filter"
+        label="Delete filter"
+      >
+        <TdesignClose />
         <!-- <icon v-if="editMode" name="times" class="filter-delete__icon" scale="0.8"></icon> -->
-      </div>
+      </button>
     </div>
 
     <div class="dialogue-filters__filter" :key="'tempFilter'" tabindex="0" v-show="newFilterType">
@@ -162,7 +168,7 @@
     </div>
 
     <button type="button" @click.prevent="handleAddFilter">
-      Add
+      <TdesignAddCircle />
     </button>
 
 <!--     <icon
@@ -178,29 +184,28 @@
 <script setup lang="ts">
 import { useJournalHighlight } from '@/stores/journalHighlights';
 import { useSidebar } from '@/stores/sidebar';
+import { addChoiceFilter, deleteFilter } from '@/api/idb.js';
 import { computed, ref } from 'vue';
+import TdesignClose from '~icons/tdesign/close';
+import TdesignAddCircle from '~icons/tdesign/add-circle';
+
 import ContextMenu from '@imengyu/vue3-context-menu';
 
+interface TopicChoice {
+  id: number;
+  text: string;
+  entryId: string;
+}
 
-const props = defineProps({
-  answer: {
-    type: Object,
-    default: () => ({})
-  },
-  speaker: {
-    type: String,
-  },
-  editMode: {
-    type: Boolean,
-  },
-  onlyFilters: {
-    type: Boolean,
-  },
-  topicChoices: {
-    type: Array,
-    default: () => [],
-  }
-})
+const props = defineProps<{
+  answer: Object;
+  speaker: string;
+  editMode: boolean;
+  onlyFilters: boolean;
+  topicChoices: TopicChoice[];
+}>();
+
+const emit = defineEmits(['fetchTopic']);
 
 const newFilterTopic = ref<string>('');
 const newFilterIndex = ref<string>('');
@@ -210,13 +215,41 @@ const dragOver = ref<boolean>(false);
 const showComparisons = ref<boolean>(false);
 const filterReactivityTrigger = ref<number>(0);
 
+async function handleAddChoiceFilter(choiceId: number) {
+  await addChoiceFilter(props.answer.TMP_info_id, choiceId);
+  emit('fetchTopic', props.answer.TMP_topic);
+}
+
+async function handleDeleteFilter(filterIndex) {
+  await deleteFilter(props.answer.TMP_info_id, filterIndex);
+  emit('fetchTopic', props.answer.TMP_topic);
+}
+
+const getUniqueTopicChoices = computed(() => {
+  let topicChoices = [...props.topicChoices];
+  let topicChoiceIds = [...new Set(topicChoices.map(val => val.id))];
+  topicChoiceIds = topicChoiceIds.sort((a, b) => a - b);
+  return topicChoiceIds.map((topicId: number) => ({
+    id: topicId,
+    texts: topicChoices.filter((val) => val.id === topicId).map((val) => val.text),
+  }))
+})
+
+const getTopicChoiceLabels = computed(() => {
+  return getUniqueTopicChoices.value.map((val) => ({
+    label: `${val.id}: ${val.texts[0]}`,
+    onClick: () => handleAddChoiceFilter(val.id),
+  }))
+})
+
 function handleAddFilter(e: MouseEvent) {
   ContextMenu.showContextMenu({
     x: e.x,
     y: e.y,
     items: [
       { 
-        label: "Choice", 
+        label: "Choice",
+        children: getTopicChoiceLabels.value,
       },
       { 
         label: "Journal", 
@@ -386,13 +419,6 @@ function addFilter() {
   */
 }
 
-function deleteFilter(slot) {
-/*
-      this.$store.commit('deleteDialogueFilter', [this.answer.info_id, slot]);
-      this.filterReactivityTrigger++;
-*/
-}
-
 function addDropFilter(comparison) {
 /*
       if (this.newFilterType === 'Journal') {
@@ -556,11 +582,22 @@ function removeTempFilter() {
   &-wrapper {
     display: flex;
     align-items: center;
-    gap: 5px;
   }
   &-delete {
-    padding: 5px;
+    //padding: 5px;
     cursor: pointer;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    svg {
+      color: rgb(202, 96, 96);
+    }
+    &:hover {
+      svg {
+        color: white;
+      }
+    }
     &__icon {
       fill: rgb(202, 165, 96);
     }

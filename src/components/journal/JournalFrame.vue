@@ -3,9 +3,12 @@
     <div class="journal-frame__header" v-if="true">
       <div class="frame-title">Journal</div>
       <div class="journal-frame__controls">
-        <div class="add-quest" @click="addQuest()">
+        <button class="add-quest" @click="addQuest()">
           New <icon name="plus-circle" class="add-quest__button" scale="1"></icon>
-        </div>
+        </button>
+        <button class="add-quest" :class="{'add-quest_active': showMasters}" @click="showMasters = !showMasters">
+          M
+        </button>
       </div>
     </div>
     <div v-if="getJournal.length" class="quests">
@@ -27,15 +30,19 @@ const primaryModalStore = usePrimaryModal();
 function addQuest() {
   primaryModalStore.setActiveModal('NewQuest');
 };
+const showMasters = ref(false);
 
 const getJournal = ref([]);
 
-onMounted(async () => {
-  const journalResponse = await fetchAllQuestIDs();
+watch(showMasters, async () => {
+  const journalResponse = await fetchAllQuestIDs(showMasters.value);
   if (journalResponse?.length) {
     getJournal.value = journalResponse;
   }
+}, {
+  immediate: true
 })
+
 
 const journalHighlightStore = useJournalHighlight();
 const getHighlighted = computed(() => {
@@ -114,6 +121,8 @@ export default {
   &__controls {
     font-size: 22px;
     padding: 10px;
+    display: flex;
+    gap: 15px;
 
     //display: flex;
     width: 100%;
@@ -152,6 +161,10 @@ export default {
     .add-quest__button {
       fill: white;
     }
+  }
+  &_active {
+    background: rgb(202, 165, 96) !important;
+    color: rgba(0, 0, 0, 0.65) !important;
   }
 
   &__button {

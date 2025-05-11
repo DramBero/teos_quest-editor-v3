@@ -1,6 +1,7 @@
 <template>
   <div class="sidebar" v-if="getSidebarActive">
     <JournalFrame v-show="getSidebarActive === 'Journal'" :key="4" />
+    <SidebarFactions v-show="getSidebarActive === 'Factions'" :key="6" />
     <!--     <HeaderFrame v-show="getSidebarActive === 'Header'" :key="5" />
     <SidebarFactions v-show="getSidebarActive === 'Factions'" :key="6" /> -->
   </div>
@@ -8,6 +9,7 @@
 
 <script setup lang="ts">
 import JournalFrame from '@/components/journal/JournalFrame.vue';
+import SidebarFactions from '@/components/sidebar/SidebarFactions.vue';
 import { useSidebar } from '@/stores/sidebar';
 import { computed } from 'vue';
 const sidebarStore = useSidebar();

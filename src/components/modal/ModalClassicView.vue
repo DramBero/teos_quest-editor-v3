@@ -1020,10 +1020,13 @@ function handleReorder(event) {
       background-color: rgba(202, 165, 96, 0.05);
       cursor: pointer;
       user-select: none;
-      transition: all 0.15s ease-in-out;
-
+      transition: all 0.1s ease-in-out;
       padding: 10px;
-
+      &:hover {
+        filter: brightness(130%);
+        -webkit-filter: brightness(130%);
+        -moz-filter: brightness(130%);
+      }
       &_active {
         color: white;
 
@@ -1056,14 +1059,6 @@ function handleReorder(event) {
       td {
         padding: 10px;
         border: 1px solid rgba(202, 165, 96, 0.05);
-      }
-
-      transition: all 0.1s ease-in-out;
-
-      &:hover {
-        filter: brightness(130%);
-        -webkit-filter: brightness(130%);
-        -moz-filter: brightness(130%);
       }
     }
 

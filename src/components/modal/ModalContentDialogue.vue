@@ -7,19 +7,10 @@
           <span v-show="currentTopic.trim().length">{{ currentTopic }}</span>
         </transition>
         <div class="dialogue-answers__edit">
-          <button @click="openClassicView">Classic view</button>
-          <!-- <icon name="list" color="#E1FF00" class="icon_gold" scale="1" @click="openClassicView"></icon> -->
-          <button v-if="!editMode" @click="editMode = true">Edit</button>
-          <button v-else @click="
-            editMode = false;
-            editedEntry = '';
-          ">
-            Cancel
-<!--             <icon name="ban" color="#E1FF00" class="icon_gold" scale="1" @click="
-              editMode = false;
-            editedEntry = '';
-            "></icon> -->
+          <button @click="openClassicView">
+            <TdesignList />
           </button>
+          <!-- <icon name="list" color="#E1FF00" class="icon_gold" scale="1" @click="openClassicView"></icon> -->
         </div>
       </div>
       <div class="dialogue__filtrations" v-if="Object.keys(appliedFiltration).length">
@@ -45,81 +36,17 @@
       </div>
       <div v-else>
         <transition-group name="fadeHeight" class="dialogue-answers__frame" mode="out-in" :style="{ width: '100%' }">
-          <div v-for="answer in currentFilteredAnswers" :key="answer.id" :class="{ 'highlight-even': !editMode }">
-            <div class="dialogue-answers-answer__above" v-if="!editMode"></div>
-            <div class="dialogue-answers-answer__above-add" v-if="editMode">
-              <button class="entry-control-button" @click="addEntry([answer.prev_id, answer.id])">
-                <!-- <icon name="plus" class="entry-control-button__icon" color="#E1FF00" scale="1"></icon> -->
-              </button>
-              <button class="entry-control-button" v-if="Object.keys(getClipboardDialogue).length"
-                @click="pasteDialogueFromClipboard([answer.prev_id, answer.id])">
-                <!-- <icon name="clipboard" class="entry-control-button__icon" color="#E1FF00" scale="1"></icon> -->
-              </button>
-            </div>
-            <form @submit.prevent="editDialogue" class="dialogue-answers-answer-wrapper">
-              <div class="dialogue-answers-answer" :class="{
-                'dialogue-answers-answer_modified': answer.old_values && answer.old_values.length,
-                'dialogue-answers-answer_edit': editMode,
-              }">
-                <div class="dialogue-answers-answer-modified" v-if="answer.old_values && answer.old_values.length > 1">
-                  * Modified in {{ answer.old_values.slice(-2)[0].TMP_dep }}
-<!--                   <span class="dialogue-answers-answer-modified_dirty"
-                    v-if="checkDirtied(answer.old_values.slice(-1)[0], answer)">
-                    (possibly dirtied by CS)
-                  </span> -->
-                </div>
-                <div class="dialogue-answers-answer__ids" v-if="false">
-                  <div class="prev-id">{{ answer.prev_id || '-' }} (before)</div>
-                  <div class="curr-id">id: {{ answer.id }}</div>
-                </div>
-
-                <DialogueEntryFilters :answer :speaker :editMode :topicChoices />
-
-                <div v-if="editedEntry !== answer.id" class="dialogue-answers-answer__text"
-                  v-html="getHyperlinkedAnswer(answer.text)" @click="handleAnswerClick($event)"></div>
-
-                <textarea v-else v-text="answer.text" name="entryText" class="dialogue-entry-textarea"></textarea>
-
-                <div class="dialogue-entry__choices">
-                  <div 
-                    v-for="choice, choiceIndex in topicChoices.filter(val => val.entryId === answer.id)"
-                    :key="choiceIndex"
-                    class="dialogue-entry__choice"
-                    @click="applyFilter({key: 'choice', value: choice.id})"
-                  >
-                    <div class="choice__id">
-                      {{ choice.id }}
-                    </div>
-                    <div class="choice__text">
-                      {{ choice.text }}
-                    </div>
-                  </div>
-                </div>
-
-                <DialogueEntryResults :editMode="editMode" :code="getLanguage(answer.script_text, 'Lua (MWSE)')"
-                  language="Lua (MWSE)" />
-                <DialogueEntryResults :editMode="editMode" :code="getLanguage(answer.script_text, 'MWScript')"
-                  language="MWScript" />
-
-                <div class="dialogue-answers-answer__ids" v-if="false">
-                  <div class="prev-id">{{ answer.id }} (id)</div>
-                  <div class="curr-id">next id: {{ answer.next_id || '-' }}</div>
-                </div>
-              </div>
-<!--               <icon v-if="editMode && editedEntry !== answer.id" name="pen" color="#E1FF00" class="icon_gold"
-                scale="1" @click="editedEntry = answer.id"></icon> -->
-              <div class="entry-edit-controls" v-if="editMode && editedEntry == answer.id">
-                <button type="submit">
-                  <!-- <icon name="save" color="#E1FF00" class="icon_gold" scale="1"></icon> -->
-                </button>
-<!--                 <icon name="copy" color="#E1FF00" class="icon_gold" scale="1" @click.prevent="setClipboard(answer)">
-                </icon> -->
-<!--                 <icon name="ban" color="#E1FF00" class="icon_gold" scale="1" @click.prevent="editedEntry = ''"></icon>
-                <icon name="trash" color="#E1FF00" class="icon_gold" scale="1"
-                  @click.prevent="deleteEntry(answer.id)"></icon> -->
-              </div>
-            </form>
-          </div>
+          <DialogueEntry 
+            v-for="answer in currentFilteredAnswers" 
+            :key="answer.id"
+            :answer
+            :editMode
+            :speaker="props.speaker"
+            :topicChoices
+            :topicsList
+            @setCurrentAnswers="setCurrentAnswers"
+            @applyFilter="applyFilter"
+          />
           <div class="dialogue-answers-answer__above dialogue-answers-answer__above_no-margin" v-if="!editMode"
             :key="'separator'"></div>
           <div class="dialogue-answers-answer__above-add" v-if="editMode" :key="'add-lowest'">
@@ -163,13 +90,13 @@
 
 <script setup lang="ts">
 import { useSelectedSpeaker } from '@/stores/selectedSpeaker';
-import DialogueEntryFilters from '../dialogue/DialogueEntryFilters.vue';
-import DialogueEntryResults from '../dialogue/DialogueEntryResults.vue';
+import DialogueEntry from '@/components/dialogue/DialogueEntry.vue';
 import { fetchTopicListByNPC, getOrderedEntriesByTopic } from '@/api/idb.js';
 import { computed, reactive, ref, toRefs, watch } from 'vue';
 import SVGSpinners90RingWithBg from '~icons/svg-spinners/90-ring-with-bg';
 import { useClassicView, useClassicViewTopic } from '@/stores/classicView';
 import TdesignClose from '~icons/tdesign/close';
+import TdesignList from '~icons/tdesign/list';
 
 const props = defineProps({
   speaker: {
@@ -379,52 +306,7 @@ function getSpeakerData(topicType) {
   return [];
   // return this.$store.getters['getDialogueBySpeaker']([this.speaker.speaker_id, topicType]);
 }
-function getLanguage(code, language) {
-  if (!code) return '';
-  if (language === 'Lua (MWSE)') {
-    return code
-      .split('\r\n')
-      .filter((val) => val.includes(';lua '))
-      .map((val) => val.replace(';lua ', ''))
-      .join('\r\n');
-  } else if (language === 'MWScript') {
-    return code
-      .split('\r\n')
-      .filter((val) => !val.includes(';lua '))
-      .join('\r\n');
-  }
-}
-function checkDirtied(entryOne, entryTwo) {
-  let entryOneNonId = Object.fromEntries(
-    Object.entries(entryOne).filter(
-      ([key]) => !key.includes('_id') && !key.includes('TMP_') && !key.includes('old_values'),
-    ),
-  );
-  let entryTwoNonId = Object.fromEntries(
-    Object.entries(entryTwo).filter(
-      ([key]) => !key.includes('_id') && !key.includes('TMP_') && !key.includes('old_values'),
-    ),
-  );
-  return JSON.stringify(entryOneNonId) === JSON.stringify(entryTwoNonId);
-}
-function handleAnswerClick(e) {
-  if (e.target.className == 'dialogue-answers-answer__text_hyperlink') {
-    setCurrentAnswers(e.target.innerText, 'Topic');
-    currentTopic.value = e.target.innerText;
-  }
-}
-function getHyperlinkedAnswer(text: string) {
-  let hyperlinkedAnswer = text;
-  for (const topic of topicsList.value) {
-    if (hyperlinkedAnswer.includes(topic)) {
-      hyperlinkedAnswer = hyperlinkedAnswer.replace(
-        topic,
-        `<span class="dialogue-answers-answer__text_hyperlink">${topic}</span>`,
-      );
-    }
-  }
-  return hyperlinkedAnswer;
-}
+
 function pasteDialogueFromClipboard(location) {
 /*   let entry = { ...this.getClipboardDialogue, speaker_id: this.speaker.speaker_id };
   this.$store.commit('pasteDialogue', [
@@ -452,21 +334,29 @@ watch(getSpeakerData, (() => {
   ]); */
 }))
 
-const dialogueInfoLoading = ref<boolean>(false);
-watch(currentTopic, (async (newValue) => {
-  if (newValue.trim()) {
-    dialogueInfoLoading.value = true;
+async function fetchTopic(topic, loading=false) {
+  if (topic.trim()) {
+    if (loading) {
+      dialogueInfoLoading.value = true;
+    }
     try {
-      const orderedEntriesResponse = await getOrderedEntriesByTopic(newValue);
+      const orderedEntriesResponse = await getOrderedEntriesByTopic(topic);
       orderedEntries.value = orderedEntriesResponse;
     } catch (error) {
       console.error(error);
     } finally {
-      dialogueInfoLoading.value = false;
+      if (loading) {
+        dialogueInfoLoading.value = false;
+      }
     }
   } else {
     orderedEntries.value = [];
   }
+}
+
+const dialogueInfoLoading = ref<boolean>(false);
+watch(currentTopic, (async (newValue) => {
+  fetchTopic(newValue, true);
 }))
 </script>
 
