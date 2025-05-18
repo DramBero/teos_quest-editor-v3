@@ -1,11 +1,18 @@
 <template>
   <div v-if="code">
     <div class="results" :class="{ results_lua: language === 'Lua (MWSE)' }">
-      <span class="script-language" :class="{ 'script-language_lua': language === 'Lua (MWSE)' }">{{
-        language
-      }}</span>
+      <span 
+        class="script-language" 
+        :class="{ 'script-language_lua': language === 'Lua (MWSE)' }"
+      >
+        {{ language }}
+      </span>
+      <Codemirror
+        v-model:value="code"
+        :options="cmOptions"
+      />
 <!--       <CodeEditor
-        v-model="luaCode"
+        v-model="code"
         :read-only="!editMode"
         :display-language="false"
         :height="'100%'"
@@ -17,7 +24,7 @@
       </CodeEditor> -->
       <!--       <prism-editor
         class="editor-code"
-        v-model="luaCode"
+        v-model="code"
         :readonly="!editMode"
         :wordwrap="false"
         :highlight="language === 'Lua' ? highlighterLua : highlighterBasic"
@@ -30,6 +37,10 @@
 <script setup lang="ts">
 // import hljs from 'highlight.js';
 // import CodeEditor from 'simple-code-editor';
+import Codemirror from "codemirror-editor-vue3";
+import "codemirror/mode/lua/lua.js";
+import "codemirror/theme/dracula.css";
+
 import { onBeforeMount, ref } from 'vue';
 
 const props = defineProps({
@@ -44,10 +55,15 @@ const props = defineProps({
   },
 })
 
-const luaCode = ref<string>('');
+const code = ref<string>('');
+
+const cmOptions = {
+  mode: 'text/x-lua',
+  theme: 'dracula',
+}
 
 onBeforeMount(() => {
-  luaCode.value = props.code || '';
+  code.value = props.code || '';
 })
 
 /*

@@ -1,14 +1,14 @@
 <template>
   <div 
-    class="quest" 
+    class="quest quest_selected" 
     :class="{
       'quest_new': props.questNameData?.is_new && !containsMasterIds,
       'quest_mod': props.questNameData?.is_new && containsMasterIds,
     }"
     ref="quest"
   >
-    <div class="quest-header">
-      <div class="quest-title" @click="emit('selected', props.questNameData)">
+    <div class="quest-header" @click="emit('clearSelected')">
+      <div class="quest-title">
         <div v-if="props.questNameData?.is_new && containsMasterIds" class="quest-status quest-status_mod">
           Mod
         </div>
@@ -16,6 +16,47 @@
           New
         </div>
         {{ props.questNameData.name }}
+      </div>
+    </div>
+    <div 
+      class="quest-content"
+    >
+      <JournalFrameQuestTabs 
+        :quests="getQuestIds"
+        v-model="selectedQuestId"
+      />
+      <div class="quest-entries">
+        <div v-if="questDataLoaded && questData.entries.length">
+          <div>
+            <div name="fadeHeight" mode="out-in" class="entries-list">
+              <div class="entries-list__child" key="TMP_quest-start">
+                <div class="entry-wrapper">
+                  <div
+                    class="quest-entry quest-entry_start"
+                    :class="{ 'quest-entry_highlighted': getIsHighlighted(0) }"
+                  >
+                    <div class="quest-entry__text">Before started</div>
+                  </div>
+                </div>
+              </div>
+              <JournalFrameQuestEntry 
+                v-for="entry in questData.entries
+                .filter((val) => val.data)
+                .sort((a, b) => parseInt(a.data.disposition) - parseInt(b.data.disposition))" 
+                :key="entry.info_id"
+                :entry
+                :questId="props.questNameData?.id"
+                :highlightedId
+                :highlightedComparison
+              />
+            </div>
+            <!-- <div class="add-entry" @click="createEntry">+</div> -->
+          </div>
+        </div>
+
+        <div v-else-if="questDataLoaded" class="no-entries">
+          No entries yet. <a class="link" @click="createEntry">Create?</a>
+        </div>
       </div>
     </div>
   </div>
@@ -37,8 +78,6 @@ const targetIsVisible = useElementVisibility(target)
 const props = defineProps({
   questNameData: Object,
 });
-
-const emit = defineEmits(['selected', 'questLoaded']);
 
 const selectedQuestId = ref('');
 
@@ -69,7 +108,6 @@ const getQuestIds = computed(() => {
   return questIds
 })
 
-const isCollapsed = ref<boolean>(false);
 const highlightedComparison = ref<FilterComparison | ''>('');
 const highlightedId = ref<number | string>('');
 const entryEdit = ref('');
@@ -78,6 +116,8 @@ const questDataLoaded = ref<boolean>(false);
 const questData = ref({
   entries: []
 })
+
+const emit = defineEmits(['questLoaded', 'clearSelected']);
 
 async function loadQuestData(questId: string) {
   try {
@@ -127,11 +167,9 @@ watch(getHighlight, async (newValue) => {
   }
   else if (newValue.id === props.questNameData?.id) {
     await new Promise((resolve) => setTimeout(resolve, 10));
-    isCollapsed.value = true;
     highlightedComparison.value = newValue.comparison;
     highlightedId.value = parseInt(newValue.value.data);
   } else {
-    isCollapsed.value = false;
     highlightedComparison.value = '';
     highlightedId.value = '';
   }
@@ -140,10 +178,6 @@ watch(getHighlight, async (newValue) => {
 function deleteEntry(info_id) {
   entryEdit.value = '';
   // this.$store.commit('deleteJournalEntry', info_id);
-}
-
-function toggleCollapse() {
-  isCollapsed.value = !isCollapsed.value;
 }
 
 function getIsHighlighted(entryId) {
@@ -165,15 +199,6 @@ function getIsHighlighted(entryId) {
     default:
       return false;
   }
-}
-
-function createEntry() {
-  isCollapsed.value = true;
-/*   this.$store.commit('addJournalEntry', [
-    this.quest.id,
-    'New entry',
-    this.getLatestDisposition,
-  ]); */
 }
 </script>
 

@@ -633,10 +633,21 @@ export const importPlugin = async function (pluginData, pluginName, isActive) {
   for (let index in pluginData) {
     let dialogueEntry;
     if (['DialogueInfo', 'Dialogue'].includes(pluginData[index].type)) {
+      let TMP_quest_name = '';
       if (pluginData[index].type === 'Dialogue') {
         dialogueType = pluginData[index].dialogue_type;
         if (pluginData[index].id) {
           dialogueId = pluginData[index].id;
+          if (dialogueType === 'Journal') {
+            function getQuestNameByQuestId() {
+              if (pluginData[parseInt(index) + 1]?.quest_state === 'Name') {
+                return pluginData[parseInt(index) + 1]?.text || '';
+              } else {
+                return '';
+              }
+            }
+            TMP_quest_name = getQuestNameByQuestId(pluginData[index].id);
+          }
         }
       }
 
@@ -657,6 +668,7 @@ export const importPlugin = async function (pluginData, pluginName, isActive) {
         TMP_dep: pluginName,
         TMP_is_active: isActive,
         TMP_index: parseInt(index),
+        TMP_quest_name,
       };
     } else {
       dialogueEntry = {
@@ -676,6 +688,7 @@ export const importPlugin = async function (pluginData, pluginName, isActive) {
         TMP_dep: pluginName,
         TMP_is_active: isActive,
         TMP_index: parseInt(index),
+        TMP_quest_name: '',
       };
     }
     entries.push(dialogueEntry);

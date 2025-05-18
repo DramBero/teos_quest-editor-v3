@@ -151,7 +151,7 @@
 <script setup lang="ts">
 </script>
 
-<style lang="scss">
+<style lang="scss" scoped>
 .header-content {
   padding: 15px;
   display: flex;
@@ -232,18 +232,6 @@
     width: 100%;
     //top: 10px;
   }
-}
-.quests {
-  display: flex;
-  height: 100%;
-  width: 100%;
-  overflow-y: scroll;
-  overflow-x: hidden;
-  flex-grow: 1;
-  padding: 10px 15px 10px 10px;
-  gap: 5px;
-  flex-direction: column;
-  align-items: center;
 }
 .add-quest {
   cursor: pointer;

@@ -220,4 +220,15 @@ input::-webkit-inner-spin-button {
   --mx-menu-open-backgroud: rgb(235, 218, 184);
   --mx-menu-open-hover-backgroud: rgb(235, 218, 184);
 }
+
+.text-input {
+  font-family: 'Pelagiad';
+  font-size: 18px;
+  padding: 7px 10px;
+  outline: none;
+  background: rgba(0, 0, 0, 0.65);
+  color: rgba(255, 255, 255, 0.7);
+  border: none;
+  border-radius: 4px;
+}
 </style>

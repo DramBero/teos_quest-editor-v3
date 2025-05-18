@@ -132,7 +132,6 @@ watch(() => props.answer, (newValue) => {
 })
 
 watchDebounced(answerText, (newValue) => {
-  console.log('change')
   editTopicText(props.answer.TMP_info_id, newValue)
 }, {
   debounce: 500,

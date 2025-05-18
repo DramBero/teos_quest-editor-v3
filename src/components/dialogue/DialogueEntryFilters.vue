@@ -167,7 +167,7 @@
       <span class="filter__function">New filter...</span>
     </div>
 
-    <button type="button" @click.prevent="handleAddFilter">
+    <button class="filter__add" type="button" @click.prevent="handleAddFilter">
       <TdesignAddCircle />
     </button>
 
@@ -577,6 +577,20 @@ function removeTempFilter() {
     transition: all 0.2s ease-out;
     &:hover {
       fill: rgba(0, 0, 0, 0.5);
+    }
+  }
+  &__add {
+    display: flex;
+    align-items: center;
+    margin-left: 7px;
+    svg {
+      width: 26px;
+      height: 26px;
+    }
+    &:hover {
+      svg {
+        color: white;
+      }
     }
   }
   &-wrapper {
