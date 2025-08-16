@@ -32,21 +32,23 @@
         </div>
         <div class="container-entries" v-else>
           <table border="0" cellspacing="0" cellpadding="0" v-if="dialogueList.length">
-            <tr class="container-entries__header">
-              <th></th>
-              <th>Text</th>
-              <th>
-                {{ dialogueList[0] && dialogueList[0].TMP_type === 'Journal' ? 'Index' : 'Disp' }}
-              </th>
-              <th v-if="dialogueList[0] && dialogueList[0].TMP_type !== 'Journal'">Speaker ID</th>
-              <th v-if="dialogueList[0] && dialogueList[0].TMP_type !== 'Journal'">
-                Speaker Faction
-              </th>
-              <th v-if="dialogueList[0] && dialogueList[0].TMP_type !== 'Journal'">Speaker Cell</th>
-              <th v-for="v in dialogueList[0] && dialogueList[0].TMP_type !== 'Journal' ? 6 : 0" :key="v">
-                Filter {{ v }}
-              </th>
-            </tr>
+            <thead>
+              <tr class="container-entries__header">
+                <th></th>
+                <th>Text</th>
+                <th>
+                  {{ dialogueList[0] && dialogueList[0].TMP_type === 'Journal' ? 'Index' : 'Disp' }}
+                </th>
+                <th v-if="dialogueList[0] && dialogueList[0].TMP_type !== 'Journal'">Speaker ID</th>
+                <th v-if="dialogueList[0] && dialogueList[0].TMP_type !== 'Journal'">
+                  Speaker Faction
+                </th>
+                <th v-if="dialogueList[0] && dialogueList[0].TMP_type !== 'Journal'">Speaker Cell</th>
+                <th v-for="v in dialogueList[0] && dialogueList[0].TMP_type !== 'Journal' ? 6 : 0" :key="v">
+                  Filter {{ v }}
+                </th>
+              </tr>
+            </thead>
             <!-- is:draggable -->
 <!--             <transition-group tag="tbody" :list="rows" :name="!drag ? 'flip-list' : null"
               :handle="'.container-entries__grip'" @start="drag = true" @end="drag = false" @change="handleReorder"

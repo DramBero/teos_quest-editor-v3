@@ -6,69 +6,51 @@
     @dragleave="handleDragLeave"
     @drop="handleDrop"
   >
-    <div
-      class="dialogue-filters__filter dialogue-filters__filter_speaker"
+    <template
       v-for="speakerType in !onlyFilters ? getOtherSpeakers : []"
       :key="speakerType.value + speakerType.type"
-      tabindex="0"
     >
-      <span class="filter__if">if </span>
-      <span class="filter__function">{{ speakerType.type }} </span>
-      <span class="filter__comparison">== </span>
-      <span class="filter__value">{{ speakerType.value }}</span>
-      <span>
-<!--         <icon
-          v-if="editMode"
-          @click.stop="
-            editFilter(
-              {
-                comparison: 'Equal',
-                filter_type: speakerType.type,
-                value: {
-                  Integer: speakerType.value,
-                },
-              },
-              speakerType.type,
-            )
-          "
-          name="pen"
-          class="filter__edit"
-          scale="1"
-        ></icon> -->
-      </span>
-    </div>
+      <div
+        class="dialogue-filters__filter dialogue-filters__filter_speaker"
+        tabindex="0"
+      >
+        <span class="filter__if">if </span>
+        <span class="filter__function">{{ speakerType.type }} </span>
+        <span class="filter__comparison">== </span>
+        <span class="filter__value">{{ speakerType.value }}</span>
+      </div>
+      <button 
+        class="filter-delete" 
+        @click.stop="handleDeleteFilter(filter.index)" 
+        aria-label="Delete filter"
+        label="Delete filter"
+      >
+        <TdesignClose />
+      </button>
+    </template>
 
-    <div
-      class="dialogue-filters__filter dialogue-filters__filter_disp"
+    <template
       v-if="!onlyFilters && answer.data.disposition > 0"
       key="disposition"
-      tabindex="0"
     >
-      <span class="filter__if">if </span>
-      <span class="filter__function">Disposition </span>
-      <span class="filter__comparison">> </span>
-      <span class="filter__value">{{ answer.data.disposition }}</span>
-      <span>
-<!--         <icon
-          v-if="editMode"
-          @click.stop="
-            editFilter(
-              {
-                comparison: 'Greater',
-                filter_type: 'Disposition',
-                value: {
-                  Integer: speakerType.value,
-                },
-              },
-              'Disposition',
-            )
-          "
-          name="pen"
-          class="filter__edit"
-          scale="1"
-        ></icon> -->
-      </span>
-    </div>
+      <div
+        class="dialogue-filters__filter dialogue-filters__filter_disp"
+        tabindex="0"
+      >
+        <span class="filter__if">if </span>
+        <span class="filter__function">Disposition </span>
+        <span class="filter__comparison">> </span>
+        <span class="filter__value">{{ answer.data.disposition }}</span>
+      </div>
+      <button 
+        class="filter-delete" 
+        @click.stop="handleDeleteFilter(filter.index)" 
+        aria-label="Delete filter"
+        label="Delete filter"
+      >
+        <TdesignClose />
+      </button>
+    </template>
 
     <div class="filter-wrapper" v-for="(filter, index) in getFiltersByInfoId" :key="index">
       <div 
@@ -100,15 +82,6 @@
         <span class="filter__id">{{ filter.id }} </span>
         <span class="filter__comparison">{{ parseComparison(filter.comparison) }} </span>
         <span class="filter__value">{{ filter.value.data }}</span>
-        <span>
-<!--           <icon
-            v-if="editMode"
-            @click.stop="editFilter(filter, index)"
-            name="pen"
-            class="filter__edit"
-            scale="1"
-          ></icon> -->
-        </span>
       </div>
       <button 
         class="filter-delete" 
@@ -117,7 +90,6 @@
         label="Delete filter"
       >
         <TdesignClose />
-        <!-- <icon v-if="editMode" name="times" class="filter-delete__icon" scale="0.8"></icon> -->
       </button>
     </div>
 

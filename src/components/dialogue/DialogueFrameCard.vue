@@ -18,6 +18,8 @@
       <img
         v-else
         :src="canvasImage"
+        :alt="speakerData?.name || speakerId"
+        :style="{'width': '160px', 'height': '160px'}"
       >
     </div>
     <template v-else-if="!redrawTrigger && loaded && getNpcFace">
@@ -93,21 +95,24 @@ async function handleLoaded() {
         canvasLoaded.value = true;
       }
     }
-    await new Promise((resolve) => setTimeout(resolve, 5));
+    await new Promise((resolve) => setTimeout(resolve, 150));
     iteration += 1;
   }
 }
 
 watch(redrawCounter, async () => {
+  if ((canvasImage.value?.length || 0) >= 1000) {
+    return
+  }
   redrawTrigger.value = true;
-  await new Promise((resolve) => setTimeout(resolve, 5));
+  await new Promise((resolve) => setTimeout(resolve, 150));
   redrawTrigger.value = false;
 })
 
 async function redrawWatcher() {
   if (!getFaceData.value) return;
   while ((canvasImage.value?.length || 0) < 1000) {
-    await new Promise((resolve) => setTimeout(resolve, 2000));
+    await new Promise((resolve) => setTimeout(resolve, 2500));
     redrawCounter.value += 1;
   }
 }
@@ -329,7 +334,7 @@ function openDialogueModal() {
   align-items: center;
   //gap: 10px;
   &:hover {
-    background: rgb(202, 165, 96);
+    background: rgba(202, 165, 96, 0.8);
     color: black;
     .dialogue-card__decoration {
       background: rgb(53, 44, 27);

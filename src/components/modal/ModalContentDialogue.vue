@@ -224,8 +224,8 @@ function transformChoiceStringToObjects(input: string, entryId: string) {
 const topicChoices = computed(() => {
   const choices = [];
   for (const answer of currentAnswers.value) {
-    if (answer.script_text?.includes('Choice ')) {
-      const regex = /Choice\s+(.*?)(?:\\n|$)/g;
+    if (/choice\s+/i.test(answer.script_text)) {
+      const regex = /choice\s+(.*?)(?:\\n|$)/gi;
       let match;
 
       const scriptStrings = answer.script_text.split('\r\n');

@@ -1,6 +1,6 @@
 <template>
   <div 
-    :id="props.questId + props.entry.data.disposition" class="entries-list__child">
+    :id="`${props.entry.TMP_topic}-${props.entry.data.disposition}`" class="entries-list__child">
     <div class="entry-wrapper">
       <div class="quest-entry" :class="{
         'quest-entry_finished': props.entry.quest_state === 'Finished',
@@ -14,6 +14,12 @@
         </div>
       </div>
     </div>
+    <button class="quest-entry__add quest-entry__add_top">
+      <TdesignAdd />
+    </button>
+    <button class="quest-entry__add quest-entry__add_bottom">
+      <TdesignAdd />
+    </button>
   </div>
 </template>
 
@@ -21,6 +27,7 @@
 import { useEditor, EditorContent } from '@tiptap/vue-3';
 import StarterKit from '@tiptap/starter-kit';
 import { ref, watch } from 'vue';
+import TdesignAdd from '~icons/tdesign/add';
 
 import { editTopicText } from '@/api/idb.js';
 import { watchDebounced } from '@vueuse/core';
@@ -64,7 +71,7 @@ const editor = useEditor({
   extensions: [
     StarterKit,
   ],
-  onUpdate: () => entryText.value = editor.value.getHTML(),
+  onUpdate: () => entryText.value = editor.value ? editor.value.getHTML() : '',
 })
 
 function startDrag(event, entry) {

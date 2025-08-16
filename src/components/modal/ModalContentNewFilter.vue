@@ -743,7 +743,7 @@ Creature Target
   margin-bottom: 20px;
 }
 .frame-upload {
-  //padding: 10px;
+  padding: 10px;
   margin: 2px;
   height: 100%;
   overflow-y: scroll;

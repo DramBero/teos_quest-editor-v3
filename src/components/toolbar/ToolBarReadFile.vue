@@ -162,13 +162,6 @@ input[type='file'] {
   display: none;
 }
 .text-reader {
-  &__wrapper {
-    display: flex;
-    gap: 15px;
-    align-items: center;
-    flex-direction: row-reverse;
-    justify-content: space-between;
-  }
   cursor: pointer;
   background: rgba(0, 0, 0, 0.65);
   color: rgb(202, 165, 96);
@@ -184,6 +177,13 @@ input[type='file'] {
     .add-quest__button {
       fill: white;
     }
+  }
+  &__wrapper {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+    flex-direction: row-reverse;
+    justify-content: space-between;
   }
   &__button {
     transition: all 0.1s ease-in;

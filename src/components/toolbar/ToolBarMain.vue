@@ -11,7 +11,7 @@
         </div>
         <div class="header-controls__info"></div>
       </div>
-      <div class="file-controls">
+      <div class="file-controls" v-if="false">
         <button class="open-btn">
           Header
         </button>

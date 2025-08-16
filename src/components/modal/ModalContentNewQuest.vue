@@ -24,10 +24,6 @@
         </label>
         <button type="submit" class="modal-button">Create</button>
       </form>
-      <div class="modal-tip">
-        Tip: to create a new journal line inside the same quest - just set the name same as the
-        previous line and change the ID.
-      </div>
     </div>
   </div>
 </template>
@@ -35,6 +31,7 @@
 <script setup lang="ts">
 import { usePrimaryModal } from '@/stores/modals';
 import { ref } from 'vue';
+import { addJournalQuest } from '@/api/idb.js';
 
 const nameError = ref<string>('');
 const idError = ref<string>('');
@@ -42,9 +39,14 @@ const inputName = ref<string>('');
 const inputId = ref<string>('');
 
 const primaryModalStore = usePrimaryModal();
-function createQuest() {
+async function createQuest() {
+  try {
+    await addJournalQuest(inputId.value, inputName.value)
+    primaryModalStore.setActiveModal('');
+  } catch (error) {
+    console.error(error);
+  }
   //       this.$store.commit('addJournalQuest', [this.inputId, this.inputName]);
-  primaryModalStore.setActiveModal('');
 }
 </script>
 
@@ -57,7 +59,7 @@ function createQuest() {
 }
 
 .frame-upload {
-  //padding: 10px;
+  padding: 10px;
   margin: 2px;
   height: 100%;
   overflow-y: scroll;

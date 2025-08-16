@@ -1,35 +1,55 @@
 <template>
   <div class="journal-frame">
-    <div class="journal-frame__header" v-if="true">
+    <div class="journal-frame__header">
       <div class="frame-title">Journal</div>
-      <div class="journal-frame__controls">
-<!--         <button class="add-quest" @click="addQuest()">
-          New <icon name="plus-circle" class="add-quest__button" scale="1"></icon>
-        </button> -->
+      <div class="journal-frame__controls" v-if="!selectedQuestName">
         <input 
           class="text-input"
           type="text" 
           v-model.trim="questSearch" 
           placeholder="Find quest"
         >
+        <div class="controls">
+          <button 
+            class="add-quest" 
+            :class="{'add-quest_active': showMasters}"
+            @click="toggleMasters"
+          >
+            M
+          </button>
+          <button class="add-quest" @click="addQuest()">
+            <TdesignAdd />
+            Add
+          </button>
+        </div>
+      </div>
+      <div v-else class="journal-frame__controls">
+        <div class="controls">
+          <button 
+            class="add-quest" 
+            :class="{'add-quest_active': showMasters}"
+            @click="selectedQuestName = null"
+          >
+            Back
+          </button>
+        </div>
       </div>
     </div>
-    <div v-if="questList.length" v-bind="containerProps">
+    <div v-if="questList.length && !selectedQuestName" v-bind="containerProps">
       <div v-bind="wrapperProps" class="quests">
         <JournalFrameQuest 
-          v-for="questNameData in list"
+          v-for="questNameData in getQuestNameList"
           :key="questNameData.data.name || 0 + `index${questNameData.index}`"
           :questNameData="questNameData.data"
           @selected="handleQuestNameSelect"
         />
       </div>
     </div>
-    <div v-if="selectedQuestName">
-      <JournalFrameQuestExpanded 
-        :questNameData="selectedQuestName"
-        @clearSelected="selectedQuestName = null"
-      />
-    </div>
+    <JournalFrameQuestExpanded 
+      v-else-if="selectedQuestName"
+      :questNameData="selectedQuestName"
+      @update="fetchQuests"
+    />
   </div>
 </template>
 
@@ -41,6 +61,7 @@ import JournalFrameQuest from './JournalFrameQuest.vue';
 import { useJournalHighlight } from '@/stores/journalHighlights';
 import { useVirtualList, watchDebounced } from '@vueuse/core';
 import JournalFrameQuestExpanded from './JournalFrameQuestExpanded.vue';
+import TdesignAdd from '~icons/tdesign/add';
 
 const primaryModalStore = usePrimaryModal();
 function addQuest() {
@@ -48,6 +69,11 @@ function addQuest() {
 };
 
 const questSearch = ref('');
+
+const showMasters = ref(false);
+function toggleMasters() {
+  showMasters.value = !showMasters.value;
+}
 
 const getJournal = ref([]);
 
@@ -87,6 +113,14 @@ const questNames = computed(() => {
 
 const { list, containerProps, wrapperProps } = useVirtualList(questNames, { itemHeight: 85 });
 
+const getQuestNameList = computed(() => {
+  if (showMasters.value) {
+    return list.value;
+  } else {
+    return list.value.filter(val => val.data.is_new);
+  }
+})
+
 watchDebounced(questSearch, () => {
   handleSearch();
 }, {
@@ -96,11 +130,15 @@ watchDebounced(questSearch, () => {
 
 watch(getJournal, handleSearch);
 
-onMounted(async () => {
+async function fetchQuests() {
   const journalResponse = await fetchAllQuestIDs(true);
   if (journalResponse?.length) {
     getJournal.value = journalResponse;
   }
+}
+
+onMounted(async () => {
+  fetchQuests();
 })
 
 
@@ -183,7 +221,7 @@ export default {
     padding: 10px;
     display: flex;
     gap: 15px;
-
+    justify-content: space-between;
     //display: flex;
     width: 100%;
     //top: 10px;
@@ -215,13 +253,14 @@ export default {
   position: relative;
   background-color: rgb(207, 191, 159);
   &_selected {
-    position: absolute;
+    //position: absolute;
     top: 0;
     height: 100%;
     overflow-y: scroll;
     z-index: 10;
     margin: 0;
     border-radius: 0;
+    flex-grow: 1;
   }
   &-header {
     position: sticky;
@@ -256,6 +295,12 @@ export default {
     gap: 7px;
     &:hover {
       color: rgb(180, 80, 60);
+    }
+    &_expanded {
+      &:hover {
+        color: rgb(150, 50, 30);
+        cursor: default;
+      }
     }
   }
   &-content {
@@ -325,6 +370,16 @@ export default {
         rgb(233, 203, 72) 24px
       );
     }
+    &__add {
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      display: none;
+      &_bottom {
+        top: 100%;
+      }
+    }
     &__text {
       flex-grow: 1;
       padding: 15px;
@@ -379,5 +434,10 @@ export default {
 .fadeHeight-enter,
 .fadeHeight-leave-to {
   opacity: 0%;
+}
+
+.controls {
+  display: flex;
+  gap: 10px;
 }
 </style>

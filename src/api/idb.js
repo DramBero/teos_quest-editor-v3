@@ -708,3 +708,97 @@ export const importPlugin = async function (pluginData, pluginName, isActive) {
 
   return databases[isActive ? 'activePlugin' : pluginName];
 };
+
+const genericTmp = {
+  TMP_dep: undefined,
+  TMP_id: undefined,
+  TMP_index: undefined,
+  TMP_info_id: undefined,
+  TMP_is_active: true,
+  TMP_next_id: undefined,
+  TMP_prev_id: undefined,
+  TMP_quest_name: undefined,
+  TMP_speaker_cell: undefined,
+  TMP_speaker_class: undefined,
+  TMP_speaker_faction: undefined,
+  TMP_speaker_id: undefined,
+  TMP_speaker_race: undefined,
+  TMP_topic: undefined,
+  TMP_type: undefined,
+}
+
+export async function addEntry(entry) {
+  try {
+    const header = await getActiveHeader();
+    const index = header.num_objects + 1;
+    const pluginName = header.TMP_dep;
+    const newEntry = {
+      ...genericTmp,
+      ...entry,
+      TMP_index: index,
+      TMP_dep: pluginName,
+    }
+    const activePlugin = databases['activePlugin'];
+    await activePlugin.pluginData.add(newEntry);
+    await activePlugin.pluginData
+      .where('type')
+      .equals('Header')
+      .modify({
+        num_objects: index,
+      });
+  } catch (error) {
+    throw error;
+  }
+}
+
+export async function addJournalQuest(id, name) {
+  let generatedId =
+    Math.random().toString().slice(2, 15) +
+    Math.random().toString().slice(2, 9);
+  let idEntry = {
+    type: "Dialogue",
+    flags: "",
+    id: id,
+    dialogue_type: "Journal",
+    TMP_topic: id,
+    TMP_type: "Journal",
+    TMP_id: id,
+    TMP_quest_name: name,
+    TMP_info_id: id,
+  };
+  let nameEntry = {
+    type: "Info",
+    flags: "",
+    info_id: generatedId,
+    prev_id: "",
+    next_id: "",
+    id: generatedId,
+    data: {
+      dialogue_type: "Journal",
+      disposition: 0,
+      speaker_race: -1,
+      speaker_sex: "Any",
+      player_rank: -1
+    },
+    text: name,
+    player_faction: "",
+    quest_state: "Name",
+    script_text: "",
+    sound_path: "",
+    speaker_cell: "",
+    speaker_class: "",
+    speaker_faction: "",
+    speaker_id: "",
+    speaker_race: "",
+    filters: [],
+    TMP_topic: id,
+    TMP_type: "Journal",
+  };
+  try {
+    await addEntry(idEntry);
+    await addEntry(nameEntry);
+  } catch (error) {
+    console.error(error);
+    throw error;
+  }
+};

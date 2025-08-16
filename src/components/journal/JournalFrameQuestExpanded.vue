@@ -1,14 +1,14 @@
 <template>
   <div 
     class="quest quest_selected" 
-    :class="{
-      'quest_new': props.questNameData?.is_new && !containsMasterIds,
-      'quest_mod': props.questNameData?.is_new && containsMasterIds,
-    }"
     ref="quest"
   >
-    <div class="quest-header" @click="emit('clearSelected')">
-      <div class="quest-title">
+<!--       :class="{
+      'quest_new': props.questNameData?.is_new && !containsMasterIds,
+      'quest_mod': props.questNameData?.is_new && containsMasterIds,
+    }" -->
+    <div class="quest-header">
+      <div class="quest-title quest-title_expanded">
         <div v-if="props.questNameData?.is_new && containsMasterIds" class="quest-status quest-status_mod">
           Mod
         </div>
@@ -23,7 +23,9 @@
     >
       <JournalFrameQuestTabs 
         :quests="getQuestIds"
+        :questName="props.questNameData.name"
         v-model="selectedQuestId"
+        @update="update"
       />
       <div class="quest-entries">
         <div v-if="questDataLoaded && questData.entries.length">
@@ -49,6 +51,16 @@
                 :highlightedId
                 :highlightedComparison
               />
+              <div class="entries-list__child" key="TMP_quest-start">
+                <div class="entry-wrapper">
+                  <div
+                    class="quest-entry quest-entry_start"
+                    :class="{ 'quest-entry_highlighted': getIsHighlighted(0) }"
+                  >
+                    <div class="quest-entry__text">End</div>
+                  </div>
+                </div>
+              </div>
             </div>
             <!-- <div class="add-entry" @click="createEntry">+</div> -->
           </div>
@@ -80,6 +92,13 @@ const props = defineProps({
 });
 
 const selectedQuestId = ref('');
+
+const emit = defineEmits(['questLoaded', 'update']);
+
+function update() {
+  emit('update');
+  selectedQuestId.value = 'New_Quest';
+}
 
 onMounted(() => {
   if (props.questNameData.quests?.length) {
@@ -116,8 +135,6 @@ const questDataLoaded = ref<boolean>(false);
 const questData = ref({
   entries: []
 })
-
-const emit = defineEmits(['questLoaded', 'clearSelected']);
 
 async function loadQuestData(questId: string) {
   try {
@@ -284,7 +301,6 @@ input[type='reset'] {
   width: 100%;
   display: flex;
   flex-direction: column;
-  gap: 1px;
   &__child {
     &:first-child {
       .quest-entry {

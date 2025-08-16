@@ -259,8 +259,13 @@ input[type='reset'] {
   width: 100%;
   display: flex;
   flex-direction: column;
-  gap: 1px;
   &__child {
+    position: relative;
+    &:hover {
+      .quest-entry__add {
+        display: block;
+      }
+    }
     &:first-child {
       .quest-entry {
         border-radius: 8px 8px 0 0;
