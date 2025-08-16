@@ -28,3 +28,6 @@ Stack: Vue3 (Composition API + TS), Pinia, Tauri, TresJS (ThreeJS), Dexie (for I
 
 Uses Greatness7 TES3 WASM module.
 Uses the Pelagiad font, as well as some assets from mods like Caleb's faces and Facelift.
+
+### License
+This project is licensed under the GNU General Public License v3. See the LICENSE file for details.
