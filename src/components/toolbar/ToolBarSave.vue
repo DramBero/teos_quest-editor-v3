@@ -1,47 +1,38 @@
 <template>
-  <a :href="getDownloadLink" :download="getPluginTitle + '.json'" class="open-btn">
-    <icon name="save" scale="1.3"></icon>
-  </a>
+  <button class="open-btn" @click="savePlugin">
+    <GameIconsSave />
+  </button>
 </template>
 
-<script>
-import Icon from 'vue-awesome/components/Icon';
-import 'vue-awesome/icons';
-export default {
-  components: {
-    Icon,
-  },
-  computed: {
-    getPluginTitle() {
-      return this.$store.getters['getActivePluginTitle'];
-    },
-    getPluginData() {
-      return (
-        this.$store.getters['getActivePlugin'] &&
-        this.$store.getters['getActivePlugin'].map((val) =>
-          Object.fromEntries(
-            Object.entries(val).filter(
-              ([key]) =>
-                !key.includes('TMP_topic') &&
-                !key.includes('TMP_type') &&
-                !key.includes('old_values'),
-            ),
-          ),
-        )
-      );
-    },
-    getDownloadLink() {
-      return (
-        'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(this.getPluginData))
-      );
-    },
-  },
-  methods: {
-    testPlugin() {
-      //console.log(this.getPluginData)
-    },
-  },
-};
+<script setup lang="ts">
+import { usePrimaryModal } from '@/stores/modals';
+import { pluginToJSON } from '@/api/idb.js';
+import { save_objects } from '@/tes3_wasm/tes3_wasm.js';
+import GameIconsSave from '~icons/game-icons/save';
+import { computed } from 'vue';
+import { usePluginHeader } from '@/stores/pluginHeader';
+
+const pluginHeaderStore = usePluginHeader();
+const getTitle = computed<string>(() => pluginHeaderStore.getPluginHeader?.TMP_dep || '');
+
+async function savePlugin() {
+  try {
+    const plugin = await pluginToJSON();
+    const file = save_objects(plugin);
+
+    const blob = new Blob([file], { type: 'application/octet-stream' });
+
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = getTitle.value;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(link.href);
+  } catch (error) {
+    console.error(error);
+  }
+}
 </script>
 
 <style lang="scss">
@@ -52,8 +43,8 @@ export default {
   align-items: center;
   padding: 10px 15px;
   height: 100%;
-  margin-left: 2px;
   background-color: rgba(255, 255, 255, 0.2);
+
   &:hover {
     background-color: rgba(255, 255, 255, 0.3);
   }

@@ -350,6 +350,11 @@ export default {
       transparent 12px,
       transparent 24px
     );
+    border-bottom: 2px dashed rgba(0, 0, 0, 0.1);
+    border-left: 5px solid transparent;
+    &_new {
+      border-left: 5px solid rgba(89, 170, 106, 0.7);
+    }
     &_start {
       text-align: center;
       min-height: 10px;
@@ -376,8 +381,20 @@ export default {
       left: 50%;
       transform: translate(-50%, -50%);
       display: none;
+      width: 100%;
+      background-color: rgba(0, 0, 0, 0.05);
+      padding: 3px;
+      align-items: center;
+      justify-content: center;
+      transition: background-color .1s ease-in;
+      &:hover {
+        background-color: rgba(0, 0, 0, 0.1);
+      }
       &_bottom {
         top: 100%;
+      }
+      svg {
+        color: rgb(49, 44, 28);
       }
     }
     &__text {

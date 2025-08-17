@@ -42,11 +42,13 @@
                 </div>
               </div>
               <JournalFrameQuestEntry 
-                v-for="entry in questData.entries
+                v-for="entry, entryIndex in questData.entries
                 .filter((val) => val.data)
                 .sort((a, b) => parseInt(a.data.disposition) - parseInt(b.data.disposition))" 
                 :key="entry.info_id"
                 :entry
+                :prevEntry="questData.entries[entryIndex - 1]"
+                :nextEntry="questData.entries[entryIndex + 1]"
                 :questId="props.questNameData?.id"
                 :highlightedId
                 :highlightedComparison
@@ -76,28 +78,37 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref, useTemplateRef, watch } from 'vue';
-import { fetchQuestByID } from '@/api/idb.js'; 
+import { addQuestEntry } from '@/api/idb.js'; 
 import type { FilterComparison } from '@/types/pluginEntries.ts';
 import { useJournalHighlight } from '@/stores/journalHighlights';
 import JournalFrameQuestEntry from './JournalFrameQuestEntry.vue';
 import JournalFrameQuestTabs from './JournalFrameQuestTabs.vue';
-
+import { useSelectedQuest } from '@/stores/selectedQuest';
 import { useElementVisibility } from '@vueuse/core'
 
-const target = useTemplateRef<HTMLDivElement>('quest')
-const targetIsVisible = useElementVisibility(target)
+const target = useTemplateRef<HTMLDivElement>('quest');
+const targetIsVisible = useElementVisibility(target);
+
+const selectedQuestId = ref('');
+
+async function createEntry() {
+  const questId = selectedQuestId.value;
+  if (!questId) return;
+  await addQuestEntry(questId, 'New entry');
+  await selectedQuestStore.fetchQuest(questId);
+}
+
+const selectedQuestStore = useSelectedQuest();
 
 const props = defineProps({
   questNameData: Object,
 });
 
-const selectedQuestId = ref('');
+const emit = defineEmits(['update']);
 
-const emit = defineEmits(['questLoaded', 'update']);
-
-function update() {
+function update(questId: string) {
   emit('update');
-  selectedQuestId.value = 'New_Quest';
+  selectedQuestId.value = questId;
 }
 
 onMounted(() => {
@@ -131,21 +142,13 @@ const highlightedComparison = ref<FilterComparison | ''>('');
 const highlightedId = ref<number | string>('');
 const entryEdit = ref('');
 
-const questDataLoaded = ref<boolean>(false);
-const questData = ref({
-  entries: []
-})
+const questDataLoaded = computed(() => selectedQuestStore.getSelectedQuestLoaded);
+
+const questData = computed(() => selectedQuestStore.getSelectedQuest);
 
 async function loadQuestData(questId: string) {
   try {
-    questDataLoaded.value = false;
-    const questResponse = await fetchQuestByID(questId);
-    questData.value = {
-      entries: [],
-    }
-    questData.value = questResponse;
-    emit('questLoaded', {name: questData.value?.name, id: [questId]});
-    questDataLoaded.value = true;
+    await selectedQuestStore.fetchQuest(questId);
   } catch(error) {
     console.error(error);
   }

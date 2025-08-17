@@ -3,7 +3,7 @@
     <div class="toolbar">
       <div class="file-controls">
         <ToolBarOpen />
-        <!-- <ToolBarSave v-if="getTitle"/> -->
+        <ToolBarSave v-if="getTitle"/>
       </div>
       <div class="header-controls" v-if="getTitle">
         <div class="header-controls__title">
@@ -27,6 +27,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import ToolBarOpen from './ToolBarOpen.vue';
+import ToolBarSave from './ToolBarSave.vue';
 import { usePluginHeader } from '@/stores/pluginHeader';
 
 const pluginHeaderStore = usePluginHeader();

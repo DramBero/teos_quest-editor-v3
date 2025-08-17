@@ -25,6 +25,22 @@ export const checkDB = async function (name) {
   return Boolean(databases[name]);
 }
 
+const TMPfields = [
+  'TMP_index',
+  'TMP_is_active',
+  'TMP_topic',
+  'TMP_type',
+  'TMP_info_id',
+  'TMP_prev_id',
+  'TMP_next_id',
+  'TMP_speaker_id',
+  'TMP_speaker_cell',
+  'TMP_speaker_faction',
+  'TMP_speaker_class',
+  'TMP_speaker_race',
+  'TMP_id',
+]
+
 export const initPlugin = async function (pluginName) {
   createDB(pluginName);
   let activePlugin = getDB(pluginName);
@@ -567,7 +583,6 @@ export const getOrderedEntriesByTopic = async function (topicId) {
   if (!topicId) return [];
 
   let pluginDialogue = await getAllDialogue(topicId);
-
   if (!pluginDialogue.flat(1).length) return [];
 
   let dependencies = await getDependencies();
@@ -613,6 +628,23 @@ export const getOrderedEntriesByTopic = async function (topicId) {
   }
   return orderedDialogue;
 };
+
+export const pluginToJSON = async function () {
+  try {
+    const activePlugin = await databases['activePlugin'].pluginData.toArray();
+    for (let entry of activePlugin) {
+      for (let key of Object.keys(entry)) {
+        if (key.startsWith('TMP_')) {
+          delete entry[key];
+        }
+      }
+    }
+    return activePlugin;
+    return JSON.stringify(activePlugin);
+  } catch (error) {
+    console.error(error);
+  }
+}
 
 export const importPlugin = async function (pluginData, pluginName, isActive) {
   let dialogueType;
@@ -727,16 +759,22 @@ const genericTmp = {
   TMP_type: undefined,
 }
 
-export async function addEntry(entry) {
+export async function addEntry(entry, locationIndex) {
+  console.log(entry, locationIndex)
   try {
     const header = await getActiveHeader();
-    const index = header.num_objects + 1;
+    if (locationIndex) {
+      await shiftIndexes(locationIndex);
+    }
+    const index = locationIndex || header.num_objects + 1;
+    console.log('index', index)
     const pluginName = header.TMP_dep;
     const newEntry = {
       ...genericTmp,
       ...entry,
       TMP_index: index,
       TMP_dep: pluginName,
+      TMP_is_active: true,
     }
     const activePlugin = databases['activePlugin'];
     await activePlugin.pluginData.add(newEntry);
@@ -744,7 +782,7 @@ export async function addEntry(entry) {
       .where('type')
       .equals('Header')
       .modify({
-        num_objects: index,
+        num_objects: header.num_objects + 1,
       });
   } catch (error) {
     throw error;
@@ -767,16 +805,17 @@ export async function addJournalQuest(id, name) {
     TMP_info_id: id,
   };
   let nameEntry = {
-    type: "Info",
+    type: "DialogueInfo",
     flags: "",
     info_id: generatedId,
     prev_id: "",
     next_id: "",
     id: generatedId,
+    TMP_id: generatedId,
     data: {
       dialogue_type: "Journal",
       disposition: 0,
-      speaker_race: -1,
+      speaker_rank: -1,
       speaker_sex: "Any",
       player_rank: -1
     },
@@ -802,3 +841,184 @@ export async function addJournalQuest(id, name) {
     throw error;
   }
 };
+
+export async function shiftIndexes(index) {
+  const activePlugin = databases['activePlugin'];
+  const lastEntry = await activePlugin.pluginData
+    .orderBy('TMP_index')
+    .last();
+  const lastEntryIndex = lastEntry.TMP_index;
+  console.log('Shifting range between:', index, lastEntryIndex);
+  let indexes = [];
+  for (let i = index; i <= lastEntryIndex; i++) {
+    indexes.push(i);
+  }
+  indexes = indexes.reverse();
+  console.log(indexes)
+  if (!indexes.length) return;
+  await activePlugin.transaction('rw', activePlugin.pluginData, async () => {
+    for (const currentIndex of indexes) {
+      await activePlugin.pluginData
+        .where('TMP_index')
+        .equals(currentIndex)
+        .modify({
+          TMP_index: currentIndex + 1,
+        });
+    }
+  });
+  console.log('ALL MODIFIED')
+};
+
+export async function addQuestEntry(questId, text, prevId, nextId) {
+  let generatedId =
+    Math.random().toString().slice(2, 15) +
+    Math.random().toString().slice(2, 9);
+  let defaultEntry = {
+    type: "DialogueInfo",
+    flags: "",
+    info_id: generatedId,
+    prev_id: prevId || '',
+    next_id: nextId || '',
+    TMP_prev_id: prevId || '',
+    TMP_next_id: nextId || '',
+    id: generatedId,
+    TMP_id: generatedId,
+    TMP_info_id: generatedId,
+    data: {
+      dialogue_type: "Journal",
+      disposition: 10,
+      speaker_rank: -1,
+      speaker_sex: "Any",
+      player_rank: -1
+    },
+    text,
+    player_faction: "",
+    script_text: "",
+    sound_path: "",
+    speaker_cell: "",
+    speaker_class: "",
+    speaker_faction: "",
+    speaker_id: "",
+    speaker_race: "",
+    filters: [],
+    TMP_topic: questId,
+    TMP_type: "Journal",
+  };
+  try {
+    console.log(questId);
+    const activePlugin = databases['activePlugin'];
+    let quest = null;
+    quest = await activePlugin.pluginData
+      .where('TMP_id')
+      .equals(questId)
+      .and((val) => val.type === 'Dialogue')
+      .toArray();
+    console.log(quest);
+    if (quest && quest.length > 1) {
+      throw ({key: 'QUEST_ID_DUPLICATE'});
+    } else if (quest && quest.length === 1) {
+      console.log('quest exists in active plugin');
+    } else {
+      const dependecies = await getDependencies();
+      for (let dep of dependecies) {
+        let dependencyDB = databases[dep];
+        if (!dependencyDB) {
+          continue;
+        }
+        let depResponse = await dependencyDB.pluginData
+          .where('TMP_id')
+          .equals(questId)
+          .and((val) => val.type === 'Dialogue')
+          .toArray();
+        if (depResponse.length) {
+          quest = depResponse;
+        }
+      }
+      if (!quest || !quest.length) {
+        throw ({key: 'NO_QUEST_FOUND'});
+      } 
+      delete quest.TMP_index;
+      await addEntry(quest.at(-1));
+    }
+    let index = null;
+    let lastEntry = await activePlugin.pluginData
+      .where('TMP_topic')
+      .equals(questId)
+      .toArray();
+    let lastEntryIndex = lastEntry?.at(-1)?.TMP_index;
+    if (!lastEntryIndex) {
+      throw ({key: 'NO_LAST_ENTRY_INDEX_FOUND'});
+    }
+    let prevEntry = [];
+    let nextEntry = [];
+    if (prevId) {
+      prevEntry = await activePlugin.pluginData
+        .where('TMP_id')
+        .equals(prevId)
+        .toArray();
+    } else {
+      prevEntry = lastEntry;
+    }
+    if (nextId) {
+      nextEntry = await activePlugin.pluginData
+        .where('TMP_id')
+        .equals(nextId)
+        .toArray();
+    }
+    if (!prevId && !nextId) {
+      index = lastEntryIndex + 1;
+    } else {
+
+      if (prevEntry && prevEntry.length) {
+        index = prevEntry.at(-1).TMP_index + 1;
+      } else if (nextEntry && nextEntry.length) {
+        index = nextEntry.at(-1).TMP_index;
+      } else {
+        index = lastEntryIndex + 1;
+      }
+    }
+    console.log('INDEX:', index);
+    
+    defaultEntry.TMP_index = index;
+    const prevDisposition = prevEntry?.at(-1)?.data?.disposition || 0;
+    const nextDisposition = nextEntry?.at(-1)?.data?.disposition || 0;
+    console.log('prev disp:', prevDisposition)
+    console.log('next disp:', nextDisposition)
+    const dispDifference = (nextDisposition || Infinity) - prevDisposition;
+    console.log(dispDifference)
+    let advisedDisposition = 10;
+    if (dispDifference > 10) {
+      advisedDisposition = ((prevDisposition / 10) + 1) * 10;
+    } else if (dispDifference > 5) {
+      advisedDisposition = ((prevDisposition / 10) + 0.5) * 10;
+    } else if (dispDifference > 1) {
+      advisedDisposition = prevDisposition + 1;
+    } else {
+      throw ({key: 'NO_PLACE_FOR_ENTRY'});
+    }
+    defaultEntry.data.disposition = advisedDisposition;
+    console.log(defaultEntry)
+    await addEntry(defaultEntry, index);
+    if (prevEntry.length) {
+      await activePlugin.pluginData
+        .where('TMP_id')
+        .equals(prevEntry.at(-1).id)
+        .modify({
+          next_id: generatedId,
+          TMP_next_id: generatedId,
+        });
+    }
+    if (nextEntry.length) {
+      await activePlugin.pluginData
+        .where('TMP_id')
+        .equals(nextEntry.at(-1).id)
+        .modify({
+          prev_id: generatedId,
+          TMP_prev_id: generatedId,
+        });
+    }
+  } catch (error) {
+    console.error(error);
+    throw error;
+  }
+}

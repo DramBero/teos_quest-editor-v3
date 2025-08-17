@@ -43,8 +43,13 @@ const emit = defineEmits(['update']);
 
 async function addQuest() {
   try {
-    await addJournalQuest('New_Quest', props.questName);
-    emit('update');
+    const date = new Date();
+    let dateString = date.toISOString().split('T')[1];
+    dateString = dateString.split(':').join('_');
+    dateString = dateString.split('.').join('_');
+    const questId = 'New_Quest_' + dateString;
+    await addJournalQuest(questId, props.questName);
+    emit('update', questId);
   } catch (error) {
     console.error(error);
   }

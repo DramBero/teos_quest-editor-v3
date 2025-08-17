@@ -3,7 +3,7 @@
     class="quest" 
     :class="{
       'quest_new': props.questNameData?.is_new && !containsMasterIds,
-      'quest_mod': props.questNameData?.is_new && containsMasterIds,
+      'quest_mod': containsActivePluginIds || (props.questNameData?.is_new && containsMasterIds),
     }"
     ref="quest"
   >
@@ -56,6 +56,11 @@ watch(selectedQuestId, (newValue) => {
 
 const containsMasterIds = computed(() => {
   const isActiveList = props.questNameData.quests.map(val => val.TMP_is_active);
+  return isActiveList.includes(false);
+})
+
+const containsActivePluginIds = computed(() => {
+  const isActiveList = props.questNameData.quests.map(val => !val.TMP_is_active);
   return isActiveList.includes(false);
 })
 
@@ -263,7 +268,7 @@ input[type='reset'] {
     position: relative;
     &:hover {
       .quest-entry__add {
-        display: block;
+        display: flex;
       }
     }
     &:first-child {

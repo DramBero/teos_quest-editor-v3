@@ -346,7 +346,7 @@ const getOtherSpeakers = computed(() => {
     },
     {
       type: 'Speaker Rank',
-      value: props.answer.data.speaker_race !== -1 ? props.answer.data.speaker_race : '',
+      value: props.answer.data.speaker_rank !== -1 ? props.answer.data.speaker_rank : '',
     },
     {
       type: 'Speaker Race',
