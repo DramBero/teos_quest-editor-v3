@@ -28,10 +28,10 @@
         @update="update"
       />
       <div class="quest-entries">
-        <div v-if="questDataLoaded && questData.entries.length">
+        <div v-if="questDataLoaded && questData?.entries.length">
           <div>
             <div name="fadeHeight" mode="out-in" class="entries-list">
-              <div class="entries-list__child" key="TMP_quest-start">
+              <div class="entries-list__child entries-list__child_top" key="TMP_quest-start">
                 <div class="entry-wrapper">
                   <div
                     class="quest-entry quest-entry_start"
@@ -41,25 +41,23 @@
                   </div>
                 </div>
               </div>
-              <JournalFrameQuestEntry 
-                v-for="entry, entryIndex in questData.entries
-                .filter((val) => val.data)
-                .sort((a, b) => parseInt(a.data.disposition) - parseInt(b.data.disposition))" 
-                :key="entry.info_id"
+              <JournalFrameQuestEntry
+                v-for="entry, entryIndex in getSortedEntries" 
+                :key="entry.info_id || 'none'"
                 :entry
-                :prevEntry="questData.entries[entryIndex - 1]"
-                :nextEntry="questData.entries[entryIndex + 1]"
+                :prevEntry="questData.entries.find((val) => val.id === entry.prev_id)"
+                :nextEntry="questData.entries.find((val) => val.id === entry.next_id)"
                 :questId="props.questNameData?.id"
                 :highlightedId
                 :highlightedComparison
               />
-              <div class="entries-list__child" key="TMP_quest-start">
+              <div class="entries-list__child entries-list__child_bottom" key="TMP_quest-start">
                 <div class="entry-wrapper">
                   <div
                     class="quest-entry quest-entry_start"
                     :class="{ 'quest-entry_highlighted': getIsHighlighted(0) }"
                   >
-                    <div class="quest-entry__text">End</div>
+                    <div class="quest-entry__text"></div>
                   </div>
                 </div>
               </div>
@@ -84,12 +82,14 @@ import { useJournalHighlight } from '@/stores/journalHighlights';
 import JournalFrameQuestEntry from './JournalFrameQuestEntry.vue';
 import JournalFrameQuestTabs from './JournalFrameQuestTabs.vue';
 import { useSelectedQuest } from '@/stores/selectedQuest';
-import { useElementVisibility } from '@vueuse/core'
+import { pxValue, useElementVisibility } from '@vueuse/core'
 
 const target = useTemplateRef<HTMLDivElement>('quest');
 const targetIsVisible = useElementVisibility(target);
 
 const selectedQuestId = ref('');
+
+const selectedQuestStore = useSelectedQuest();
 
 async function createEntry() {
   const questId = selectedQuestId.value;
@@ -97,8 +97,6 @@ async function createEntry() {
   await addQuestEntry(questId, 'New entry');
   await selectedQuestStore.fetchQuest(questId);
 }
-
-const selectedQuestStore = useSelectedQuest();
 
 const props = defineProps({
   questNameData: Object,
@@ -145,6 +143,12 @@ const entryEdit = ref('');
 const questDataLoaded = computed(() => selectedQuestStore.getSelectedQuestLoaded);
 
 const questData = computed(() => selectedQuestStore.getSelectedQuest);
+
+const getSortedEntries = computed(() => {
+  return questData.value.entries
+    .filter((val) => val.data)
+    .sort((a, b) => parseInt(a.data.disposition) - parseInt(b.data.disposition));
+});
 
 async function loadQuestData(questId: string) {
   try {
@@ -310,6 +314,16 @@ input[type='reset'] {
         border-radius: 8px 8px 0 0;
       }
     }
+    &_top {
+      .quest-entry__text {
+        padding-bottom: 10px !important;
+      }
+    }
+    &_bottom {
+      .quest-entry__text {
+        padding-top: 10px !important;
+      }
+    }
   }
 }
 
@@ -346,12 +360,16 @@ input[type='reset'] {
 
 .fadeHeight-enter-active,
 .fadeHeight-leave-active {
-  transition: all 0.15s cubic-bezier(1, 1, 1, 1);
+  transition: all 0.2s cubic-bezier(1, 1, 1, 1);
   opacity: 100;
+  left: 0;
+  height: auto;
 }
 
 .fadeHeight-enter,
 .fadeHeight-leave-to {
   opacity: 0%;
+  left: 100%;
+  height: 0;
 }
 </style>

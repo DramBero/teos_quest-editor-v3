@@ -9,6 +9,7 @@ export const useSelectedQuest = defineStore('selectedQuest', () => {
     name: String;
     old_names: String[];
   }
+
   const selectedQuest = ref<selectedQuest>();
   function setSelectedQuest(value: selectedQuest) {
     selectedQuest.value = value;
@@ -21,12 +22,21 @@ export const useSelectedQuest = defineStore('selectedQuest', () => {
   }
   const getSelectedQuestLoaded = computed(() => selectedQuestLoaded.value);
 
-  async function fetchQuest(questId: String) {
+  interface FetchQuestOptions {
+    reload: boolean;
+  }
+
+  async function fetchQuest(questId: String, options: FetchQuestOptions) {
     try {
-      setSelectedQuestLoaded(false);
       const questResponse = await fetchQuestByID(questId);
       setSelectedQuest(questResponse);
-      setSelectedQuestLoaded(true);
+      if (options?.reload !== false) {
+        setSelectedQuestLoaded(false);
+      }
+      await new Promise((resolve) => setTimeout(resolve, 1));
+      if (options?.reload !== false) {
+        setSelectedQuestLoaded(true);
+      }
     } catch (error) {
       console.error(error);
     }

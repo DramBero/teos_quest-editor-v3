@@ -313,11 +313,12 @@ function openDialogueModal() {
 .dialogue-card {
   font-family: 'Pelagiad', 'Sans serif';
   line-height: 23px;
-  max-width: 230px;
+  max-width: 200px;
   min-width: 200px;
   width: 230px;
   font-size: 18px;
   background: rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(0, 0, 0, 0.5);
   //border: 3px solid rgb(202, 165, 96);
   border-radius: 8px;
   word-break: break-word;
@@ -332,10 +333,12 @@ function openDialogueModal() {
   flex-direction: column-reverse;
   position: relative;
   align-items: center;
+  backdrop-filter: blur(2px);
   //gap: 10px;
   &:hover {
-    background: rgba(202, 165, 96, 0.8);
-    color: black;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgb(202, 165, 96);
+    // color: black;
     .dialogue-card__decoration {
       background: rgb(53, 44, 27);
       transform: translateY(-65%) rotate(-8deg);

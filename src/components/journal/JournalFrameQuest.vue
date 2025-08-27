@@ -26,8 +26,6 @@ import { computed, onMounted, ref, useTemplateRef, watch } from 'vue';
 import { fetchQuestByID } from '@/api/idb.js'; 
 import type { FilterComparison } from '@/types/pluginEntries.ts';
 import { useJournalHighlight } from '@/stores/journalHighlights';
-import JournalFrameQuestEntry from './JournalFrameQuestEntry.vue';
-import JournalFrameQuestTabs from './JournalFrameQuestTabs.vue';
 
 import { useElementVisibility } from '@vueuse/core'
 
@@ -114,17 +112,6 @@ const getLatestDisposition = computed(() => {
   ).toString();
 })
 
-function editEntry(event, info_id) {
-  //editJournalEntry(state, [entryId, entryText, entryDisp, entryFinished])
-/*   this.$store.commit('editJournalEntry', [
-        info_id,
-        event.target.elements.entryText.value,
-        event.target.elements.entryDisp.value,
-        event.target.elements.entryFinished.checked,
-      ]);
-      this.entryEdit = ''; */
-}
-
 watch(getHighlight, async (newValue) => {
   if (!newValue?.id) {
     highlightedId.value = '';
@@ -141,15 +128,6 @@ watch(getHighlight, async (newValue) => {
     highlightedId.value = '';
   }
 });
-
-function deleteEntry(info_id) {
-  entryEdit.value = '';
-  // this.$store.commit('deleteJournalEntry', info_id);
-}
-
-function toggleCollapse() {
-  isCollapsed.value = !isCollapsed.value;
-}
 
 function getIsHighlighted(entryId) {
   let intEntryId = parseInt(entryId);
@@ -170,15 +148,6 @@ function getIsHighlighted(entryId) {
     default:
       return false;
   }
-}
-
-function createEntry() {
-  isCollapsed.value = true;
-/*   this.$store.commit('addJournalEntry', [
-    this.quest.id,
-    'New entry',
-    this.getLatestDisposition,
-  ]); */
 }
 </script>
 

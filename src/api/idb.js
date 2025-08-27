@@ -760,14 +760,9 @@ const genericTmp = {
 }
 
 export async function addEntry(entry, locationIndex) {
-  console.log(entry, locationIndex)
   try {
     const header = await getActiveHeader();
-    if (locationIndex) {
-      await shiftIndexes(locationIndex);
-    }
     const index = locationIndex || header.num_objects + 1;
-    console.log('index', index)
     const pluginName = header.TMP_dep;
     const newEntry = {
       ...genericTmp,
@@ -777,6 +772,15 @@ export async function addEntry(entry, locationIndex) {
       TMP_is_active: true,
     }
     const activePlugin = databases['activePlugin'];
+    if (locationIndex) {
+      const nextEntry = await activePlugin.pluginData
+        .where('TMP_index')
+        .above(locationIndex)
+        .limit(1)
+        .first();
+      newEntry.TMP_index = newEntry.TMP_index + ((nextEntry.TMP_index - locationIndex) / 2);
+    }
+    console.log(newEntry);
     await activePlugin.pluginData.add(newEntry);
     await activePlugin.pluginData
       .where('type')
@@ -786,6 +790,62 @@ export async function addEntry(entry, locationIndex) {
       });
   } catch (error) {
     throw error;
+  }
+}
+
+export async function deleteEntry(entry) {
+  try {
+    if (entry.TMP_is_active) {
+      const activePlugin = databases['activePlugin'];
+      await activePlugin.pluginData.delete(entry.TMP_index);
+      // unshiftIndexes(entry.TMP_index);
+      const header = await getActiveHeader();
+      await activePlugin.pluginData
+        .where('type')
+        .equals('Header')
+        .modify({
+          num_objects: header.num_objects - 1,
+        });
+    } else {
+      throw {key: 'MASTER_ENTRY_DELETION_NOT_IMPLEMENTED'};
+    }
+  } catch (error) {
+    throw error;
+  }
+}
+
+export async function deleteJournalEntry(entry) {
+  let prevEntry = [];
+  let nextEntry = [];
+  const activePlugin = databases['activePlugin'];
+  await deleteEntry(entry);
+  if (entry.prev_id) {
+    prevEntry = await activePlugin.pluginData
+      .where('TMP_id')
+      .equals(entry.prev_id)
+      .toArray();
+  } 
+  if (entry.next_id) {
+    nextEntry = await activePlugin.pluginData
+      .where('TMP_id')
+      .equals(entry.next_id)
+      .toArray();
+  }
+  if (prevEntry.length) {
+    console.log('PREV:', prevEntry)
+    console.log('next_id', entry.next_id)
+    await modifyEntry({
+      TMP_index: prevEntry.at(-1)?.TMP_index,
+      next_id: entry.next_id,
+    })
+  }
+  if (nextEntry.length) {
+    console.log('NEXT', nextEntry)
+    console.log('prev_id', entry.prev_id)
+    await modifyEntry({
+      TMP_index: nextEntry.at(-1)?.TMP_index,
+      prev_id: entry.prev_id,
+    })
   }
 }
 
@@ -854,7 +914,6 @@ export async function shiftIndexes(index) {
     indexes.push(i);
   }
   indexes = indexes.reverse();
-  console.log(indexes)
   if (!indexes.length) return;
   await activePlugin.transaction('rw', activePlugin.pluginData, async () => {
     for (const currentIndex of indexes) {
@@ -868,6 +927,31 @@ export async function shiftIndexes(index) {
   });
   console.log('ALL MODIFIED')
 };
+
+export async function unshiftIndexes(index) {
+  const activePlugin = databases['activePlugin'];
+  const lastEntry = await activePlugin.pluginData
+    .orderBy('TMP_index')
+    .last();
+  const lastEntryIndex = lastEntry.TMP_index;
+  console.log('Unshifting range between:', index, lastEntryIndex);
+  let indexes = [];
+  for (let i = index; i <= lastEntryIndex; i++) {
+    indexes.push(i);
+  }
+  if (!indexes.length) return;
+  await activePlugin.transaction('rw', activePlugin.pluginData, async () => {
+    for (const currentIndex of indexes) {
+      await activePlugin.pluginData
+        .where('TMP_index')
+        .equals(currentIndex)
+        .modify({
+          TMP_index: currentIndex - 1,
+        });
+    }
+  });
+  console.log('ALL MODIFIED')
+}
 
 export async function addQuestEntry(questId, text, prevId, nextId) {
   let generatedId =
@@ -997,7 +1081,6 @@ export async function addQuestEntry(questId, text, prevId, nextId) {
       throw ({key: 'NO_PLACE_FOR_ENTRY'});
     }
     defaultEntry.data.disposition = advisedDisposition;
-    console.log(defaultEntry)
     await addEntry(defaultEntry, index);
     if (prevEntry.length) {
       await activePlugin.pluginData

@@ -1,6 +1,9 @@
 <template>
   <div 
-    :id="`${props.entry.TMP_topic}-${props.entry.data.disposition}`" class="entries-list__child">
+    :id="`${props.entry.TMP_topic}-${props.entry.data.disposition}`" 
+    :key="`${props.entry.TMP_topic}-${props.entry.data.disposition}`" 
+    class="entries-list__child"
+  >
     <div class="entry-wrapper">
       <div class="quest-entry" :class="{
         'quest-entry_finished': isFinished,
@@ -12,48 +15,48 @@
           <div v-else>
             {{ props.entry.text }}
           </div>
+            <EntryDisposition 
+              :entry="props.entry"
+            />
+          <button
+            v-if="showPrevEntry"
+            type="button"
+            class="quest-entry__add quest-entry__add_top" 
+            @click="createEntry(props.entry.prev_id, props.entry.id)"
+          >
+            <TdesignAdd />
+          </button>
+          <button
+            v-if="showNextEntry"
+            type="button"
+            class="quest-entry__add quest-entry__add_bottom"
+            @click="createEntry(props.entry.id, props.entry.next_id)"
+          >
+            <TdesignAdd />
+          </button>
         </div>
-        <div class="quest-entry__index">
-          {{ props.entry.data.disposition }}
+        <div class="entry-controls" v-if="props.entry.TMP_is_active">
+          <button
+            type="button"
+            class="entry-controls__btn entry-controls__btn_delete"
+            @click="handleDeleteEntry"
+          >
+            <TdesignClose />
+          </button>
+          <button
+            type="button"
+            class="entry-controls__btn"
+            :class="{
+              'entry-controls__btn_on': isFinished,
+              'entry-controls__btn_off': !isFinished
+            }"
+            @click="toggleFinished"
+          >
+            <TdesignFlagFilled v-if="isFinished"/>
+            <TdesignFlag v-else />
+          </button>
         </div>
       </div>
-    </div>
-    <button
-      v-if="!prevEntry?.data?.disposition || (props.entry.data.disposition - prevEntry?.data?.disposition) > 1"
-      type="button"
-      class="quest-entry__add quest-entry__add_top" 
-      @click="createEntry(props.entry.prev_id, props.entry.id)"
-    >
-      <TdesignAdd />
-    </button>
-    <button
-      v-if="!nextEntry?.data?.disposition || (nextEntry?.data?.disposition - props.entry.data.disposition) > 1"
-      type="button"
-      class="quest-entry__add quest-entry__add_bottom"
-      @click="createEntry(props.entry.id, props.entry.next_id)"
-    >
-      <TdesignAdd />
-    </button>
-    <div class="entry-controls" v-if="props.entry.TMP_is_active">
-      <button
-        type="button"
-        class="entry-controls__btn"
-        :class="{
-          'entry-controls__btn_on': isFinished,
-          'entry-controls__btn_off': !isFinished
-        }"
-        @click="toggleFinished"
-      >
-        <TdesignFlagFilled v-if="isFinished"/>
-        <TdesignFlag v-else />
-      </button>
-      <button
-        type="button"
-        class="entry-controls__btn entry-controls__btn_delete"
-        disabled
-      >
-        <TdesignClose />
-      </button>
     </div>
   </div>
 </template>
@@ -67,9 +70,11 @@ import TdesignFlag from '~icons/tdesign/flag';
 import TdesignFlagFilled from '~icons/tdesign/flag-filled';
 import TdesignClose from '~icons/tdesign/close';
 
-import { editTopicText, addQuestEntry, modifyEntry } from '@/api/idb.js';
+import { editTopicText, addQuestEntry, modifyEntry, deleteJournalEntry } from '@/api/idb.js';
 import { watchDebounced } from '@vueuse/core';
 import { useSelectedQuest } from '@/stores/selectedQuest';
+
+import EntryDisposition from '@/components/journal/EntryDisposition.vue';
 
 const props = defineProps({
   entry: {
@@ -101,6 +106,40 @@ const props = defineProps({
   },
 });
 
+const selectedQuestStore = useSelectedQuest();
+
+async function handleDeleteEntry() {
+  try {
+    await deleteJournalEntry(props.entry);
+    await selectedQuestStore.fetchQuest(props.entry.TMP_topic, { reload: false });
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+const showPrevEntry = computed(() => {
+  if (props.entry.data.disposition < 2) {
+    return false;
+  }
+  if (!props.prevEntry?.data?.disposition) {
+    return true;
+  }
+  if ((props.entry.data.disposition - props.prevEntry?.data?.disposition) > 1) {
+    return true;
+  }
+  return false;
+});
+
+const showNextEntry = computed(() => {
+  if (!props.nextEntry?.data?.disposition) {
+    return true;
+  }
+  if ((props.nextEntry?.data?.disposition - props.entry.data.disposition) > 1) {
+    return true;
+  }
+  return false;
+})
+
 const isFinished = ref(false);
 const propsIsFinished = computed(() => props.entry.quest_state === 'Finished');
 watch(propsIsFinished, (newValue) => {
@@ -112,7 +151,7 @@ async function toggleFinished() {
   try {
     await modifyEntry({
       TMP_index: props.entry.TMP_index,
-      quest_state: isFinished.value ? '' :'Finished',
+      quest_state: isFinished.value ? null :'Finished',
     })
     isFinished.value = !isFinished.value;
   } catch (error) {
@@ -120,13 +159,11 @@ async function toggleFinished() {
   }
 }
 
-const selectedQuestStore = useSelectedQuest();
-
 async function createEntry(prevId: String, nextId: String) {
   const questId = props.entry.TMP_topic;
   if (!questId) return;
   await addQuestEntry(questId, 'New entry', prevId, nextId);
-  await selectedQuestStore.fetchQuest(questId);
+  await selectedQuestStore.fetchQuest(questId, { reload: false });
 }
 
 const entryText = ref('');
@@ -181,22 +218,27 @@ function getIsHighlighted(entryId) {
 
 <style lang="scss">
 .entry-controls {
-  position: absolute;
+  // position: absolute;
   right: 0;
-  bottom: 0;
-  display: none;
-  background-color: white;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  background-color: transparent;
   border-radius: 4px;
-  padding: 5px;
   align-items: center;
   z-index: 10;
-  gap: 15px;
-  transform: translate(0, 70%);
-  box-shadow: 2px 2px 4px 2px rgba(0, 0, 0, 0.1);
+  border-left: solid 1px rgba(0, 0, 0, 0.1);
+  opacity: 0.7;
+  transition: all .15s ease-in;
+  border-bottom: 2px dashed rgba(0, 0, 0, 0.1);
   &__btn {
     display: flex;
     align-items: center;
     justify-content: center;
+    padding: 5px;
+    &:hover {
+      background-color: rgba(0, 0, 0, 0.05);
+    }
     &_on {
       svg {
         color: rgba(89, 170, 106, 1);
@@ -221,8 +263,25 @@ function getIsHighlighted(entryId) {
 .entries-list__child {
   &:hover {
     .entry-controls {
-      display: flex;
+      opacity: 1;
     }
   }
+}
+
+.input-disposition {
+  padding: 5px;
+  font-family: 'Pelagiad';
+  font-size: 18px;
+  display: flex;
+  justify-content: center;
+  text-align: center;
+  border-radius: 8px;
+  outline: none;
+  border: solid 1px rgba(0, 0, 0, 0.1);
+  width: 50px;
+  height: fit-content;
+  // float: right;
+  margin: 5px;
+  background-color: transparent;
 }
 </style>

@@ -108,17 +108,17 @@ const questNames = computed(() => {
       is_new: Boolean(quests.filter((quest) => quest.TMP_is_active)?.length),
     })
   }
-  return questNameListNew;
+  if (showMasters.value) {
+    return questNameListNew;
+  } else {
+    return questNameListNew.filter(val => val.is_new);
+  }
 });
 
 const { list, containerProps, wrapperProps } = useVirtualList(questNames, { itemHeight: 85 });
 
 const getQuestNameList = computed(() => {
-  if (showMasters.value) {
-    return list.value;
-  } else {
-    return list.value.filter(val => val.data.is_new);
-  }
+  return list.value;
 })
 
 watchDebounced(questSearch, () => {
@@ -261,11 +261,20 @@ export default {
     margin: 0;
     border-radius: 0;
     flex-grow: 1;
+    &::-webkit-scrollbar {
+      &-thumb {
+        background-color: rgb(58, 45, 20) !important;
+      }
+
+      &-trail {
+        background-color: rgba(58, 45, 20, 0.2);
+      }
+    }
   }
   &-header {
     position: sticky;
     top: -15px;
-    z-index: 1;
+    z-index: 15;
     padding-top: 15px;
     background-color: rgba(207, 191, 159, 0.9);
   }
@@ -340,7 +349,7 @@ export default {
     flex-grow: 1;
     // margin: 8px 0;
     min-height: 50px;
-    overflow: hidden;
+    // overflow: hidden;
     display: flex;
     transition: all 0.2s ease-in;
     background-image: repeating-linear-gradient(
@@ -350,7 +359,7 @@ export default {
       transparent 12px,
       transparent 24px
     );
-    border-bottom: 2px dashed rgba(0, 0, 0, 0.1);
+    box-sizing: border-box;
     border-left: 5px solid transparent;
     &_new {
       border-left: 5px solid rgba(89, 170, 106, 0.7);
@@ -383,7 +392,7 @@ export default {
       display: none;
       width: 100%;
       background-color: rgba(0, 0, 0, 0.05);
-      padding: 3px;
+      padding: 2px;
       align-items: center;
       justify-content: center;
       transition: background-color .1s ease-in;
@@ -391,7 +400,7 @@ export default {
         background-color: rgba(0, 0, 0, 0.1);
       }
       &_bottom {
-        top: 100%;
+        top: calc(100% + 2px);
       }
       svg {
         color: rgb(49, 44, 28);
@@ -399,7 +408,12 @@ export default {
     }
     &__text {
       flex-grow: 1;
-      padding: 15px;
+      display: flex;
+      justify-content: space-between;
+      gap: 3px;
+      padding: 20px 5px 20px 15px;
+      position: relative;
+      border-bottom: 2px dashed rgba(0, 0, 0, 0.1);
     }
     &__index {
       min-width: 50px;
