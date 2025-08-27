@@ -17,6 +17,7 @@
           </div>
             <EntryDisposition 
               :entry="props.entry"
+              :questId
             />
           <button
             v-if="showPrevEntry"

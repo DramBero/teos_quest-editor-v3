@@ -1,7 +1,7 @@
 <template>
   <form 
     class="disposition" 
-    @reset.prevent="disposition = currentEntry.data.disposition"
+    @reset.prevent="disposition = props.entry.data.disposition"
     @submit.prevent="handleSubmit"
   >
     <input 
@@ -10,7 +10,7 @@
       v-model="disposition"
       max="9999"
     />
-    <div v-if="disposition && disposition !== currentEntry.data.disposition" class="disposition__controls">
+    <div v-if="disposition && disposition !== props.entry.data.disposition" class="disposition__controls">
       <button 
         type="submit" 
         class="disposition__btn disposition__btn_green"
@@ -32,21 +32,17 @@ import { ref, watch } from 'vue';
 import TdesignCheck from '~icons/tdesign/check';
 import TdesignClose from '~icons/tdesign/close';
 import { modifyEntry } from '@/api/idb.js';
+import { useSelectedQuest } from '@/stores/selectedQuest';
 
 const props = defineProps<{
   entry: Object;
 }>();
 
+const selectedQuestStore = useSelectedQuest();
+
 const disposition = ref<number>(0);
 watch(() => props.entry.data.disposition, () => {
   disposition.value = props.entry.data.disposition;
-}, {
-  immediate: true,
-});
-
-const currentEntry = ref<Object>({});
-watch(() => props.entry, () => {
-  currentEntry.value = props.entry;
 }, {
   immediate: true,
 });
@@ -60,13 +56,7 @@ async function handleSubmit() {
         disposition: disposition.value,
       }
     });
-    currentEntry.value = {
-      ...currentEntry.value,
-      data: {
-        ...currentEntry.value.data,
-        disposition: disposition.value,
-      }
-    };
+    await selectedQuestStore.fetchQuest(props.entry.TMP_topic, { reload: true });
   } catch (error) {
     console.error(error);
   }
