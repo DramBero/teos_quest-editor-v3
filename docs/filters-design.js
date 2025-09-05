@@ -54,7 +54,7 @@
     - Ash (6)
     - Blight (7)
     - Snow (8)
-    - Blizzrd (9)
+    - Blizzard (9)
     - Other (int)
 
 
@@ -249,4 +249,3 @@ Not:
         CompareLocal = 22579,          // b"3X",
         VariableCompare = 22643,       // b"sX",
     }
-

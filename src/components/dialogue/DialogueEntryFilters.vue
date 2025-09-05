@@ -139,7 +139,12 @@
       <span class="filter__function">New filter...</span>
     </div>
 
-    <button class="filter__add" type="button" @click.prevent="handleAddFilter">
+    <button
+      v-if="false"
+      type="button"
+      class="filter__add"
+      @click.prevent="handleAddFilter"
+    >
       <TdesignAddCircle />
     </button>
 
@@ -224,23 +229,6 @@ function handleAddFilter(e: MouseEvent) {
         children: getTopicChoiceLabels.value,
       },
       { 
-        label: "Journal", 
-      },
-      { 
-        label: "Dead", 
-      },
-      { 
-        label: "Speakers", 
-        children: [
-          { label: "ID" },
-          { label: "Cell" },
-          { label: "Class" },
-          { label: "Faction" },
-          { label: "Race" },
-          { label: "Rank" },
-        ]
-      },
-      { 
         label: "Player", 
         children: [
           { label: "Health" },
@@ -263,9 +251,6 @@ function handleAddFilter(e: MouseEvent) {
             ]
           },
           {
-            label: 'Skills'
-          },
-          {
             label: 'Disease',
             children: [
               { label: 'Common' },
@@ -277,8 +262,40 @@ function handleAddFilter(e: MouseEvent) {
           { label: 'Clothes on' },
           { label: 'Werewolf kills' },
           { label: 'Gold' },
-          { label: 'Inventory item' },
         ]
+      },
+      { 
+        label: "Local",
+
+      },
+      { 
+        label: "Weather",
+        children: [
+          { label: 'Clear' },
+          { label: 'Cloudy' },
+          { label: 'Foggy' },
+          { label: 'Overcast' },
+          { label: 'Rain' },
+          { label: 'Thunder' },
+          { label: 'Ash' },
+          { label: 'Blight' },
+          { label: 'Snow' },
+          { label: 'Blizzard' },
+        ],
+      },
+      { 
+        label: "NPC",
+        children: [
+          { label: "Health" },
+          { label: "Health percent" },
+          { label: "Magicka" },
+          { label: "Level" },
+          { label: "Reputation" },
+          { label: "Werewolf" },
+          { label: "Same faction" },
+          { label: "Same race" },
+          { label: "Same sex" },
+        ],
       },
     ]
   }); 

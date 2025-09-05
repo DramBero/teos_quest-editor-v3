@@ -404,6 +404,40 @@ export const fetchAllQuestIDs = async function (masters = false) {
   return resp;
 };
 
+export const fetchByType = async function (types, TMP_type = '', masters = true) {
+  let resp = [];
+  if (!databases['activePlugin']) {
+    await initPlugin('activePlugin');
+  }
+  const activePlugin = databases['activePlugin'];
+  try {
+    const response = await activePlugin.pluginData
+      .where('type')
+      .anyOf(types)
+      .and((val) => val.TMP_type === TMP_type)
+      .toArray();
+    resp = [...resp, ...response]
+  } catch (error) {
+    throw error;
+  }
+  if (masters) {
+    const dependecies = await getDependencies();
+    for (let dep of dependecies.reverse()) {
+      let dependencyDB = databases[dep];
+      if (!dependencyDB) {
+        continue;
+      }
+      let depResponse = await dependencyDB.pluginData
+        .where('type')
+        .anyOf(types)
+        .and((val) => val.TMP_type === TMP_type)
+        .toArray();
+        resp = [...resp, ...depResponse];
+    }
+  }
+  return resp;
+};
+
 export const fetchQuestByID = async function (questID) {
   if (!databases['activePlugin']) {
     await initPlugin('activePlugin');

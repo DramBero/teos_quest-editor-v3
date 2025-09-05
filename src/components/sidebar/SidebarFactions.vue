@@ -1,157 +1,169 @@
 <template>
-  <div class="journal-frame">
+  <div 
+    class="journal-frame"
+    :class="`journal-frame_${props.modificator}`"
+  >
     <div class="journal-frame__header" v-if="true">
-      <div class="frame-title">Factions</div>
+      <div class="frame-title types">
+        <button
+          v-for="type in entryTypes"
+          :key="type"
+          class="types__item"
+          :class="{'types__item_selected': selectedType === type}"
+          @click="selectedType = type"
+        >
+          {{ type }}
+        </button>
+      </div>
       <div class="journal-frame__controls">
-        <div class="add-quest" @click="() => {}">
-          New <icon name="plus-circle" class="add-quest__button" scale="1"></icon>
+        <input 
+          class="text-input"
+          type="text" 
+          v-model.trim="factionSearch" 
+          placeholder="Search"
+        >
+        <div class="controls">
+          <button 
+            class="add-quest" 
+            :class="{'add-quest_active': showMasters}"
+            @click="showMasters = !showMasters"
+          >
+            M
+          </button>
         </div>
       </div>
     </div>
     <div class="header-content">
-      <div class="faction" v-for="faction in []" :key="faction.id">
-        <h3>{{ faction.name }}</h3>
-        <!--       <div class="faction-rank" v-for="rank, index in faction.rank_names" :key="rank">
-        <span class="faction-rank__index">{{ index + 1 }}. </span>
-        <span class="faction-rank__name">{{ rank }}</span>
-      </div> -->
-      </div>
+      <template v-if="!loading">
+        <SidebarFactionsItem 
+          v-for="faction in filteredFactions"
+          :key="faction[0].id"
+          :faction
+          :modificator="props.modificator"
+        />
+      </template>
+      <SVGSpinners90RingWithBg v-else class="loading-spinner" />
+      <component
+        :is="iconComponent" 
+        class="journal-icon"
+      />
     </div>
-
-    <!--
-
-  Header
-  Journal
-  Factions
-  ? Items -> Armor, Weapons, Clothing, Books, Apparatus, Misc Items, Gold
-  ? Actors -> Creatures, NPCs, Races, Classes, Attributes, Skills
-  ? Actions -> Scripts, Global vars, Activators
-  ? Cells -> Ext, Int
-  ? Magic -> Spells
-
-  
-
-  Dialogues
-  Quests
-  
-  Modals:
-    Books
-    Scripts
-
--->
-
-    <!--     <div class="journal-frame__header" v-if="true">
-      <div class="frame-title">Header</div>
-    </div>
-    <div class="header-content">
-      <span class="modal-field__name"> Plugin name: </span>
-      <div class="header-content__row">
-        <label class="modal-field modal-field_dark">
-          <input
-            class="modal-field__input"
-            name="speaker-name"
-            autocomplete="off"
-            :placeholder="'Type plugin name'"
-            v-model="name"
-          />
-        </label>
-        <button
-          class="modal-button modal-button_dark"
-          :class="{
-            'modal-button_dark-active': file_type.toUpperCase() === 'ESP'
-          }"
-          @click="file_type = 'Esp'"
-        >
-          ESP
-        </button>
-        <button
-          class="modal-button modal-button_dark"
-          :class="{
-            'modal-button_dark-active': file_type.toUpperCase() === 'ESM'
-          }"
-          @click="file_type = 'Esm'"
-        >
-          ESM
-        </button>
-      </div>
-
-      <div class="header-content__row">
-        <label class="modal-field modal-field_dark">
-          <span class="modal-field__name"> Version: </span>
-          <input
-            class="modal-field__input"
-            name="speaker-name"
-            autocomplete="off"
-            :placeholder="'Type version'"
-            v-model="version"
-          />
-        </label>
-        <label class="modal-field modal-field_dark">
-          <span class="modal-field__name"> Author: </span>
-          <input
-            class="modal-field__input"
-            name="speaker-name"
-            autocomplete="off"
-            :placeholder="'Type author'"
-            v-model="author"
-          />
-        </label>
-      </div>
-      <label class="modal-field modal-field_dark">
-        <span class="modal-field__name"> Description: </span>
-        <textarea
-          class="modal-field__input modal-field__input_textarea"
-          name="speaker-name"
-          autocomplete="off"
-          :placeholder="'Type description'"
-          v-model="description"
-        ></textarea>
-      </label>
-      <span class="modal-field__name"> Dependencies: </span>
-      <div class="header-dependencies">
-        <transition-group
-          is="draggable"
-          tag="tbody"
-          :list="dependencies"
-          :name="!drag ? 'flip-list' : null"
-          :handle="'.grab'"
-          @start="drag = true"
-          @end="drag = false"
-          :scroll-sensitivity="500"
-          animation="200"
-        >
-          <div
-            class="header-dependencies__item"
-            v-for="dep in dependencies"
-            :key="dep[0]"
-          >
-            <span>{{ dep[0] }}</span>
-            <icon name="grip-horizontal" class="grab" scale="1"></icon>
-          </div>
-        </transition-group>
-      </div>
-      <div class="header-buttons">
-        <button
-          class="modal-button header-buttons__button"
-          @click="saveHeader"
-        >
-          Save
-        </button>
-        <button
-          class="modal-button header-buttons__button"
-          @click="cancelChanges"
-        >
-          Cancel
-        </button>
-      </div>
-    </div> -->
   </div>
 </template>
 
 <script setup lang="ts">
+import { fetchByType } from '@/api/idb.js';
+import SidebarFactionsItem from '@/components/sidebar/SidebarFactionsItem.vue';
+import { computed, defineAsyncComponent, ref, watch } from 'vue';
+import SVGSpinners90RingWithBg from '~icons/svg-spinners/90-ring-with-bg';
+
+const GameIconsBookmarklet = defineAsyncComponent(
+  () => import('~icons/game-icons/bookmarklet/GameIconsBookmarklet.vue')
+);
+const GameIconsGears = defineAsyncComponent(
+  () => import('~icons/game-icons/gears/GameIconsGears.vue')
+);
+const GameIconsOrganigram = defineAsyncComponent(
+  () => import('~icons/game-icons/organigram/GameIconsOrganigram.vue')
+);
+const GameIconsCharacter = defineAsyncComponent(
+  () => import('~icons/game-icons/character/GameIconsCharacter.vue')
+);
+const GameIconsGauntlet = defineAsyncComponent(
+  () => import('~icons/game-icons/gauntlet/GameIconsGauntlet.vue')
+);
+const OpenChest = defineAsyncComponent(
+  () => import('~icons/game-icons/open-chest/OpenChest.vue')
+);
+const FireSpellCast = defineAsyncComponent(
+  () => import('~icons/game-icons/fire-spell-cast/FireSpellCast.vue')
+);
+
+const iconComponent = computed(() => {
+  switch(props.modificator) {
+    case 'scripts': return GameIconsGears;
+    case 'factions': return GameIconsOrganigram;
+    case 'actors': return GameIconsCharacter;
+    case 'items': return GameIconsGauntlet;
+    case 'magic': return FireSpellCast;
+    case 'interact': return OpenChest;
+    default: return GameIconsBookmarklet;
+  }
+})
+
+const props = defineProps<{
+  title: String;
+  entryTypes: String[];
+  modificator: String;
+}>();
+
+const factions = ref([]);
+const filteredFactions = ref([]);
+
+const loading = ref<Boolean>(false);
+
+const selectedType = ref<String>('');
+
+const showMasters = ref<Boolean>(false);
+
+watch(() => props.entryTypes, () => {
+  selectedType.value = props.entryTypes[0] || '';
+}, {
+  immediate: true,
+});
+
+watch(showMasters, fetchFactions, {
+  immediate: true,
+});
+
+watch(selectedType, fetchFactions);
+
+async function fetchFactions() {
+  try {
+    loading.value = true;
+    const response = await fetchByType([selectedType.value], '', showMasters.value);
+    let idKey = 'id';
+    if (selectedType.value === 'Skill') {
+      idKey = 'skill_id';
+    } else if (selectedType.value === 'MagicEffect') {
+      idKey = 'effect_id';
+    }
+    const uniqueIds = [...new Set(response.map((val) => val[idKey]))];
+    const uniqueFactions = uniqueIds.map(val => response.filter(faction => faction[idKey] === val));
+    factions.value = uniqueFactions;
+  } catch (error) {
+    console.error(error);
+  } finally {
+    loading.value = false;
+  }
+};
+
+const factionSearch = ref<String>('');
+watch(factionSearch, (newValue) => {
+  if (factionSearch.value === '') {
+    filteredFactions.value = factions.value;
+  } else {
+    filteredFactions.value = factions.value
+      .filter((val) => val[0].name.toLowerCase().includes(newValue.toLowerCase()) 
+        || val[0].id.toLowerCase().includes(newValue.toLowerCase()))
+  }
+}, {
+  immediate: true,
+});
+
+watch(factions, (newValue) => {
+  filteredFactions.value = factions.value;
+})
 </script>
 
 <style lang="scss" scoped>
+@mixin dot-bg-big($bg-color, $dot-color) {
+  background-image: radial-gradient($dot-color 2px, transparent 2px), radial-gradient($dot-color 2px, transparent 2px);
+  background-size: 20px 20px;
+  background-position: 0 0, 10px 10px;
+  background-color: $bg-color;
+}
+
 .header-content {
   padding: 15px;
   display: flex;
@@ -265,5 +277,73 @@
 .fadeHeight-enter,
 .fadeHeight-leave-to {
   opacity: 0%;
+}
+
+.journal-frame {
+  &_factions {
+    @include dot-bg-big(rgb(59, 45, 59), rgba(255, 255, 255, 0.02));
+  }
+  &_actors {
+    @include dot-bg-big(rgb(45, 59, 45), rgba(255, 255, 255, 0.02));
+  }
+  &_items {
+    @include dot-bg-big(rgb(45, 59, 58), rgba(255, 255, 255, 0.02));
+  }
+  &_scripts {
+    @include dot-bg-big(rgb(59, 48, 45), rgba(255, 255, 255, 0.02));
+  }
+  &_magic {
+    @include dot-bg-big(rgb(57, 68, 80), rgba(255, 255, 255, 0.02));
+  }
+  &_interact {
+    @include dot-bg-big(rgb(94, 86, 57), rgba(255, 255, 255, 0.02));
+  }
+}
+
+.sidebar {
+  position: relative;
+  overflow-x: hidden;
+}
+
+.journal-icon {
+  width: 600px;
+  height: 600px;
+  position: absolute;
+  top: 200px;
+  right: 0;
+  z-index: -10;
+  color: rgba(0, 0, 0, 0.1);
+}
+
+.types {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  height: auto;
+  padding: 10px;
+  justify-content: left;
+  &__item {
+    font-size: 20px;
+    padding: 2px 5px;
+    background-color: rgba(255, 255, 255, 0.2);
+    transition: all .1s ease-in;
+    &:hover {
+      background-color: rgba(255, 255, 255, 0.3);
+    }
+    &_selected {
+      background-color: rgba(255, 255, 255, 0.3);
+      color: white;
+    }
+  }
+}
+
+.loading-spinner {
+  width: 100px;
+  height: 100px;
+  color: #986;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
 }
 </style>

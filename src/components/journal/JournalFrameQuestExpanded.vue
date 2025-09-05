@@ -15,7 +15,10 @@
         <div v-else-if="props.questNameData?.is_new" class="quest-status quest-status_new">
           New
         </div>
-        {{ props.questNameData.name }}
+        <QuestNameEditor 
+          :default="props.questNameData?.name"
+          :disabled="true || !props.questNameData?.is_new"
+        />
       </div>
     </div>
     <div 
@@ -23,7 +26,7 @@
     >
       <JournalFrameQuestTabs 
         :quests="getQuestIds"
-        :questName="props.questNameData.name"
+        :questName="props.questNameData?.name"
         v-model="selectedQuestId"
         @update="update"
       />
@@ -79,8 +82,9 @@ import { computed, onMounted, ref, useTemplateRef, watch } from 'vue';
 import { addQuestEntry } from '@/api/idb.js'; 
 import type { FilterComparison } from '@/types/pluginEntries.ts';
 import { useJournalHighlight } from '@/stores/journalHighlights';
-import JournalFrameQuestEntry from './JournalFrameQuestEntry.vue';
-import JournalFrameQuestTabs from './JournalFrameQuestTabs.vue';
+import JournalFrameQuestEntry from '@/components/journal/JournalFrameQuestEntry.vue';
+import JournalFrameQuestTabs from '@/components/journal/JournalFrameQuestTabs.vue';
+import QuestNameEditor from '@/components/journal/QuestNameEditor.vue';
 import { useSelectedQuest } from '@/stores/selectedQuest';
 import { pxValue, useElementVisibility } from '@vueuse/core'
 
@@ -101,6 +105,10 @@ async function createEntry() {
 const props = defineProps({
   questNameData: Object,
 });
+
+watch(() => props.questNameData, () => {
+  console.log(props.questNameData)
+})
 
 const emit = defineEmits(['update']);
 
@@ -127,7 +135,7 @@ const containsMasterIds = computed(() => {
 })
 
 const getQuestIds = computed(() => {
-  let questIds = props.questNameData.quests.map(val => val.id);
+  let questIds = props.questNameData.quests?.map(val => val.id) || [];
   questIds = [...new Set(questIds)];
   questIds = questIds.map((questId) => ({
     id: questId,

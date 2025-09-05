@@ -1,11 +1,15 @@
 <template>
   <div class="text-reader__wrapper" :class="{ 'text-reader__wrapper_dep': dep }">
-    <button class="text-reader" @click="handleDelete">
-      <span v-if="loaded">Delete</span>
-      <SVGSpinners90RingWithBg v-else/>
+    <button v-if="loaded && isDepLoaded" class="text-reader" @click="handleDelete">
+      <span>Delete</span>
     </button>
     <label class="text-reader">
-      <input type="file" accept=".esp,.esm" @change="loadTextFromFile" :disabled="!loaded"/>
+      <input
+        type="file"
+        accept=".esp,.esm"
+        @change="loadTextFromFile"
+        :disabled="!loaded"
+      />
       <span v-if="loaded">
         {{ isDepLoaded ? 'Change' : 'Load' }}
       </span>

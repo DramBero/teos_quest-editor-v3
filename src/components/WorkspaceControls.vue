@@ -12,34 +12,54 @@
        <GameIconsGears />
       <span>Header</span>
     </div> -->
-    <div class="workspace-controls__button"
-      :class="{ 'workspace-controls__button_active': getSidebarActive === 'Factions' }"
-      @click="toggleSidebarActive('Factions')"
-      >
+    <div 
+      class="workspace-controls__button"
+      :class="{ 'workspace-controls__button_active': getSidebarActive === 'Social' }"
+      @click="toggleSidebarActive('Social')"
+    >
       <GameIconsOrganigram />
-      <span>Factions</span>
+      <span>Social</span>
     </div>
-    <!--     <div class="workspace-controls__button workspace-controls__button_wip" disabled>
-        <icon
-            name="user"
-            class="icon-controls"
-            scale="2"
-        ></icon>
-        <span>NPCs</span>
-    </div> -->
-    <div class="workspace-controls__button" disabled>
-      <!-- <icon name="user" class="icon-controls" scale="2"></icon> -->
+    <div 
+      class="workspace-controls__button"
+      :class="{ 'workspace-controls__button_active': getSidebarActive === 'Actors' }"
+      @click="toggleSidebarActive('Actors')"
+    >
       <GameIconsCharacter />
       <span>Actors</span>
     </div>
-    <div class="workspace-controls__button" disabled>
-      <!-- <icon name="book" class="icon-controls" scale="2"></icon> -->
+    <div
+      class="workspace-controls__button"
+      :class="{ 'workspace-controls__button_active': getSidebarActive === 'Items' }"
+      @click="toggleSidebarActive('Items')"
+    >
       <GameIconsGauntlet />
       <span>Items</span>
     </div>
-<!--     <div class="workspace-controls__button" disabled>
+    <div
+      class="workspace-controls__button"
+      :class="{ 'workspace-controls__button_active': getSidebarActive === 'Scripts' }"
+      @click="toggleSidebarActive('Scripts')"
+    >
+      <GameIconsGears />
       <span>Scripts</span>
-    </div> -->
+    </div>
+    <div
+      class="workspace-controls__button"
+      :class="{ 'workspace-controls__button_active': getSidebarActive === 'Magic' }"
+      @click="toggleSidebarActive('Magic')"
+    >
+      <FireSpellCast />
+      <span>Magic</span>
+    </div>
+    <div
+      class="workspace-controls__button"
+      :class="{ 'workspace-controls__button_active': getSidebarActive === 'Interact' }"
+      @click="toggleSidebarActive('Interact')"
+    >
+      <OpenChest />
+      <span>Interact</span>
+    </div>
   </div>
 </template>
 
@@ -52,6 +72,8 @@ import GameIconsGears from '~icons/game-icons/gears';
 import GameIconsOrganigram from '~icons/game-icons/organigram';
 import GameIconsCharacter from '~icons/game-icons/character';
 import GameIconsGauntlet from '~icons/game-icons/gauntlet';
+import FireSpellCast from '~icons/game-icons/fire-spell-cast';
+import OpenChest from '~icons/game-icons/open-chest';
 
 const sidebarStore = useSidebar();
 function toggleSidebarActive(value: string) {

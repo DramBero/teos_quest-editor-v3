@@ -32,6 +32,7 @@
 import { usePrimaryModal } from '@/stores/modals';
 import { ref } from 'vue';
 import { addJournalQuest } from '@/api/idb.js';
+import { useSelectedQuest } from '@/stores/selectedQuest';
 
 const nameError = ref<string>('');
 const idError = ref<string>('');
@@ -39,10 +40,17 @@ const inputName = ref<string>('');
 const inputId = ref<string>('');
 
 const primaryModalStore = usePrimaryModal();
+const selectedQuestStore = useSelectedQuest();
+
 async function createQuest() {
   try {
     await addJournalQuest(inputId.value, inputName.value)
     primaryModalStore.setActiveModal('');
+    await selectedQuestStore.fetchQuest(inputId.value, {
+      fetchQuests: true,
+      updateName: true,
+      reload: true,
+    });
   } catch (error) {
     console.error(error);
   }

@@ -8,6 +8,7 @@
       type="number"
       class="input-disposition"
       v-model="disposition"
+      :disabled="!props.entry.TMP_is_active"
       max="9999"
     />
     <div v-if="disposition && disposition !== props.entry.data.disposition" class="disposition__controls">
@@ -56,7 +57,7 @@ async function handleSubmit() {
         disposition: disposition.value,
       }
     });
-    await selectedQuestStore.fetchQuest(props.entry.TMP_topic, { reload: true });
+    await selectedQuestStore.fetchQuest(props.entry.TMP_topic, { reload: false });
   } catch (error) {
     console.error(error);
   }

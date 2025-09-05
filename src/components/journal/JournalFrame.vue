@@ -7,7 +7,7 @@
           class="text-input"
           type="text" 
           v-model.trim="questSearch" 
-          placeholder="Find quest"
+          placeholder="Search"
         >
         <div class="controls">
           <button 
@@ -28,7 +28,7 @@
           <button 
             class="add-quest" 
             :class="{'add-quest_active': showMasters}"
-            @click="selectedQuestName = null"
+            @click="handleQuestNameSelect(null)"
           >
             Back
           </button>
@@ -47,7 +47,7 @@
     </div>
     <JournalFrameQuestExpanded 
       v-else-if="selectedQuestName"
-      :questNameData="selectedQuestName"
+      :questNameData="selectedQuest"
       @update="fetchQuests"
     />
   </div>
@@ -59,6 +59,7 @@ import { usePrimaryModal } from '@/stores/modals';
 import { computed, onMounted, ref, watch } from 'vue';
 import JournalFrameQuest from './JournalFrameQuest.vue';
 import { useJournalHighlight } from '@/stores/journalHighlights';
+import { useSelectedQuest } from '@/stores/selectedQuest';
 import { useVirtualList, watchDebounced } from '@vueuse/core';
 import JournalFrameQuestExpanded from './JournalFrameQuestExpanded.vue';
 import TdesignAdd from '~icons/tdesign/add';
@@ -75,13 +76,19 @@ function toggleMasters() {
   showMasters.value = !showMasters.value;
 }
 
-const getJournal = ref([]);
+const selectedQuestStore = useSelectedQuest();
+
+const getJournal = computed(() => selectedQuestStore.getQuests);
 
 const questList = ref([]);
 
-const selectedQuestName = ref(null);
-function handleQuestNameSelect(newValue) {
-  selectedQuestName.value = newValue;
+function fetchQuests() {
+  selectedQuestStore.fetchQuests();
+}
+
+const selectedQuestName = computed(() => selectedQuestStore.getSelectedQuestName);
+function handleQuestNameSelect(newValue: String | null) {
+  selectedQuestStore.setSelectedQuestName(newValue);
 }
 
 async function handleSearch() {
@@ -115,6 +122,8 @@ const questNames = computed(() => {
   }
 });
 
+const selectedQuest = computed(() => questNames.value.find(val => val.name === selectedQuestName.value) || {});
+
 const { list, containerProps, wrapperProps } = useVirtualList(questNames, { itemHeight: 85 });
 
 const getQuestNameList = computed(() => {
@@ -130,15 +139,8 @@ watchDebounced(questSearch, () => {
 
 watch(getJournal, handleSearch);
 
-async function fetchQuests() {
-  const journalResponse = await fetchAllQuestIDs(true);
-  if (journalResponse?.length) {
-    getJournal.value = journalResponse;
-  }
-}
-
 onMounted(async () => {
-  fetchQuests();
+  selectedQuestStore.fetchQuests();
 })
 
 

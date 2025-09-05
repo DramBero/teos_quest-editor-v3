@@ -8,12 +8,40 @@
       @select="handleTabSelect"
     />
     <button
+      v-if="!addMode"
       type="button"
       class="quest-tabs__tab quest-tabs__tab_add" 
-      @click="addQuest"
+      :class="{'quest-tabs__tab_input': addMode}"
+      @click="addModeOn"
     >
       <TdesignAdd />
     </button>
+    <div 
+      v-else
+      class="quest-tabs__tab quest-tabs__tab_add quest-tabs__tab_input"
+    >
+      <editor-content
+        :editor="editor"
+        autocomplete="off"
+        autocorrect="off"
+        autocapitalize="off"
+        spellcheck="false"
+      />
+      <button
+        type="button"
+        class="tab__add"
+        @click="addQuest"
+      >
+        <TdesignCheck />
+      </button>
+      <button
+        type="button"
+        class="tab__delete"
+        @click="addModeOff"
+      >
+        <TdesignClose />
+      </button>
+    </div>
   </div>
 </template>
 
@@ -22,6 +50,13 @@ import JournalFrameQuestTabsItem from '@/components/journal/JournalFrameQuestTab
 import { addJournalQuest } from '@/api/idb.js';
 import TdesignClose from '~icons/tdesign/close';
 import TdesignAdd from '~icons/tdesign/add';
+import TdesignCheck from '~icons/tdesign/check';
+import { ref, useTemplateRef } from 'vue';
+import StarterKit from '@tiptap/starter-kit';
+import { Extension } from "@tiptap/core";
+import { useEditor, EditorContent } from '@tiptap/vue-3';
+import { watchDebounced } from '@vueuse/core';
+import { useSelectedQuest } from '@/stores/selectedQuest';
 
 interface QuestForTabs {
   id: string,
@@ -33,6 +68,23 @@ const props = defineProps<{
   questName: string;
 }>();
 
+const addMode = ref<boolean>(false);
+const newQuestName = ref<string>('new_quest');
+
+function addModeOff() {
+  addMode.value = false;
+  newQuestName.value = 'new_quest';
+}
+
+function addModeOn() {
+  addMode.value = true;
+  if (!editor.value) return;
+  editor.value.commands.focus();
+  editor.value.commands.selectAll();
+}
+
+const selectedQuestStore = useSelectedQuest();
+
 const model = defineModel<string>();
 
 function handleTabSelect(value: string) {
@@ -43,17 +95,40 @@ const emit = defineEmits(['update']);
 
 async function addQuest() {
   try {
-    const date = new Date();
-    let dateString = date.toISOString().split('T')[1];
-    dateString = dateString.split(':').join('_');
-    dateString = dateString.split('.').join('_');
-    const questId = 'New_Quest_' + dateString;
-    await addJournalQuest(questId, props.questName);
-    emit('update', questId);
+    await addJournalQuest(newQuestName.value, props.questName);
+    // emit('update', newQuestName.value);
+    await selectedQuestStore.fetchQuest(newQuestName.value, {
+      fetchQuests: true,
+      updateName: true,
+      reload: false
+    });
+    model.value = newQuestName.value;
   } catch (error) {
     console.error(error);
   }
 }
+
+const DisableEnter = Extension.create({
+  addKeyboardShortcuts() {
+    return {
+      Enter: addQuest,
+      Space: () => true,
+    };
+  },
+});
+
+const editor = useEditor({
+  content: newQuestName.value,
+  extensions: [
+    StarterKit,
+    DisableEnter,
+  ],
+  autofocus: 'all',
+  parseOptions: {
+    preserveWhitespace: 'full',
+  },
+  onUpdate: () => newQuestName.value = editor.value ? editor.value.getText() : '',
+});
 </script>
 
 <style lang="scss">
@@ -138,7 +213,7 @@ async function addQuest() {
         }
       }
       &_add {
-        background-color: rgb(202, 165, 96, 1);
+        background-color: rgb(112, 193, 130);
         border-radius: 8px;
         border-color: transparent;
         display: flex;
@@ -157,7 +232,7 @@ async function addQuest() {
         }
         &:hover {
           transform: none;
-          background-color: rgb(202, 165, 96, 1);
+          background-color: rgb(111, 206, 131);
           opacity: 1 !important;
         }
         svg {
@@ -165,6 +240,13 @@ async function addQuest() {
           height: 20px;
           width: 20px;
         }
+      }
+      &_input {
+        width: fit-content;
+        padding: 5px;
+        opacity: 1;
+        background-color: rgb(111, 206, 131);
+        cursor: text;
       }
     }
   }
@@ -181,6 +263,11 @@ async function addQuest() {
         width: 15px;
         height: 15px;
       }
+    }
+    &__add {
+      display: flex;
+      justify-content: center;
+      align-items: center;
     }
   }
 </style>

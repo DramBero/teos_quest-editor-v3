@@ -2,13 +2,13 @@
   <div 
     class="quest" 
     :class="{
-      'quest_new': props.questNameData?.is_new && !containsMasterIds,
-      'quest_mod': containsActivePluginIds || (props.questNameData?.is_new && containsMasterIds),
+      'quest_new': false && props.questNameData?.is_new && !containsMasterIds,
+      'quest_mod': false && containsActivePluginIds || (props.questNameData?.is_new && containsMasterIds),
     }"
     ref="quest"
   >
     <div class="quest-header">
-      <div class="quest-title" @click="emit('selected', props.questNameData)">
+      <div class="quest-title" @click="emit('selected', props.questNameData.name)">
         <div v-if="props.questNameData?.is_new && containsMasterIds" class="quest-status quest-status_mod">
           Mod
         </div>

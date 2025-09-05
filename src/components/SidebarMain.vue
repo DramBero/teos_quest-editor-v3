@@ -1,9 +1,79 @@
 <template>
   <div class="sidebar" v-if="getSidebarActive">
     <JournalFrame v-show="getSidebarActive === 'Journal'" :key="4" />
-    <SidebarFactions v-show="getSidebarActive === 'Factions'" :key="6" />
-    <!--     <HeaderFrame v-show="getSidebarActive === 'Header'" :key="5" />
-    <SidebarFactions v-show="getSidebarActive === 'Factions'" :key="6" /> -->
+    <SidebarFactions 
+      v-show="getSidebarActive === 'Social'"
+      title="Social"
+      :entryTypes="[
+        'Class',
+        'Faction',
+        'Race',
+        'Skill',
+        'Birthsign',
+      ]"
+      modificator="factions"
+    />
+    <SidebarFactions 
+      v-show="getSidebarActive === 'Actors'"
+      title="Actors"
+      :entryTypes="[
+        'Npc',
+        'Creature',
+        'LeveledCreature',
+      ]"
+      modificator="actors"
+    />
+    <SidebarFactions 
+      v-show="getSidebarActive === 'Items'"
+      title="Items"
+      :entryTypes="[
+        'Clothing',
+        'Armor',
+        'Weapon',
+        'MiscItem',
+        'RepairItem',
+        'Apparatus',
+        'Lockpick',
+        'Probe',
+        'Ingredient',
+        'Book',
+        'Alchemy',
+        'LeveledItem',
+      ]"
+      modificator="items"
+    />
+    <SidebarFactions 
+      v-show="getSidebarActive === 'Scripts'"
+      title="Scripts"
+      :entryTypes="[
+        'Script',
+        'StartScript',
+        'GameSetting',
+        'GlobalVariable',
+      ]"
+      modificator="scripts"
+    />
+    <SidebarFactions 
+      v-show="getSidebarActive === 'Magic'"
+      title="Magic"
+      :entryTypes="[
+        'Spell',
+        'MagicEffect',
+        'Enchanting',
+        'Alchemy',
+      ]"
+      modificator="magic"
+    />
+    <SidebarFactions 
+      v-show="getSidebarActive === 'Interact'"
+      title="Interact"
+      :entryTypes="[
+        'Door',
+        'Activator',
+        'Container',
+      ]"
+      modificator="interact"
+    />
   </div>
 </template>
 
