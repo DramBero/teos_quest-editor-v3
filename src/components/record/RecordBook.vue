@@ -16,13 +16,11 @@ import { useSelectedRecord } from '@/stores/selectedRecord';
 import { computed } from 'vue';
 
 const selectedRecordStore = useSelectedRecord();
-const selectedRecord = computed(() => selectedRecordStore.getSelectedRecord[0]);
+const selectedRecord = computed(() => selectedRecordStore.getSelectedRecord?.[0] || {});
 
 function parseText(text: String) {
-  const blocks = text.split('<DIV');
   let newText = text;
   newText = newText.replace(/magic cards/gi, 'pelagiad');
-  // newText = newText.replace(/<br\s*\/?>/gi, '\r\n');
   return newText;
 }
 
@@ -30,27 +28,35 @@ const parsedText = computed(() => parseText(selectedRecord.value.text));
 </script>
 <style lang="scss">
 .record-book {
-  padding: 20px;
+  padding: 20px 0;
   max-width: 700px;
   margin: 0 auto;
   color: rgb(49, 44, 28);
-  background-color: rgb(201, 190, 157);
+  // background-color: rgb(201, 190, 157);
+  background-image: url('/images/paper-texture.jpg');
   border-radius: 4px;
+  height: 100%;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  gap: 10px;
   &__title {
     font-size: 30px;
-    margin-bottom: 20px;
-    background-color: rgb(49, 44, 28);
-    color: rgb(201, 190, 157);
+    background-color: rgba(49, 44, 28, 0.9);
+    color: rgba(255, 255, 255, 0.9);
     text-align: center;
     padding: 5px;
-    border-radius: 4px;
+    width: 100%;
   }
   &__text {
     font-size: 25px;
     width: 47ch;
     white-space: normal;
     overflow-wrap: break-word;
-    margin: 0 auto;
+    height: 100%;
+    overflow-y: scroll;
     font {
       font-size: 25px !important;
     }

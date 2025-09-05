@@ -1,5 +1,5 @@
 <template>
-  <div class="record" v-if="selectedRecord">
+  <div v-if="selectedRecord" class="record" @click="closeRecord">
     <button
       type="button"
       class="record__close"
@@ -10,6 +10,7 @@
     <div class="record__content">
       <component
         :is="getSelectedComponent"
+        @click.stop
       />
     </div>
   </div>
@@ -70,9 +71,8 @@ function closeRecord(){
     }
   }
   &__content {
-    padding-top: 50px;
+    padding: 50px 0;
     height: 100%;
-    overflow-y: scroll;
   }
 }
 </style>
