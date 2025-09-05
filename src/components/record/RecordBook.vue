@@ -34,6 +34,8 @@ const parsedText = computed(() => parseText(selectedRecord.value.text));
   max-width: 700px;
   margin: 0 auto;
   color: rgb(49, 44, 28);
+  background-color: rgb(201, 190, 157);
+  border-radius: 4px;
   &__title {
     font-size: 30px;
     margin-bottom: 20px;

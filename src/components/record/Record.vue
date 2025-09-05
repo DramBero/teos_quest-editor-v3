@@ -47,15 +47,26 @@ function closeRecord(){
 .record {
   width: 100%;
   height: 100%;
-  background-color: rgb(201, 190, 157);
   position: absolute;
   &__close {
     position: absolute;
     right: 10px;
     top: 10px;
+    background-color: rgba(0, 0, 0, 0.5);
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     svg {
-      height: 30px;
+      color: rgb(202, 165, 96);
       width: 30px;
+      height: 30px;
+      transition: fill 0.15s ease-in;
+      &:hover {
+        color: rgb(223, 200, 157);
+      }
     }
   }
   &__content {
