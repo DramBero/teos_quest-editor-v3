@@ -105,7 +105,7 @@ watch(redrawCounter, async () => {
     return
   }
   redrawTrigger.value = true;
-  await new Promise((resolve) => setTimeout(resolve, 150));
+  await new Promise((resolve) => setTimeout(resolve, 200));
   redrawTrigger.value = false;
 })
 
@@ -120,6 +120,16 @@ async function redrawWatcher() {
 const speakerData = ref<NpcEntry | null>(null);
 
 const getFaceData = computed(() => {
+  try {
+    const filePath = `/meshes/${speakerData.value?.head?.toLowerCase()}.glb`;
+    return filePath;
+  } catch (error) {
+    console.error(error);
+    return '';
+  }
+});
+
+const getFaceData2 = computed(() => {
   switch (speakerData.value?.head?.toLowerCase()) {
     case 'b_n_argonian_f_head_01': return '/meshes/b_n_argonian_f_head_01.glb';
     case 'b_n_argonian_f_head_02': return '/meshes/b_n_argonian_f_head_02.glb';
@@ -139,6 +149,7 @@ const getFaceData = computed(() => {
     case 'b_n_breton_f_head_06': return '/meshes/b_n_breton_f_head_06.glb';
     case 'b_v_breton_f_head_01': return '/meshes/b_v_breton_f_head_01.glb';
 
+    case 'b_n_breton_m_head_01': return '/meshes/b_n_breton_m_head_01.glb';
 
     case 'b_n_khajiit_f_head_01': return '/meshes/b_n_khajiit_f_head_01.glb';
     case 'b_n_khajiit_f_head_02': return '/meshes/b_n_khajiit_f_head_02.glb';
@@ -230,6 +241,16 @@ const getFaceData = computed(() => {
 })
 
 const getHairData = computed(() => {
+  try {
+    const filePath = `/meshes/${speakerData.value?.hair?.toLowerCase()}.glb`;
+    return filePath;
+  } catch (error) {
+    console.error(error);
+    return '';
+  }
+});
+
+const getHairData2 = computed(() => {
   switch(speakerData.value?.hair?.toLowerCase()) {
     case 'b_n_dark elf_f_hair_03': return '/meshes/b_n_dark elf_f_hair_03.glb';
     case 'b_n_imperial_m_hair_01': return '/meshes/b_n_imperial_m_hair_01.glb';
