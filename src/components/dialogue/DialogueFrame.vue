@@ -48,11 +48,13 @@
           :speakerType="currentSpeakerType" />
       </div>
     </div>
+    <Record />
   </div>
 </template>
 
 <script setup lang="ts">
 import DialogueFrameCard from '@/components/dialogue/DialogueFrameCard.vue';
+import Record from '../record/Record.vue';
 import { fetchAllDialogueBySpeaker, fetchSpeakersAmountBySpeakerType } from '@/api/idb.js';
 import { computed, onMounted, ref, watch } from 'vue';
 import { usePrimaryModal } from '@/stores/modals';

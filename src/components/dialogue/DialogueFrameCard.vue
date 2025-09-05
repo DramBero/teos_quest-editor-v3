@@ -354,7 +354,6 @@ function openDialogueModal() {
   flex-direction: column-reverse;
   position: relative;
   align-items: center;
-  backdrop-filter: blur(2px);
   //gap: 10px;
   &:hover {
     background: rgba(0, 0, 0, 0.3);

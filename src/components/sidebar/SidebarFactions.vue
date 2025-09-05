@@ -318,7 +318,7 @@ watch(factions, (newValue) => {
 .types {
   display: flex;
   flex-wrap: wrap;
-  gap: 2px;
+  gap: 3px;
   height: auto;
   padding: 10px;
   justify-content: left;
@@ -326,6 +326,7 @@ watch(factions, (newValue) => {
     font-size: 20px;
     padding: 2px 5px;
     background-color: rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
     transition: all .1s ease-in;
     &:hover {
       background-color: rgba(255, 255, 255, 0.3);

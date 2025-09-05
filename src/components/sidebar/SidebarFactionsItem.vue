@@ -1,5 +1,10 @@
 <template>
-  <div class="faction" v-if="props.faction.length">
+  <button
+    v-if="props.faction.length"
+    class="faction"
+    :disabled="!['Book'].includes(props.faction[0].type)"
+    @click="handleSelect"
+  >
     <div class="faction-left">
       <div class="faction__title">
         <div v-if="props.faction[0].TMP_is_active && props.faction.length > 1" class="quest-status quest-status_mod">
@@ -36,25 +41,40 @@
         </tbody>
       </table>
     </div>
-  </div>
+  </button>
 </template>
 
 <script setup lang="ts">
+import { useSelectedRecord } from '@/stores/selectedRecord';
+
 const props = defineProps<{
   faction: Array<Object>;
     modificator: String;
 }>();
+
+const selectedRecordStore = useSelectedRecord();
+
+function handleSelect() {
+  selectedRecordStore.setSelectedRecord(props.faction);
+}
 </script>
 
 <style lang="scss">
 .faction {
   display: flex;
   justify-content: space-between;
+  text-align: left;
   gap: 5px;
   padding: 8px 12px;
   border-radius: 4px;
   border: solid 1px rgba(255, 255, 255, 0.1);
   background-color: rgba(255, 255, 255, 0.1);
+  &:hover {
+    background-color: rgba(255, 255, 255, 0.06);
+  }
+  &:disabled {
+    pointer-events: none;
+  }
   &-left {
     display: flex;
     flex-direction: column;

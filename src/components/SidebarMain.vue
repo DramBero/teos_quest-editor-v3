@@ -27,6 +27,7 @@
       v-show="getSidebarActive === 'Items'"
       title="Items"
       :entryTypes="[
+        'Book',
         'Clothing',
         'Armor',
         'Weapon',
@@ -36,7 +37,6 @@
         'Lockpick',
         'Probe',
         'Ingredient',
-        'Book',
         'Alchemy',
         'LeveledItem',
       ]"
@@ -47,9 +47,9 @@
       title="Scripts"
       :entryTypes="[
         'Script',
+        'GlobalVariable',
         'StartScript',
         'GameSetting',
-        'GlobalVariable',
       ]"
       modificator="scripts"
     />

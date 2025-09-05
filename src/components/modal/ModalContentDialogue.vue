@@ -232,11 +232,6 @@ const topicChoices = computed(() => {
 
       for (const scriptString of scriptStrings) {
         while ((match = regex.exec(scriptString)) !== null) {
-          if (answer.id == '206641278520424260') {
-            console.log('MATCH STRING', scriptString)
-            console.log('MATCH:', match)
-          }
-
           choices.push(...transformChoiceStringToObjects(match[1].trim(), answer.id))
         } 
       }
