@@ -82,6 +82,7 @@ import JournalFrame from '@/components/journal/JournalFrame.vue';
 import SidebarFactions from '@/components/sidebar/SidebarFactions.vue';
 import { useSidebar } from '@/stores/sidebar';
 import { computed } from 'vue';
+
 const sidebarStore = useSidebar();
 const getSidebarActive = computed(() => {
   return sidebarStore.getActiveItem;

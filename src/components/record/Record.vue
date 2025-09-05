@@ -1,22 +1,21 @@
 <template>
-  <div v-if="selectedRecord" class="record" @click="closeRecord">
-    <button
-      type="button"
-      class="record__close"
-      @click="closeRecord"
-    >
-      <TdesignClose />
-    </button>
-    <div class="record__content">
-      <component
-        :is="getSelectedComponent"
-        @click.stop
-      />
+  <transition name="fade">
+    <div v-if="selectedRecord" class="record" @click="closeRecord">
+      <button
+        type="button"
+        class="record__close"
+        @click="closeRecord"
+      >
+        <TdesignClose />
+      </button>
+      <div class="record__content">
+        <component
+          :is="getSelectedComponent"
+          @click.stop
+        />
+      </div>
     </div>
-  </div>
-  <div v-else>
-
-  </div>
+  </transition>
 </template>
 
 <script setup lang="ts">
@@ -74,5 +73,16 @@ function closeRecord(){
     padding: 50px 0;
     height: 100%;
   }
+}
+
+.fade-enter-to,
+.fade-leave-active {
+  transition: opacity 0.3s cubic-bezier(0, 0, 0.2, 1);
+  opacity: 1;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
 }
 </style>

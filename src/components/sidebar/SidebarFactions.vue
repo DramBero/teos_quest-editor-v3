@@ -13,6 +13,9 @@
           @click="selectedType = type"
         >
           {{ type }}
+          <div class="types__amount" v-if="getTypeAmount(type)">
+            {{ getTypeAmount(type) }}
+          </div>
         </button>
       </div>
       <div class="journal-frame__controls">
@@ -52,8 +55,9 @@
 </template>
 
 <script setup lang="ts">
-import { fetchByType } from '@/api/idb.js';
 import SidebarFactionsItem from '@/components/sidebar/SidebarFactionsItem.vue';
+import { useCountTypes } from '@/stores/countTypes';
+import { fetchByType } from '@/api/idb.js';
 import { computed, defineAsyncComponent, ref, watch } from 'vue';
 import SVGSpinners90RingWithBg from '~icons/svg-spinners/90-ring-with-bg';
 
@@ -118,6 +122,12 @@ watch(showMasters, fetchFactions, {
 
 watch(selectedType, fetchFactions);
 
+const countTypesStore = useCountTypes();
+
+function getTypeAmount(type) {
+  return countTypesStore.getTypesAmount?.[type] || 0;
+}
+
 async function fetchFactions() {
   try {
     loading.value = true;
@@ -131,6 +141,7 @@ async function fetchFactions() {
     const uniqueIds = [...new Set(response.map((val) => val[idKey]))];
     const uniqueFactions = uniqueIds.map(val => response.filter(faction => faction[idKey] === val));
     factions.value = uniqueFactions;
+    countTypesStore.updateCountTypes();
   } catch (error) {
     console.error(error);
   } finally {
@@ -328,6 +339,9 @@ watch(factions, (newValue) => {
     background-color: rgba(255, 255, 255, 0.2);
     border-radius: 4px;
     transition: all .1s ease-in;
+    display: flex;
+    align-items: center;
+    gap: 5px;
     &:hover {
       background-color: rgba(255, 255, 255, 0.3);
     }
@@ -335,6 +349,17 @@ watch(factions, (newValue) => {
       background-color: rgba(255, 255, 255, 0.3);
       color: white;
     }
+  }
+  &__amount {
+    background-color: rgba(89, 170, 106, 0.7);
+    border-radius: 10px;
+    color: white;
+    font-size: 15px;
+    font-family: 'Consolas';
+    display: flex;
+    align-items: center;
+    justify-content: center;;
+    padding: 0px 5px;
   }
 }
 

@@ -2,6 +2,7 @@
   <button
     v-if="props.faction.length"
     class="faction"
+    :class="{'faction_selected': getSelectedRecord?.[0]?.id === props.faction[0].id }"
     :disabled="!['Book'].includes(props.faction[0].type)"
     @click="handleSelect"
   >
@@ -46,6 +47,7 @@
 
 <script setup lang="ts">
 import { useSelectedRecord } from '@/stores/selectedRecord';
+import { computed } from 'vue';
 
 const props = defineProps<{
   faction: Array<Object>;
@@ -57,6 +59,8 @@ const selectedRecordStore = useSelectedRecord();
 function handleSelect() {
   selectedRecordStore.setSelectedRecord(props.faction);
 }
+
+const getSelectedRecord = computed(() => selectedRecordStore.getSelectedRecord);
 </script>
 
 <style lang="scss">
@@ -67,13 +71,19 @@ function handleSelect() {
   gap: 5px;
   padding: 8px 12px;
   border-radius: 4px;
-  border: solid 1px rgba(255, 255, 255, 0.1);
+  border: solid 3px rgba(255, 255, 255, 0.1);
   background-color: rgba(255, 255, 255, 0.1);
+  transition: all .1s ease-in;
   &:hover {
     background-color: rgba(255, 255, 255, 0.06);
   }
   &:disabled {
     pointer-events: none;
+  }
+  &_selected {
+    background-color: rgba(255, 255, 255, 0);
+    border: solid 3px rgb(202, 165, 96);
+    box-sizing: border-box;
   }
   &-left {
     display: flex;

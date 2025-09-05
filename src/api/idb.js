@@ -41,6 +41,29 @@ const TMPfields = [
   'TMP_id',
 ]
 
+let activePluginTypeCount = {}
+
+export async function countTypes() {
+  console.log('counting')
+  const activePlugin = databases['activePlugin'];
+  const items = await activePlugin.pluginData.toArray();
+  activePluginTypeCount = {};
+  items.forEach(item => {
+    if (activePluginTypeCount[item.type]) {
+      activePluginTypeCount[item.type]++;
+    } else {
+      activePluginTypeCount[item.type] = 1;
+    }
+  });
+}
+
+export async function getCountTypes() {
+  // await initPlugin('activePlugin');
+  await countTypes();
+  console.log('COUNT:', activePluginTypeCount)
+  return activePluginTypeCount;
+}
+
 export const initPlugin = async function (pluginName) {
   createDB(pluginName);
   let activePlugin = getDB(pluginName);
