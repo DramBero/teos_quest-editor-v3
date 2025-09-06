@@ -6,20 +6,62 @@
     <div class="record-book__title">
       {{ selectedRecord.name }}
     </div>
-    <div class="record-book__text" v-sanitize-html="{ html: parseText(parsedText), options: sanitizeOptions }">
+    <div 
+      v-if="selectedRecord.data.book_type === 'Scroll'"
+      class="record-book__text" 
+      v-sanitize-html="{ html: parseText(parsedText), options: sanitizeOptions }"
+    >
+    </div>
+    <div v-else-if="selectedRecord.data.book_type === 'Book'" class="record-book__book">
+      <div 
+        class="record-book__text record-book__page" 
+        ref="leftPage"
+        v-sanitize-html="{ html: parseText(pages[currentPage]), options: sanitizeOptions }"
+      >
+      </div>
+      <div 
+        class="record-book__text record-book__page" 
+        ref="rightPage"
+        v-sanitize-html="{ html: parseText(pages[currentPage + 1]), options: sanitizeOptions }"
+      >
+      </div>
+      <button
+        v-if="currentPage > 1"
+        class="book-pagination book-pagination_prev"
+        @click="currentPage = currentPage - 2"
+      >
+        <TdesignCaretLeft />
+      </button>
+      <button
+        v-if="currentPage < (pages.length - 2)"
+        class="book-pagination book-pagination_next"
+        @click="currentPage = currentPage + 2"
+      >
+        <TdesignCaretRight />
+      </button>
     </div>
   </div>
   <div class="book-editor">
+    <div class="book-editor__header">
+
+    </div>
     <Codemirror
       v-model:value="parsedText"
       :options="cmOptions"
     />
+    <div class="book-editor__form" v-if="false">
+      <input
+        type="text"
+        :value="selectedRecord.name"
+      >
+    </div>
   </div>
+  <div class="measurer" ref="measurer" aria-hidden="true"></div>
 </template>
 
 <script setup lang="ts">
 import { useSelectedRecord } from '@/stores/selectedRecord';
-import { computed, ref, watch } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref, useTemplateRef, watch } from 'vue';
 import sanitize from 'sanitize-html';
 
 import Codemirror from "codemirror-editor-vue3";
@@ -27,10 +69,15 @@ import "codemirror/mode/htmlmixed/htmlmixed.js";
 import "codemirror/theme/dracula.css";
 import { modifyEntry } from '@/api/idb.js';
 
+import TdesignCaretRight from '~icons/tdesign/caret-right';
+import TdesignCaretLeft from '~icons/tdesign/caret-left';
+
 import { watchDebounced } from '@vueuse/core';
 
 const selectedRecordStore = useSelectedRecord();
 const selectedRecord = computed(() => selectedRecordStore.getSelectedRecord?.[0] || {});
+
+const currentPage = ref<Number>(0);
 
 const sanitizeOptions: sanitize.IOptions = {
   allowedTags: ['div', 'br', 'font', 'img', 'span'],
@@ -44,7 +91,9 @@ const sanitizeOptions: sanitize.IOptions = {
 
 function parseText(text: String) {
   let newText = text;
+  if (!newText) return '';
   newText = newText.replace(/magic cards/gi, 'pelagiad');
+  newText = newText.replace(/--/g, '\u2011\u2011');
   newText = newText.replace(/%[\w]+(?=\W|$)/g, (match) => {
     return `<span class="variable">${match}</span>`;
   });
@@ -60,6 +109,8 @@ const cmOptions = {
 const parsedText = ref<String>();
 watch(selectedRecord, () => {
   parsedText.value = selectedRecord.value.text;
+}, {
+  immediate: true,
 })
 
 watchDebounced(parsedText, (newValue) => {
@@ -71,10 +122,88 @@ watchDebounced(parsedText, (newValue) => {
   debounce: 200,
 });
 
+let resizeObserver = null;
+
+const leftPage = useTemplateRef('leftPage');
+const rightPage = ref(null);
+const measurer = ref(null);
+
+const pages = ref([]);
+const pageIndex = ref(0);
+
+function createPages() {
+  pages.value = paginateHTML(parseText(parsedText.value || ''), measurer.value);
+  // ensure pageIndex is valid and even (left page starts at even index 0)
+  if (pageIndex.value >= pages.value.length) pageIndex.value = Math.max(0, pages.value.length - 2);
+  if (pageIndex.value % 2 === 1) pageIndex.value--; // keep left on even index
+}
+
+function next() {
+  if (pageIndex.value < pages.value.length - 2) pageIndex.value += 2;
+}
+function prev() {
+  if (pageIndex.value >= 2) pageIndex.value -= 2;
+}
+
+function paginateHTML(htmlString: String, measureEl) {
+  if (!measureEl) return [htmlString];
+  // prepare measurer style/content
+  measureEl.innerHTML = '';
+  const words = htmlString.split(/(\s+)/); // keep spaces
+  const pagesOut = [];
+  let buffer = '';
+
+  for (let i = 0; i < words.length; i++) {
+    buffer += words[i];
+    measureEl.innerHTML = buffer;
+    // if overflow, backtrack: remove last token and finalize page
+    if (measureEl.scrollHeight > measureEl.clientHeight) {
+      // remove the last token that caused overflow
+      const removed = words[i];
+      buffer = buffer.slice(0, -removed.length);
+      // trim and push
+      pagesOut.push(buffer || '');
+      // start new buffer with the removed token (if not pure whitespace)
+      buffer = removed.trim() ? removed : '';
+      // set measure to new buffer for next iteration
+      measureEl.innerHTML = buffer;
+    }
+  }
+  if (buffer.trim() || pagesOut.length === 0) pagesOut.push(buffer);
+  return pagesOut;
+}
+
+function setupMeasurer() {
+  if (!measurer.value) return;
+  if (!leftPage.value) return;
+  const style = getComputedStyle(leftPage.value);
+  const m = measurer.value;
+  // 26 400
+  m.style.width = '25ch';
+  m.style.height = '390px';
+  m.style.font = style.font;
+  m.style.fontSize = style.fontSize;
+  m.style.lineHeight = style.lineHeight;
+  m.style.whiteSpace = style.whiteSpace;
+  m.style.overflow = 'scroll';
+}
+
+onMounted(() => {
+  setupMeasurer();
+  createPages();
+});
+
+watch(parsedText, () => {
+  setupMeasurer();
+  createPages();
+}, {
+  immediate: true,
+});
 </script>
+
 <style lang="scss">
 .record-book {
-  padding: 20px 0;
+  padding: 0 0 10px 0;
   max-width: 700px;
   margin: 0 auto;
   color: rgb(49, 44, 28);
@@ -95,6 +224,11 @@ watchDebounced(parsedText, (newValue) => {
     text-align: center;
     padding: 5px;
     width: 100%;
+  }
+  &__book {
+    display: flex;
+    gap: 20px;
+    overflow: scroll;
   }
   &__text {
     font-size: 25px;
@@ -128,7 +262,15 @@ watchDebounced(parsedText, (newValue) => {
   }
   &_book {
     .record-book__text {
-      width: 29ch;
+    }
+  }
+  &__page {
+    height: 450px;
+    width: 29ch;
+    font-size: 20px !important;
+    overflow: visible;
+    font {
+      font-size: 20px !important;
     }
   }
 }
@@ -140,8 +282,30 @@ watchDebounced(parsedText, (newValue) => {
   bottom: 0;
   left: 1;
   background-color: white;
+  display: flex;
   .CodeMirror {
     font-size: 16px;
+    // max-width: 800px;
+  }
+  &__form {
+    // min-width: 400px;
+  }
+}
+
+.book-pagination {
+  position: absolute;
+  top: 30%;
+  transform: translateY(-50%);
+  svg {
+    width: 90px;
+    height: 90px;
+    color: rgb(202, 165, 96);
+  }
+  &_prev {
+    left: 10px;
+  }
+  &_next {
+    right: 10px;
   }
 }
 </style>

@@ -70,7 +70,7 @@ function closeRecord(){
     }
   }
   &__content {
-    padding: 50px 0;
+    padding: 10px 0;
     height: 100%;
   }
 }

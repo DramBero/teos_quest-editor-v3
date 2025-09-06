@@ -81,7 +81,7 @@ const getSelectedRecord = computed(() => selectedRecordStore.getSelectedRecord);
     pointer-events: none;
   }
   &_selected {
-    background-color: rgba(255, 255, 255, 0);
+    background-color: rgba(202, 165, 96, 0.1);
     border: solid 3px rgb(202, 165, 96);
     box-sizing: border-box;
   }
