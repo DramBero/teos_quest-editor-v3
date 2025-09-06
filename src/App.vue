@@ -52,7 +52,7 @@ const getSpeakerData = computed(() => {
 
 @font-face {
   font-family: "Gothic";
-  src: local("Gothic"), url(@/assets/fonts/gothic/GOTHIC.ttf) format("truetype");
+  src: local("Gothic"), url(@/assets/fonts/gothic/GOTHIC.TTF) format("truetype");
 }
 
 @font-face {
