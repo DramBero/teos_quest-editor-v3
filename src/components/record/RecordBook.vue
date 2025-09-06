@@ -179,12 +179,14 @@ function setupMeasurer() {
   const style = getComputedStyle(leftPage.value);
   const m = measurer.value;
   // 26 400
-  m.style.width = '25ch';
-  m.style.height = '390px';
+  m.style.width = '27ch';
+  m.style.height = '380px';
   m.style.font = style.font;
   m.style.fontSize = style.fontSize;
   m.style.lineHeight = style.lineHeight;
   m.style.whiteSpace = style.whiteSpace;
+  m.style.letterSpacing = style.letterSpacing;
+  m.style.wordSpacing = style.wordSpacing;
   m.style.overflow = 'scroll';
 }
 
@@ -202,6 +204,10 @@ watch(parsedText, () => {
 </script>
 
 <style lang="scss">
+.measurer {
+  opacity: 0;
+  pointer-events: none;
+}
 .record-book {
   padding: 0 0 10px 0;
   max-width: 700px;
@@ -210,10 +216,10 @@ watch(parsedText, () => {
   // background-color: rgb(201, 190, 157);
   background-image: url('/images/paper-texture.jpg');
   border-radius: 4px;
-  height: 60%;
+  max-height: 62%;
   overflow: hidden;
   display: flex;
-  justify-content: center;
+  // justify-content: center;
   align-items: center;
   flex-direction: column;
   gap: 10px;
@@ -237,6 +243,8 @@ watch(parsedText, () => {
     overflow-wrap: break-word;
     height: 100%;
     overflow-y: scroll;
+    letter-spacing: -0.2px;
+    word-spacing: 0px;
     font {
       font-size: 25px !important;
     }
@@ -261,23 +269,24 @@ watch(parsedText, () => {
     }
   }
   &_book {
+    max-width: 650px;
     .record-book__text {
     }
   }
   &__page {
-    height: 450px;
+    height: 415px;
     width: 29ch;
-    font-size: 20px !important;
+    font-size: 19px !important;
     overflow: visible;
     font {
-      font-size: 20px !important;
+      font-size: 19px !important;
     }
   }
 }
 
 .book-editor {
   width: 100%;
-  height: 40%;
+  height: 38%;
   position: absolute;
   bottom: 0;
   left: 1;
