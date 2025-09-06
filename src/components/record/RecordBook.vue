@@ -78,6 +78,21 @@
         :options="cmOptions"
         :extensions
       />
+      <div 
+        v-if="currentTab === 'editor' && lintingProblems.length"
+        class="status-bar"
+        :class="`status-bar_${lintingProblems[0].type}`"
+      >
+        <div class="status-bar__icon">
+          <TdesignErrorTriangle v-if="lintingProblems[0].type == 'warning'"/>
+        </div>
+        <div class="status-bar__line">
+          Line {{ lintingProblems[0].line }}:
+        </div>
+        <div class="status-bar__text">
+          {{ lintingProblems[0].text }}
+        </div>
+      </div>
       <div v-else-if="currentTab === 'settings'" class="form">
         <div class="form-field">
           <label>
@@ -173,6 +188,7 @@ import { modifyEntry } from '@/api/idb.js';
 
 import TdesignCaretRight from '~icons/tdesign/caret-right';
 import TdesignCaretLeft from '~icons/tdesign/caret-left';
+import TdesignErrorTriangle from '~icons/tdesign/error-triangle';
 
 import { watchDebounced } from '@vueuse/core';
 import { useSidebar } from '@/stores/sidebar';
@@ -254,6 +270,24 @@ watchDebounced(isScroll, (newValue) => {
   debounce: 200,
 });
 
+const lintingProblems = computed(() => {
+  const problems = [];
+  if (!parsedText.value) return [];
+  const lines = parsedText.value.split(/\r\n|\n|\r/);
+  for (let i = 0; i < lines.length; i++) {
+    const col = lines[i].indexOf(' - ');
+    if (col !== -1) {
+      problems.push({
+        key: 'hyphens',
+        type: 'warning',
+        text: 'Text contains single hyphens. Replace them with double hyphens (" - ").',
+        line: i + 1,
+        priority: 0,
+      })
+    }
+  }
+  return problems.sort((a, b) => b.priority - a.priority);
+});
 
 watchDebounced(parsedText, (newValue) => {
   modifyEntry({
@@ -523,8 +557,27 @@ watch(isScroll, updatePages, {immediate: true});
 }
 
 .page-number {
-  font-size: 25px;
+  font-size: 20px;
   align-self: flex-end;
-  width: 10px;
+  width: 20px;
+}
+
+.status-bar {
+  display: flex;
+  gap: 10px;
+  padding: 5px 10px;
+  font-size: 14px;
+  font-family: 'Consolas';
+  background-color: rgb(68, 86, 121);
+  border-top: solid 2px rgb(45, 97, 201);
+  color: white;
+  align-items: center;
+  &_warning {
+    background-color: rgb(101, 84, 60);
+    border-top: solid 2px rgb(162, 122, 66);
+    svg {
+      color: rgb(255, 149, 0);
+    }
+  }
 }
 </style>
