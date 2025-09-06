@@ -99,7 +99,11 @@ function parseText(text: String) {
   newText = newText.replace(/%[\w]+(?=\W|$)/g, (match) => {
     return `<span class="variable">${match}</span>`;
   });
-  newText = newText + '<div class="bottom-padding"></div>'
+  if (selectedRecord.value.data.book_type === 'Book') {
+    newText = newText + '<div class="bottom-padding bottom-padding_book"></div>';
+  } else {
+    newText = newText + '<div class="bottom-padding"></div>';
+  }
   return newText;
 }
 
@@ -185,7 +189,7 @@ watch(parsedText, updatePages, {immediate: true});
   }
   &__text {
     font-size: 25px;
-    width: 47ch;
+    width: 50ch;
     white-space: normal;
     overflow-wrap: break-word;
     height: 100%;
@@ -214,6 +218,7 @@ watch(parsedText, updatePages, {immediate: true});
   }
   &_scroll {
     .record-book__text {
+      line-height: 32px;
       min-height: 400px;
     }
   }
@@ -273,6 +278,9 @@ watch(parsedText, updatePages, {immediate: true});
 }
 
 .bottom-padding {
-  height: 440px;
+  height: 40px;
+  &_book {
+    height: 440px;
+  }
 }
 </style>
