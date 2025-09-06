@@ -16,6 +16,8 @@
     "tauri": "tauri"
   },
   "dependencies": {
+    "@codemirror/lint": "^6.8.5",
+    "@codemirror/state": "^6.5.2",
     "@imengyu/vue3-context-menu": "^1.5.2",
     "@nanogiants/vue3-sanitize-html": "^1.0.5",
     "@tiptap/extension-text": "^2.11.7",

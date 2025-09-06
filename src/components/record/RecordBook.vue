@@ -1,61 +1,164 @@
 <template>
-  <div class="record-book" :class="{
-    'record-book_scroll': selectedRecord.data.book_type === 'Scroll',
-    'record-book_book': selectedRecord.data.book_type === 'Book'
-  }">
-    <div class="record-book__title">
-      {{ selectedRecord.name }}
-    </div>
-    <div 
-      v-if="selectedRecord.data.book_type === 'Scroll'"
-      class="record-book__text" 
-      v-sanitize-html="{ html: parseText(parsedText), options: sanitizeOptions }"
-    >
-    </div>
-    <div v-else-if="selectedRecord.data.book_type === 'Book'" class="record-book__book">
+  <div 
+    class="record-book__wrapper"
+    :class="{'record-book__wrapper_vertical-split': !getSidebarItem,}"
+  >
+    <div class="record-book" :class="{
+      'record-book_scroll': isScroll,
+      'record-book_book': !isScroll,
+    }">
+      <div class="record-book__title">
+        {{ entry.name }}
+      </div>
       <div 
-        class="record-book__text record-book__page" 
-        ref="leftPage"
+        v-if="isScroll"
+        class="record-book__text" 
         v-sanitize-html="{ html: parseText(parsedText), options: sanitizeOptions }"
       >
       </div>
-      <div 
-        class="record-book__text record-book__page" 
-        ref="rightPage"
-        v-sanitize-html="{ html: parseText(parsedText), options: sanitizeOptions }"
-      >
+      <div v-else-if="!isScroll" class="record-book__book">
+        <div class="page-number page-number_left">
+          {{ (currentPage * 2) + 1 }}
+        </div>
+        <div 
+          class="record-book__text record-book__page" 
+          ref="leftPage"
+          v-sanitize-html="{ html: parseText(parsedText), options: sanitizeOptions }"
+        >
+        </div>
+        <div 
+          class="record-book__text record-book__page" 
+          ref="rightPage"
+          v-sanitize-html="{ html: parseText(parsedText), options: sanitizeOptions }"
+        >
+        </div>
+        <button
+          v-if="currentPage > 0"
+          class="book-pagination book-pagination_prev"
+          @click="currentPage = currentPage - 1"
+        >
+          <TdesignCaretLeft />
+        </button>
+        <button
+          class="book-pagination book-pagination_next"
+          @click="currentPage = currentPage + 1"
+        >
+          <TdesignCaretRight />
+        </button>
+        <div class="page-number page-number_right">
+          {{ (currentPage * 2) + 2 }}
+        </div>
       </div>
-      <button
-        v-if="currentPage > 0"
-        class="book-pagination book-pagination_prev"
-        @click="currentPage = currentPage - 1"
-      >
-        <TdesignCaretLeft />
-      </button>
-      <button
-        class="book-pagination book-pagination_next"
-        @click="currentPage = currentPage + 1"
-      >
-        <TdesignCaretRight />
-      </button>
+    </div>
+    <div class="book-editor">
+      <div class="book-editor__header">
+        <input
+          type="text"
+          class="text-input"
+          v-model="entry.name"
+        >
+        <div class="book-editor__controls">
+          <button
+            :class="{'btn_selected': currentTab === 'editor'}"
+            @click="currentTab = 'editor'"
+          >
+            Editor
+          </button>
+          <button
+            :class="{'btn_selected': currentTab === 'settings'}"
+            @click="currentTab = 'settings'"
+          >
+            Settings
+          </button>
+        </div>
+      </div>
+      <Codemirror
+        v-if="currentTab === 'editor'"
+        v-model:value="parsedText"
+        :options="cmOptions"
+        :extensions
+      />
+      <div v-else-if="currentTab === 'settings'" class="form">
+        <div class="form-field">
+          <label>
+            <span>Is a scroll:</span>
+            <input
+              type="checkbox"
+              class="checkbox"
+              :checked="isScroll"
+              @input="handleIsScrollChange"
+            >
+          </label>
+        </div>
+        <div class="form-field">
+          <label>
+            <span>Skill:</span>
+            <input
+              type="text"
+              class="text-input"
+              :value="selectedRecord.data.skill"
+              disabled
+            >
+          </label>
+        </div>
+        <div class="form-field">
+          <label>
+            <span>Script:</span>
+            <input
+              type="text"
+              class="text-input"
+              :value="selectedRecord.script || 'None'"
+              disabled
+            >
+          </label>
+        </div>
+        <div class="form-field">
+          <label>
+            <span>Enchanting:</span>
+            <input
+              type="text"
+              class="text-input"
+              :value="selectedRecord.enchanting || 'None'"
+              disabled
+            >
+          </label>
+        </div>
+        <div class="form-field">
+          <label>
+            <span>Enchantment:</span>
+            <input
+              type="number"
+              class="text-input"
+              :value="selectedRecord.data.enchantment"
+              disabled
+            >
+          </label>
+        </div>
+        <div class="form-field">
+          <label>
+            <span>Value:</span>
+            <input
+              type="number"
+              class="text-input"
+              :value="selectedRecord.data.value"
+              disabled
+            >
+          </label>
+        </div>
+        <div class="form-field">
+          <label>
+            <span>Weight:</span>
+            <input
+              type="number"
+              class="text-input"
+              :value="getWeight"
+              disabled
+            >
+          </label>
+        </div>
+      </div>
     </div>
   </div>
-  <div class="book-editor">
-    <div class="book-editor__header">
-
-    </div>
-    <Codemirror
-      v-model:value="parsedText"
-      :options="cmOptions"
-    />
-    <div class="book-editor__form" v-if="false">
-      <input
-        type="text"
-        :value="selectedRecord.name"
-      >
-    </div>
-  </div>
-  <div class="measurer" ref="measurer" aria-hidden="true"></div>
 </template>
 
 <script setup lang="ts">
@@ -72,6 +175,15 @@ import TdesignCaretRight from '~icons/tdesign/caret-right';
 import TdesignCaretLeft from '~icons/tdesign/caret-left';
 
 import { watchDebounced } from '@vueuse/core';
+import { useSidebar } from '@/stores/sidebar';
+
+const currentTab = ref<'editor' | 'settings'>('editor');
+
+const sidebarStore = useSidebar();
+
+const getSidebarItem = computed(() => {
+  return sidebarStore.getActiveItem;
+})
 
 const selectedRecordStore = useSelectedRecord();
 const selectedRecord = computed(() => selectedRecordStore.getSelectedRecord?.[0] || {});
@@ -99,7 +211,7 @@ function parseText(text: String) {
   newText = newText.replace(/%[\w]+(?=\W|$)/g, (match) => {
     return `<span class="variable">${match}</span>`;
   });
-  if (selectedRecord.value.data.book_type === 'Book') {
+  if (!isScroll.value) {
     newText = newText + '<div class="bottom-padding bottom-padding_book"></div>';
   } else {
     newText = newText + '<div class="bottom-padding"></div>';
@@ -111,15 +223,37 @@ const cmOptions = {
   mode: 'text/html',
   theme: 'dracula',
   lineWrapping: true,
+  spellcheck: true,
 }
 
+const getWeight = computed(() => {
+  return Math.round(selectedRecord.value.data.weight * 100) / 100;
+});
+
 const parsedText = ref<String>();
+const entry = ref<Object>({});
+const isScroll = ref<Boolean>(false);
 watch(selectedRecord, () => {
   parsedText.value = selectedRecord.value.text;
   currentPage.value = 0;
+  entry.value = JSON.parse(JSON.stringify(selectedRecord.value));
+  isScroll.value = selectedRecord.value.data?.book_type === 'Scroll';
 }, {
   immediate: true,
-})
+});
+
+watchDebounced(isScroll, (newValue) => {
+  modifyEntry({
+    TMP_index: selectedRecord.value.TMP_index,
+    data: {
+      ...selectedRecord.value.data,
+      book_type: newValue ? 'Scroll' : 'Book',
+    },
+  });
+}, {
+  debounce: 200,
+});
+
 
 watchDebounced(parsedText, (newValue) => {
   modifyEntry({
@@ -130,25 +264,36 @@ watchDebounced(parsedText, (newValue) => {
   debounce: 200,
 });
 
+watchDebounced(entry, (newValue) => {
+  modifyEntry({
+    TMP_index: entry.value.TMP_index,
+    name: entry.value.name,
+  });
+}, {
+  debounce: 200,
+  deep: true,
+});
+
+function handleIsScrollChange(event) {
+  isScroll.value = event.target.checked;
+}
+
 const leftPage = useTemplateRef('leftPage');
 const rightPage = useTemplateRef('rightPage');
-const measurer = ref(null);
-
-const pages = ref([]);
-const pageIndex = ref(0);
 
 const offset = -9;
-const pageHeight = 424;
 
 async function updatePages() {
   await new Promise((resolve) => setTimeout(resolve, 1));
+  if (isScroll.value === 'scroll') return;
   if (!rightPage.value || !leftPage.value) return;
-  leftPage.value.scrollTop = (currentPage.value * 2) * leftPage.value.clientHeight - (currentPage.value === 0 ? 0 : offset);
+  leftPage.value.scrollTop = (currentPage.value * 2) * leftPage.value.clientHeight - offset;
   rightPage.value.scrollTop = ((currentPage.value * 2) + 1) * rightPage.value.clientHeight - offset;
 }
 
 watch(currentPage, updatePages, {immediate: true});
 watch(parsedText, updatePages, {immediate: true});
+watch(isScroll, updatePages, {immediate: true});
 
 // el.scrollTop = el.clientHeight;
 
@@ -160,20 +305,54 @@ watch(parsedText, updatePages, {immediate: true});
   pointer-events: none;
 }
 .record-book {
-  padding: 0 0 10px 0;
+  padding: 10px;
   max-width: 700px;
   margin: 0 auto;
   color: rgb(49, 44, 28);
   // background-color: rgb(201, 190, 157);
   background-image: url('/images/paper-texture.jpg');
   border-radius: 4px;
-  max-height: 62%;
-  overflow: hidden;
+  overflow: visible;
   display: flex;
   // justify-content: center;
   align-items: center;
   flex-direction: column;
-  gap: 10px;
+  position: relative;
+  gap: 10px;  
+  &__wrapper {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    .record-book {
+      height: 60%;
+      @media (max-width: 1500px) {
+        max-height: 900px;
+        transform: scale(0.8);
+      }
+    }
+    .book-editor {
+      height: 40%;
+    }
+    &_vertical-split {
+      flex-direction: row;
+      align-items: center;
+      .record-book {
+        height: fit-content;
+        width: 50%;
+        max-height: 100%;
+        @media (max-width: 1500px) {
+          transform: scale(1);
+        }
+      }
+      .book-editor {
+        margin: 10px;
+        margin-top: 100px;
+        height: 90%;
+        width: 50%;
+        border: solid 2px #cb9;
+      }
+    }
+  }
   &__title {
     font-size: 30px;
     background-color: rgba(49, 44, 28, 0.9);
@@ -189,6 +368,7 @@ watch(parsedText, updatePages, {immediate: true});
   }
   &__text {
     font-size: 25px;
+    font-weight: 600;
     width: 50ch;
     white-space: normal;
     overflow-wrap: break-word;
@@ -234,7 +414,7 @@ watch(parsedText, updatePages, {immediate: true});
     overflow: hidden;
     padding: 0 10px;
     box-sizing: content-box;
-    &:first-child {
+    &:nth-child(2) {
       border-right: solid 1px rgba(0, 0, 0, 0.5);
     }
     font {
@@ -244,13 +424,36 @@ watch(parsedText, updatePages, {immediate: true});
 }
 
 .book-editor {
-  width: 100%;
-  height: 38%;
-  position: absolute;
-  bottom: 0;
-  left: 1;
   background-color: white;
   display: flex;
+  flex-direction: column;
+  &__header {
+    background-color: #cb9;
+    display: flex;
+    justify-content: space-between;
+    gap: 2px;
+    padding: 0 20px;
+    .text-input {
+      width: 400px;
+      border-radius: 0;
+      background-color: rgba(255, 255, 255, 0.2);
+      color: black;
+      font-size: 20px;
+    }
+    button {
+      padding: 5px;
+      font-size: 20px;
+      background-color: rgba(255, 255, 255, 0.2);
+    }
+    .btn_selected {
+      background-color: rgba(0, 0, 0, 0.7);
+      color: #cb9;
+    }
+  }
+  &__controls {
+    display: flex;
+    gap: 5px;
+  }
   .CodeMirror {
     font-size: 16px;
     // max-width: 800px;
@@ -262,18 +465,22 @@ watch(parsedText, updatePages, {immediate: true});
 
 .book-pagination {
   position: absolute;
-  top: 30%;
+  top: 50%;
   transform: translateY(-50%);
+  height: 100%;
+  &:hover {
+    background-color: rgba(202, 165, 96, 0.1);
+  }
   svg {
     width: 90px;
     height: 90px;
     color: rgb(202, 165, 96);
   }
   &_prev {
-    left: 10px;
+    left: -50px;
   }
   &_next {
-    right: 10px;
+    right: -50px;
   }
 }
 
@@ -282,5 +489,38 @@ watch(parsedText, updatePages, {immediate: true});
   &_book {
     height: 440px;
   }
+}
+
+.form {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  grid-auto-rows: min-content;
+  padding: 20px;
+  font-size: 20px;
+  gap: 15px;
+  align-items: center;
+  row-gap: 10px;
+  background-color: rgba(204, 187, 153, 0.5);
+  height: 100%;
+  &-field {
+    label {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      input[type='checkbox'] {
+        width: 20px;
+        height: 20px;
+      }
+      &:has(input[type='checkbox']) {
+        flex-direction: row;
+        gap: 5px;
+      }
+    }
+  }
+}
+
+.page-number {
+  font-size: 25px;
+  align-self: flex-end;
 }
 </style>

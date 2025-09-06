@@ -155,8 +155,8 @@ watch(factionSearch, (newValue) => {
     filteredFactions.value = factions.value;
   } else {
     filteredFactions.value = factions.value
-      .filter((val) => val[0].name.toLowerCase().includes(newValue.toLowerCase()) 
-        || val[0].id.toLowerCase().includes(newValue.toLowerCase()))
+      .filter((val) => val[0].name?.toLowerCase().includes(newValue.toLowerCase()) 
+        || val[0].id?.toLowerCase().includes(newValue.toLowerCase()))
   }
 }, {
   immediate: true,
