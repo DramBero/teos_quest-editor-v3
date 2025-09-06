@@ -280,7 +280,7 @@ const lintingProblems = computed(() => {
       problems.push({
         key: 'hyphens',
         type: 'warning',
-        text: 'Text contains single hyphens. Replace them with double hyphens (" - ").',
+        text: 'Text contains single hyphens. Replace them with double hyphens: " -- "',
         line: i + 1,
         priority: 0,
       })
