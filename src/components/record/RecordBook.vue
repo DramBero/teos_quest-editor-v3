@@ -16,26 +16,25 @@
       <div 
         class="record-book__text record-book__page" 
         ref="leftPage"
-        v-sanitize-html="{ html: parseText(pages[currentPage]), options: sanitizeOptions }"
+        v-sanitize-html="{ html: parseText(parsedText), options: sanitizeOptions }"
       >
       </div>
       <div 
         class="record-book__text record-book__page" 
         ref="rightPage"
-        v-sanitize-html="{ html: parseText(pages[currentPage + 1]), options: sanitizeOptions }"
+        v-sanitize-html="{ html: parseText(parsedText), options: sanitizeOptions }"
       >
       </div>
       <button
-        v-if="currentPage > 1"
+        v-if="currentPage > 0"
         class="book-pagination book-pagination_prev"
-        @click="currentPage = currentPage - 2"
+        @click="currentPage = currentPage - 1"
       >
         <TdesignCaretLeft />
       </button>
       <button
-        v-if="currentPage < (pages.length - 2)"
         class="book-pagination book-pagination_next"
-        @click="currentPage = currentPage + 2"
+        @click="currentPage = currentPage + 1"
       >
         <TdesignCaretRight />
       </button>
@@ -80,9 +79,9 @@ const selectedRecord = computed(() => selectedRecordStore.getSelectedRecord?.[0]
 const currentPage = ref<Number>(0);
 
 const sanitizeOptions: sanitize.IOptions = {
-  allowedTags: ['div', 'br', 'font', 'img', 'span'],
+  allowedTags: ['div', 'br', 'font', 'img', 'span', 'p'],
   allowedAttributes: {
-    'div': ['align', 'color'],
+    'div': ['align', 'color', 'class'],
     'font': ['face', 'size', 'color'],
     'img': ['src', 'width', 'height'],
     'span': ['class'],
@@ -92,11 +91,15 @@ const sanitizeOptions: sanitize.IOptions = {
 function parseText(text: String) {
   let newText = text;
   if (!newText) return '';
-  newText = newText.replace(/magic cards/gi, 'pelagiad');
+  // newText = newText.replace(/magic cards/gi, 'pelagiad');
+  newText = newText.replace(/<p>/gi, '<br><br>');
   newText = newText.replace(/--/g, '\u2011\u2011');
+  newText = newText.replace(/“/g, '"');
+  newText = newText.replace(/”/g, '"');
   newText = newText.replace(/%[\w]+(?=\W|$)/g, (match) => {
     return `<span class="variable">${match}</span>`;
   });
+  newText = newText + '<div class="bottom-padding"></div>'
   return newText;
 }
 
@@ -109,6 +112,7 @@ const cmOptions = {
 const parsedText = ref<String>();
 watch(selectedRecord, () => {
   parsedText.value = selectedRecord.value.text;
+  currentPage.value = 0;
 }, {
   immediate: true,
 })
@@ -122,85 +126,28 @@ watchDebounced(parsedText, (newValue) => {
   debounce: 200,
 });
 
-let resizeObserver = null;
-
 const leftPage = useTemplateRef('leftPage');
-const rightPage = ref(null);
+const rightPage = useTemplateRef('rightPage');
 const measurer = ref(null);
 
 const pages = ref([]);
 const pageIndex = ref(0);
 
-function createPages() {
-  pages.value = paginateHTML(parseText(parsedText.value || ''), measurer.value);
-  // ensure pageIndex is valid and even (left page starts at even index 0)
-  if (pageIndex.value >= pages.value.length) pageIndex.value = Math.max(0, pages.value.length - 2);
-  if (pageIndex.value % 2 === 1) pageIndex.value--; // keep left on even index
+const offset = -9;
+const pageHeight = 424;
+
+async function updatePages() {
+  await new Promise((resolve) => setTimeout(resolve, 1));
+  if (!rightPage.value || !leftPage.value) return;
+  leftPage.value.scrollTop = (currentPage.value * 2) * leftPage.value.clientHeight - (currentPage.value === 0 ? 0 : offset);
+  rightPage.value.scrollTop = ((currentPage.value * 2) + 1) * rightPage.value.clientHeight - offset;
 }
 
-function next() {
-  if (pageIndex.value < pages.value.length - 2) pageIndex.value += 2;
-}
-function prev() {
-  if (pageIndex.value >= 2) pageIndex.value -= 2;
-}
+watch(currentPage, updatePages, {immediate: true});
+watch(parsedText, updatePages, {immediate: true});
 
-function paginateHTML(htmlString: String, measureEl) {
-  if (!measureEl) return [htmlString];
-  // prepare measurer style/content
-  measureEl.innerHTML = '';
-  const words = htmlString.split(/(\s+)/); // keep spaces
-  const pagesOut = [];
-  let buffer = '';
+// el.scrollTop = el.clientHeight;
 
-  for (let i = 0; i < words.length; i++) {
-    buffer += words[i];
-    measureEl.innerHTML = buffer;
-    // if overflow, backtrack: remove last token and finalize page
-    if (measureEl.scrollHeight > measureEl.clientHeight) {
-      // remove the last token that caused overflow
-      const removed = words[i];
-      buffer = buffer.slice(0, -removed.length);
-      // trim and push
-      pagesOut.push(buffer || '');
-      // start new buffer with the removed token (if not pure whitespace)
-      buffer = removed.trim() ? removed : '';
-      // set measure to new buffer for next iteration
-      measureEl.innerHTML = buffer;
-    }
-  }
-  if (buffer.trim() || pagesOut.length === 0) pagesOut.push(buffer);
-  return pagesOut;
-}
-
-function setupMeasurer() {
-  if (!measurer.value) return;
-  if (!leftPage.value) return;
-  const style = getComputedStyle(leftPage.value);
-  const m = measurer.value;
-  // 26 400
-  m.style.width = '27ch';
-  m.style.height = '380px';
-  m.style.font = style.font;
-  m.style.fontSize = style.fontSize;
-  m.style.lineHeight = style.lineHeight;
-  m.style.whiteSpace = style.whiteSpace;
-  m.style.letterSpacing = style.letterSpacing;
-  m.style.wordSpacing = style.wordSpacing;
-  m.style.overflow = 'scroll';
-}
-
-onMounted(() => {
-  setupMeasurer();
-  createPages();
-});
-
-watch(parsedText, () => {
-  setupMeasurer();
-  createPages();
-}, {
-  immediate: true,
-});
 </script>
 
 <style lang="scss">
@@ -233,8 +180,8 @@ watch(parsedText, () => {
   }
   &__book {
     display: flex;
-    gap: 20px;
-    overflow: scroll;
+    // gap: 20px;
+    overflow: hidden;
   }
   &__text {
     font-size: 25px;
@@ -243,8 +190,9 @@ watch(parsedText, () => {
     overflow-wrap: break-word;
     height: 100%;
     overflow-y: scroll;
-    letter-spacing: -0.2px;
-    word-spacing: 0px;
+    // letter-spacing: 0.3px;
+    line-height: 22px;
+    // word-spacing: 0px;
     font {
       font-size: 25px !important;
     }
@@ -266,6 +214,7 @@ watch(parsedText, () => {
   }
   &_scroll {
     .record-book__text {
+      min-height: 400px;
     }
   }
   &_book {
@@ -274,10 +223,15 @@ watch(parsedText, () => {
     }
   }
   &__page {
-    height: 415px;
-    width: 29ch;
+    height: 440px;
+    width: 269px;
     font-size: 19px !important;
-    overflow: visible;
+    overflow: hidden;
+    padding: 0 10px;
+    box-sizing: content-box;
+    &:first-child {
+      border-right: solid 1px rgba(0, 0, 0, 0.5);
+    }
     font {
       font-size: 19px !important;
     }
@@ -316,5 +270,9 @@ watch(parsedText, () => {
   &_next {
     right: 10px;
   }
+}
+
+.bottom-padding {
+  height: 440px;
 }
 </style>

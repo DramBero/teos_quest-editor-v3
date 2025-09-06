@@ -46,6 +46,22 @@ const getSpeakerData = computed(() => {
 }
 
 @font-face {
+  font-family: "Magic Cards";
+  src: local("Magic Cards"), url(@/assets/fonts/magic_cards/Magic_Cards.ttf) format("truetype");
+}
+
+@font-face {
+  font-family: "Gothic";
+  src: local("Gothic"), url(@/assets/fonts/gothic/GOTHIC.ttf) format("truetype");
+}
+
+@font-face {
+  font-family: "Daedric";
+  src: local("Daedric"), url(@/assets/fonts/daedric/daedric_runes.ttf) format("truetype");
+}
+
+
+@font-face {
   font-family: "Consolas";
   src: local("Consolas"), url(@/assets/fonts/consolas/CONSOLA.TTF) format("truetype");
 }
