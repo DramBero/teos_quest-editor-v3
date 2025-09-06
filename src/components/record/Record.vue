@@ -8,7 +8,7 @@
       >
         <TdesignClose />
       </button>
-      <div class="record__content">
+      <div class="record__content" @click.stop>
         <component
           :is="getSelectedComponent"
           @click.stop

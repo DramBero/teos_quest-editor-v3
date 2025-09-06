@@ -17,6 +17,7 @@
   },
   "dependencies": {
     "@imengyu/vue3-context-menu": "^1.5.2",
+    "@nanogiants/vue3-sanitize-html": "^1.0.5",
     "@tiptap/extension-text": "^2.11.7",
     "@tiptap/starter-kit": "^2.12.0",
     "@tiptap/vue-3": "^2.11.7",
@@ -30,6 +31,7 @@
     "legacy-encoding": "^3.0.0",
     "lowlight": "^3.3.0",
     "pinia": "^3.0.3",
+    "sanitize-html": "^2.17.0",
     "three": "^0.179.1",
     "vue": "^3.5.18",
     "vue-router": "^4.5.1",
@@ -45,6 +47,7 @@
     "@tsconfig/node22": "^22.0.2",
     "@types/codemirror": "^5.60.16",
     "@types/node": "^24.2.1",
+    "@types/sanitize-html": "^2.16.0",
     "@types/three": "^0.179.0",
     "@vitejs/plugin-vue": "^6.0.1",
     "@vue/eslint-config-prettier": "^10.2.0",
