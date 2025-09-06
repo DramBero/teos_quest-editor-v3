@@ -306,6 +306,7 @@ watch(isScroll, updatePages, {immediate: true});
 }
 .record-book {
   padding: 10px;
+  box-shadow: 2px 2px 8px 2px rgba(0, 0, 0, 0.25);
   max-width: 700px;
   margin: 0 auto;
   color: rgb(49, 44, 28);
@@ -350,6 +351,7 @@ watch(isScroll, updatePages, {immediate: true});
         height: 90%;
         width: 50%;
         border: solid 2px #cb9;
+        border-radius: 4px;
       }
     }
   }
@@ -427,6 +429,7 @@ watch(isScroll, updatePages, {immediate: true});
   background-color: white;
   display: flex;
   flex-direction: column;
+  box-shadow: 2px 2px 8px 2px rgba(0, 0, 0, 0.25);
   &__header {
     background-color: #cb9;
     display: flex;
@@ -522,5 +525,6 @@ watch(isScroll, updatePages, {immediate: true});
 .page-number {
   font-size: 25px;
   align-self: flex-end;
+  width: 10px;
 }
 </style>

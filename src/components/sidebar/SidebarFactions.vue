@@ -60,6 +60,7 @@ import { useCountTypes } from '@/stores/countTypes';
 import { fetchByType } from '@/api/idb.js';
 import { computed, defineAsyncComponent, ref, watch } from 'vue';
 import SVGSpinners90RingWithBg from '~icons/svg-spinners/90-ring-with-bg';
+import { useSelectedRecord } from '@/stores/selectedRecord';
 
 const GameIconsBookmarklet = defineAsyncComponent(
   () => import('~icons/game-icons/bookmarklet/GameIconsBookmarklet.vue')
@@ -122,15 +123,25 @@ watch(showMasters, fetchFactions, {
 
 watch(selectedType, fetchFactions);
 
+const selectedRecordStore = useSelectedRecord();
+const getSelectedRecord = computed(() => selectedRecordStore.getSelectedRecord);
+watch(getSelectedRecord, () => fetchFactions({loading: false}));
+
 const countTypesStore = useCountTypes();
 
-function getTypeAmount(type) {
+function getTypeAmount(type: string) {
   return countTypesStore.getTypesAmount?.[type] || 0;
 }
 
-async function fetchFactions() {
+interface FetchFactionsOptions {
+  loading?: boolean;
+}
+
+async function fetchFactions(options: FetchFactionsOptions) {
   try {
-    loading.value = true;
+    if (options.loading !== false) {
+      loading.value = true;
+    }
     const response = await fetchByType([selectedType.value], '', showMasters.value);
     let idKey = 'id';
     if (selectedType.value === 'Skill') {
