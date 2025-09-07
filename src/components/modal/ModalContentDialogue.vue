@@ -74,12 +74,12 @@
           :key="index"
           class="dialogue-questions__topic" 
           :class="{
-            'dialogue-questions__topic_new': question.TMP_is_active,
-            'dialogue-questions__topic_mod': false && question.TMP_is_active,
+            'dialogue-questions__topic_new': question[0].TMP_is_active,
+            'dialogue-questions__topic_mod': question.length > 1 && question[0].TMP_is_active,
           }"
-          @click="setCurrentAnswers(question.TMP_topic, 'Greeting')"
+          @click="setCurrentAnswers(question[0].TMP_topic, 'Greeting')"
         >
-          {{ question.TMP_topic }}
+          {{ question[0].TMP_topic }}
         </div>
       </div>
       <div class="dialogue-questions__container" v-if="persuasionsList?.length">
@@ -88,12 +88,12 @@
           :key="index"
           class="dialogue-questions__topic" 
           :class="{
-            'dialogue-questions__topic_new': question.TMP_is_active,
-            'dialogue-questions__topic_mod': false && question.TMP_is_active,
+            'dialogue-questions__topic_new': question[0].TMP_is_active,
+            'dialogue-questions__topic_mod': question.length > 1 && question[0].TMP_is_active,
           }"
-          @click="setCurrentAnswers(question.TMP_topic, 'Persuasion')"
+          @click="setCurrentAnswers(question[0].TMP_topic, 'Persuasion')"
         >
-          {{ question.TMP_topic }}
+          {{ question[0].TMP_topic }}
         </div>
       </div>
       <div 
@@ -101,12 +101,12 @@
         :key="index"
         class="dialogue-questions__topic" 
         :class="{
-          'dialogue-questions__topic_new': question.TMP_is_active,
-          'dialogue-questions__topic_mod': false && question.TMP_is_active,
+          'dialogue-questions__topic_new': question[0].TMP_is_active,
+          'dialogue-questions__topic_mod': question.length > 1 && question[0].TMP_is_active,
         }"
-        @click="setCurrentAnswers(question.TMP_topic, 'Topic')"
+        @click="setCurrentAnswers(question[0].TMP_topic, 'Topic')"
       >
-        {{ question.TMP_topic }}
+        {{ question[0].TMP_topic }}
       </div>
     </div>
   </div>
@@ -724,24 +724,6 @@ watch(currentTopic, (async (newValue) => {
     .entry-control-button__icon {
       fill: rgb(202, 165, 96);
     }
-  }
-}
-
-.highlight-even {
-  background: rgb(0, 0, 0);
-  background: linear-gradient(90deg,
-      rgba(0, 0, 0, 0) 0%,
-      rgba(92, 85, 44, 0.2) 20%,
-      rgba(92, 85, 44, 0.2) 80%,
-      rgba(0, 0, 0, 0) 100%);
-
-  &:nth-child(even) {
-    background: rgb(0, 0, 0);
-    background: linear-gradient(90deg,
-        rgba(0, 0, 0, 0) 0%,
-        rgba(92, 85, 44, 0.12) 20%,
-        rgba(92, 85, 44, 0.12) 80%,
-        rgba(0, 0, 0, 0) 100%);
   }
 }
 

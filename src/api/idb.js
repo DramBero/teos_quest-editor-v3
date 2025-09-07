@@ -275,6 +275,11 @@ export const fetchTopicListByNPC = async function (npcID, speakerType) {
         .toArray();
       topicList = addTopicEntries(topicList, depEntries)
     }
+    for (let type of ['topics', 'greetings', 'persuasions']) {
+      const uniqueEntries = [...new Set(topicList[type].map(val => val.TMP_topic))];
+      topicList[type] = uniqueEntries.map(val => topicList[type].filter((i) => i.TMP_topic === val));
+    }
+    console.log('LIST:', topicList)
     return topicList;
   } catch (error) {
     throw error;

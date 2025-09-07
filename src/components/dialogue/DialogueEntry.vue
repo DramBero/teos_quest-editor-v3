@@ -1,5 +1,8 @@
 <template>
-  <div :class="{ 'highlight-even': !props.editMode }">
+  <div class="highlight-even" :class="{
+    'highlight-even_new': props.answer.TMP_is_active,
+    'highlight-even_mod': props.answer.old_values && props.answer.old_values.length > 1,
+  }">
     <div class="dialogue-answers-answer__above" v-if="!props.editMode"></div>
     <div class="dialogue-answers-answer__above-add" v-if="props.editMode">
         <button class="entry-control-button" @click="addEntry([props.answer.prev_id, props.answer.id])">
@@ -17,10 +20,10 @@
         }">
         <div class="dialogue-answers-answer-modified" v-if="props.answer.old_values && props.answer.old_values.length > 1">
             * Modified in {{ props.answer.old_values.slice(-2)[0].TMP_dep }}
-            <!-- <span class="dialogue-answers-answer-modified_dirty"
-            v-if="checkDirtied(answer.old_values.slice(-1)[0], answer)">
-            (possibly dirtied by CS)
-            </span> -->
+            <span class="dialogue-answers-answer-modified_dirty"
+              v-if="getIsDirty">
+              (possibly dirtied by CS)
+            </span>
         </div>
         <div class="dialogue-answers-answer__ids" v-if="false">
             <div class="prev-id">{{ props.answer.prev_id || '-' }} (before)</div>
@@ -93,7 +96,7 @@ import StarterKit from '@tiptap/starter-kit';
 
 import { watchDebounced } from '@vueuse/core';
 import { editTopicText } from '@/api/idb.js';
-import { ref, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 
 const props = defineProps({
   answer: {
@@ -161,19 +164,22 @@ function getLanguage(code, language) {
   }
 }
 
-function checkDirtied(entryOne, entryTwo) {
+const getIsDirty = computed(() => {
+  if (!props.answer.old_values?.length) {
+    return false;
+  }
   const entryOneNonId = Object.fromEntries(
-    Object.entries(entryOne).filter(
+    Object.entries(props.answer.old_values.slice(-2)[0]).filter(
       ([key]) => !key.includes('_id') && !key.includes('TMP_') && !key.includes('old_values'),
     ),
   );
   const entryTwoNonId = Object.fromEntries(
-    Object.entries(entryTwo).filter(
+    Object.entries(props.answer).filter(
       ([key]) => !key.includes('_id') && !key.includes('TMP_') && !key.includes('old_values'),
     ),
   );
   return JSON.stringify(entryOneNonId) === JSON.stringify(entryTwoNonId);
-}
+})
 
 const emit = defineEmits(['applyFilter', 'setCurrentAnswers']);
 
@@ -209,5 +215,35 @@ function applyFilter(filter) {
 <style lang="scss">
 .tiptap {
   outline: none !important;
+}
+
+.highlight-even {
+  background: rgb(0, 0, 0);
+  background: linear-gradient(90deg,
+      rgba(0, 0, 0, 0) 0%,
+      rgba(92, 85, 44, 0.2) 20%,
+      rgba(92, 85, 44, 0.2) 80%,
+      rgba(0, 0, 0, 0) 100%);
+
+  &:nth-child(even) {
+    background: rgb(0, 0, 0);
+    background: linear-gradient(90deg,
+        rgba(0, 0, 0, 0) 0%,
+        rgba(92, 85, 44, 0.12) 20%,
+        rgba(92, 85, 44, 0.12) 80%,
+        rgba(0, 0, 0, 0) 100%);
+  }
+  &_new {
+    background-color: rgba(54, 92, 44, 0.3);
+    &:nth-child(even) {
+      background-color: rgba(54, 92, 44, 0.3);
+    }
+  }
+  &_mod {
+    background-color: rgba(44, 51, 92, 0.3);
+    &:nth-child(even) {
+      background-color: rgba(44, 51, 92, 0.3);
+    }
+  }
 }
 </style>

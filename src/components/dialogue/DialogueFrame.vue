@@ -21,12 +21,20 @@
       </form> -->
       </div>
       <div class="frame-controls-types">
-        <template v-for="speakerType in speakerTypes" :key="speakerType">
-          <div class="frame-controls-types__type" :class="{
-            'frame-controls-types__type_active': currentSpeakerType === speakerType,
-          }" @click="currentSpeakerType = speakerType">
-            {{ speakerType }} {{ speakerTypeAmounts[speakerType] }}
-          </div>
+        <template v-for="speakerType in speakerTypes.filter(val => speakerTypeAmounts[val] > 0)" :key="speakerType">
+          <button 
+            class="frame-controls-types__type" 
+            :class="{
+              'frame-controls-types__type_active': currentSpeakerType === speakerType,
+            }" 
+            @click="currentSpeakerType = speakerType"
+            :title="getTitle(speakerType)"
+          >
+            <component 
+              :is="speakerTypeIcon(speakerType)"
+            />
+            {{ speakerTypeAmounts[speakerType] }}
+          </button>
         </template>
         <!--         <div
           class="frame-controls-types__type frame-controls-types__type_generic"
@@ -52,11 +60,49 @@
 import DialogueFrameCard from '@/components/dialogue/DialogueFrameCard.vue';
 import Record from '../record/Record.vue';
 import { fetchAllDialogueBySpeaker, fetchSpeakersAmountBySpeakerType } from '@/api/idb.js';
-import { computed, onMounted, ref, watch } from 'vue';
+import { computed, defineAsyncComponent, onMounted, ref, watch } from 'vue';
 import { usePrimaryModal } from '@/stores/modals';
 import { useClassicView } from '@/stores/classicView';
 
 type SpeakerType = 'npc' | 'cell' | 'class' | 'faction' | 'rank' | 'global';
+
+const GameIconsOrganigram = defineAsyncComponent(
+  () => import('~icons/game-icons/organigram/GameIconsOrganigram.vue')
+);
+const GameIconsCharacter = defineAsyncComponent(
+  () => import('~icons/game-icons/character/GameIconsCharacter.vue')
+);
+const GameIconsMedievalVillage01 = defineAsyncComponent(
+  () => import('~icons/game-icons/medieval-village-01/GameIconsMedievalVillage01.vue')
+);
+const GameIconsAnvilImpact = defineAsyncComponent(
+  () => import('~icons/game-icons/anvil-impact/GameIconsAnvilImpact.vue')
+);
+const GameIconsSaberToothedCatHead = defineAsyncComponent(
+  () => import('~icons/game-icons/saber-toothed-cat-head/GameIconsSaberToothedCatHead.vue')
+);
+
+function speakerTypeIcon(speakerType) {
+  switch(speakerType) {
+    case 'npc': return GameIconsCharacter;
+    case 'cell': return GameIconsMedievalVillage01;
+    case 'class': return GameIconsAnvilImpact;
+    case 'faction': return GameIconsOrganigram;
+    case 'rank': return GameIconsSaberToothedCatHead;
+    default: return GameIconsOrganigram;
+  }
+}
+
+function getTitle(speakerType) {
+  switch(speakerType) {
+    case 'npc': return 'Actor';
+    case 'cell': return 'Cell';
+    case 'class': return 'Class';
+    case 'faction': return 'Faction';
+    case 'rank': return 'Race';
+    default: return 'N/A';
+  }
+}
 
 const speakerTypes = ref<SpeakerType[]>(['npc', 'cell', 'class', 'faction', 'rank']);
 const currentSpeakerType = ref<SpeakerType>('npc');
@@ -153,8 +199,7 @@ function openGeneric() {
 
     &-types {
       display: flex;
-      gap: 5px;
-
+      gap: 15px;
       &__secondary {
         font-size: 20px;
         color: rgb(202, 165, 96);
@@ -167,6 +212,16 @@ function openGeneric() {
       }
 
       &__type {
+        display: flex;
+        gap: 5px;
+        color: rgb(221, 221, 221);
+        font-size: 22px;
+        &_active {
+          color: rgb(202, 165, 96);
+        }
+      }
+
+/*       &__type {
         min-width: 90px;
         user-select: none;
         border-radius: 4px;
@@ -207,7 +262,7 @@ function openGeneric() {
             background-color: rgba(202, 165, 96, 0.7);
           }
         }
-      }
+      } */
     }
   }
 }
