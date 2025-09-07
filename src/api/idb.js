@@ -1386,6 +1386,9 @@ export async function addDialogueEntry(speakerId, topicId, dialogueType, speaker
     - get topic entries from active plugin
     - if they are - don't add a topic, and just add info after last info, but check if order must be maintained
       also, make sure to make a floatable TMP_index in that case
+    - sort the topics in dialogue window by alphabet
+    - remember about global dialogue
+    - change the icon for cells
   */
 }
 /*
