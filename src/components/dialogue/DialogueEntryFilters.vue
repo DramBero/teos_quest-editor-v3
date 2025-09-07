@@ -42,7 +42,8 @@
         <span class="filter__comparison">> </span>
         <span class="filter__value">{{ answer.data.disposition }}</span>
       </div>
-      <button 
+      <button
+        v-if="false"
         class="filter-delete" 
         @click.stop="handleDeleteFilter(filter.index)" 
         aria-label="Delete filter"

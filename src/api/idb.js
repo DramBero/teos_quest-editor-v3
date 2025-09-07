@@ -79,7 +79,7 @@ export const initPlugin = async function (pluginName) {
   let activePlugin = getDB(pluginName);
   activePlugin.version(1).stores({
     pluginData:
-      'TMP_index,type,dialogue_type,TMP_is_active,TMP_topic,TMP_type,TMP_info_id,TMP_prev_id,TMP_next_id,TMP_speaker_id,TMP_speaker_cell,TMP_speaker_faction,TMP_speaker_class,TMP_speaker_race,TMP_id,name',
+      'TMP_index,type,prev_id,dialogue_type,TMP_is_active,TMP_topic,TMP_type,TMP_info_id,TMP_prev_id,TMP_next_id,TMP_speaker_id,TMP_speaker_cell,TMP_speaker_faction,TMP_speaker_class,TMP_speaker_race,TMP_id,name',
   });
   await activePlugin.open().catch((err) => {
     console.error(err.stack || err);
@@ -1087,7 +1087,6 @@ export async function addQuestEntry(questId, text, prevId, nextId) {
     TMP_type: "Journal",
   };
   try {
-    console.log(questId);
     const activePlugin = databases['activePlugin'];
     let quest = null;
     quest = await activePlugin.pluginData
@@ -1095,7 +1094,6 @@ export async function addQuestEntry(questId, text, prevId, nextId) {
       .equals(questId)
       .and((val) => val.type === 'Dialogue')
       .toArray();
-    console.log(quest);
     if (quest && quest.length > 1) {
       throw ({key: 'QUEST_ID_DUPLICATE'});
     } else if (quest && quest.length === 1) {
@@ -1158,16 +1156,11 @@ export async function addQuestEntry(questId, text, prevId, nextId) {
       } else {
         index = lastEntryIndex + 1;
       }
-    }
-    console.log('INDEX:', index);
-    
+    }    
     defaultEntry.TMP_index = index;
     const prevDisposition = prevEntry?.at(-1)?.data?.disposition || 0;
     const nextDisposition = nextEntry?.at(-1)?.data?.disposition || 0;
-    console.log('prev disp:', prevDisposition)
-    console.log('next disp:', nextDisposition)
     const dispDifference = (nextDisposition || Infinity) - prevDisposition;
-    console.log(dispDifference)
     let advisedDisposition = 10;
     if (dispDifference > 10) {
       advisedDisposition = ((prevDisposition / 10) + 1) * 10;
@@ -1203,3 +1196,254 @@ export async function addQuestEntry(questId, text, prevId, nextId) {
     throw error;
   }
 }
+
+export async function getBestEntryLocation(speakerId, topicId, speakerType) {
+  let orderedTopics = await getOrderedEntriesByTopic(topicId);
+  if (!orderedTopics.length) return ["", ""];
+  else if (
+    orderedTopics.filter((val) => val[speakerType] === speakerId).length
+  ) {
+    return [
+      orderedTopics.filter((val) => val[speakerType] === speakerId).slice(-1)[0]
+        .id,
+      orderedTopics.filter((val) => val[speakerType] === speakerId).slice(-1)[0]
+        .next_id
+    ];
+  } else {
+    let selectedTopic;
+    let testString = [];
+
+    if (speakerType === "speaker_id") {
+      testString.push("SPEAKER ID");
+      selectedTopic = orderedTopics.filter((val) => val[speakerType] != "");
+      if (selectedTopic.length > 1) {
+        selectedTopic = selectedTopic.slice(
+          0,
+          Math.ceil(selectedTopic.length / 2)
+        );
+        selectedTopic =
+          selectedTopic[Math.floor(Math.random() * Array.length)];
+      } else if (selectedTopic.length > 0) {
+        selectedTopic = selectedTopic[0];
+      } else {
+        selectedTopic =
+          orderedTopics.length > 1 ? orderedTopics[1] : orderedTopics[0];
+      }
+    } else {
+      testString.push("NOT SPEAKER ID");
+      var filteredPriorityEntries;
+      switch (speakerType) {
+        case "speaker_cell":
+          filteredPriorityEntries = orderedTopics.filter(
+            (val) => !val.speaker_id
+          );
+          break;
+        case "speaker_faction":
+          filteredPriorityEntries = orderedTopics.filter(
+            (val) => !val.speaker_id && !val.speaker_cell
+          );
+          break;
+        case "speaker_class":
+          filteredPriorityEntries = orderedTopics.filter(
+            (val) =>
+              !val.speaker_id && !val.speaker_cell && !val.speaker_faction
+          );
+          break;
+        case "speaker_race":
+          filteredPriorityEntries = orderedTopics.filter(
+            (val) =>
+              !val.speaker_id &&
+              !val.speaker_cell &&
+              !val.speaker_faction &&
+              !val.speaker_class
+          );
+          break;
+        default:
+          filteredPriorityEntries = orderedTopics.filter(
+            (val) =>
+              !val.speaker_id &&
+              !val.speaker_cell &&
+              !val.speaker_faction &&
+              !val.speaker_class &&
+              !val.speaker_race
+          );
+          break;
+      }
+      testString.push("LENGTH: " + filteredPriorityEntries.length);
+      selectedTopic = filteredPriorityEntries.filter(
+        (val) => val[speakerType] != ""
+      );
+      if (selectedTopic.length > 1) {
+        testString.push("IF 1");
+        selectedTopic = selectedTopic.slice(
+          0,
+          Math.ceil(selectedTopic.length / 2)
+        );
+        selectedTopic =
+          selectedTopic[Math.floor(Math.random() * Array.length)];
+      } else if (selectedTopic.length > 0) {
+        testString.push("ELSE IF 1");
+        selectedTopic = selectedTopic[0];
+      } else if (filteredPriorityEntries.length > 0) {
+        testString.push("ELSE IF 2");
+        selectedTopic = filteredPriorityEntries[0];
+      } else {
+        testString.push("ELSE");
+        selectedTopic =
+          orderedTopics.length > 1
+            ? orderedTopics.at(-2)
+            : orderedTopics[0];
+      }
+    }
+    testString.push(selectedTopic);
+    let nextId;
+    const activePlugin = databases['activePlugin'];
+    const activePluginEntry = await activePlugin.pluginData
+      .where('prev_id')
+      .equals(selectedTopic.id)
+      .first();
+    if (activePluginEntry) {
+      nextId = activePluginEntry.id;
+    } else {
+      const dependecies = await getDependencies();
+      for (let dep of dependecies.reverse()) {
+        nextId = selectedTopic.next_id;
+        const dependencyDB = databases[dep];
+        if (!dependencyDB) {
+          continue;
+        }
+        const dependencyEntry = await dependencyDB.pluginData
+          .where('prev_id')
+          .equals(selectedTopic.id)
+          .first();
+        if (dependencyEntry) {
+          nextId = dependencyEntry.id;
+        }
+      }
+    }
+
+    return [selectedTopic.id, nextId, testString];
+  }
+}
+
+async function findEntryIdByDirection(direction, entryId) {
+  const activePlugin = databases['activePlugin'];
+  const activePluginEntry = await activePlugin.pluginData
+    .where(direction)
+    .equals(entryId)
+    .first();
+  if (activePluginEntry) {
+    return activePluginEntry.id;
+  } else {
+    const dependecies = await getDependencies();
+    for (let dep of dependecies.reverse()) {
+      const dependencyDB = databases[dep];
+      if (!dependencyDB) {
+        continue;
+      }
+      const dependencyEntry = await dependencyDB.pluginData
+        .where(direction)
+        .equals(entryId)
+        .first();
+      if (dependencyEntry) {
+        return dependencyEntry.id;
+      }
+    }
+  }
+}
+
+export async function addDialogueEntry(speakerId, topicId, dialogueType, speakerType, entryId, direction) {
+  let prev_id = "";
+  let next_id = "";
+  if (!entryId) {
+    const location = await getBestEntryLocation(speakerId, topicId, speakerType);
+    console.log('LOCATION:', location);
+    prev_id = location[0];
+    next_id = location[1];
+  } else if (direction === 'next') {
+    prev_id = entryId;
+    next_id = findEntryIdByDirection('prev_id', entryId);
+  } else if (direction === 'prev') {
+    next_id = entryId;
+    prev_id = findEntryIdByDirection('prev_id', entryId);
+  }
+
+  let generatedId =
+    Math.random().toString().slice(2, 15) +
+    Math.random().toString().slice(2, 9);
+
+  let topicObject = {
+    dialogue_type: "Topic",
+    flags: "",
+    id: topicId,
+    type: "Dialogue",
+    TMP_topic: topicId,
+    TMP_type: dialogueType
+  };
+  console.log('TOPIC', topicObject)
+  const activePlugin = databases['activePlugin'];
+  /*
+    - get topic entries from active plugin
+    - if they are - don't add a topic, and just add info after last info, but check if order must be maintained
+      also, make sure to make a floatable TMP_index in that case
+  */
+}
+/*
+  addDialogue(
+    state,
+    [
+      speakerType,
+      speakerId,
+      topicId,
+      dialogueType,
+      location_id,
+      location_direction,
+      text
+    ]
+  ) {
+
+    let questEntries = state.activePlugin.filter(
+      (val) => val.TMP_type === dialogueType && val.TMP_topic === topicId
+    );
+
+    if (!questEntries.length)
+      state.activePlugin = [...state.activePlugin, topicObject];
+
+    let lastIdIndex = null;
+    if (questEntries.length && questEntries.at(-1).info_id) {
+      lastIdIndex = state.activePlugin.findIndex(
+        (item) => item.info_id === questEntries.at(-1).info_id
+      );
+    }
+
+    let newEntry = {
+      data: {
+        dialogue_type: "Topic",
+        disposition: 0,
+        player_rank: -1,
+        speaker_race: -1,
+        speaker_sex: "Any"
+      },
+      filters: [],
+      flags: [0, 0],
+      info_id: generatedId,
+      next_id: next_id,
+      prev_id: prev_id,
+      text: text,
+      type: "Info",
+      TMP_topic: topicId,
+      TMP_type: dialogueType
+    };
+    if (speakerType && speakerType !== 'Global') newEntry[speakerType] = speakerId;
+
+    state.activePlugin.find((val) => val.info_id === prev_id) &&
+      (state.activePlugin.find((val) => val.info_id === prev_id).next_id =
+        generatedId);
+    state.activePlugin.find((val) => val.info_id === next_id) &&
+      (state.activePlugin.find((val) => val.info_id === next_id).prev_id =
+        generatedId);
+
+    if (lastIdIndex) state.activePlugin.splice(lastIdIndex, 0, newEntry);
+    else state.activePlugin = [...state.activePlugin, newEntry];
+  },
+*/

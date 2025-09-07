@@ -9,11 +9,15 @@
   >
     <div class="quest-header">
       <div class="quest-title" @click="emit('selected', props.questNameData.name)">
-        <div v-if="props.questNameData?.is_new && containsMasterIds" class="quest-status quest-status_mod">
-          Mod
+        <div 
+          v-if="props.questNameData?.is_new && containsMasterIds"
+          class="quest-status quest-status_mod"
+        >
         </div>
-        <div v-else-if="props.questNameData?.is_new" class="quest-status quest-status_new">
-          New
+        <div
+          v-else-if="props.questNameData?.is_new"
+          class="quest-status quest-status_new"
+        >
         </div>
         {{ props.questNameData.name }}
       </div>
@@ -26,11 +30,6 @@ import { computed, onMounted, ref, useTemplateRef, watch } from 'vue';
 import { fetchQuestByID } from '@/api/idb.js'; 
 import type { FilterComparison } from '@/types/pluginEntries.ts';
 import { useJournalHighlight } from '@/stores/journalHighlights';
-
-import { useElementVisibility } from '@vueuse/core'
-
-const target = useTemplateRef<HTMLDivElement>('quest')
-const targetIsVisible = useElementVisibility(target)
 
 const props = defineProps({
   questNameData: Object,
@@ -55,27 +54,16 @@ watch(selectedQuestId, (newValue) => {
 const containsMasterIds = computed(() => {
   const isActiveList = props.questNameData.quests.map(val => val.TMP_is_active);
   return isActiveList.includes(false);
-})
+});
 
 const containsActivePluginIds = computed(() => {
   const isActiveList = props.questNameData.quests.map(val => !val.TMP_is_active);
   return isActiveList.includes(false);
-})
-
-const getQuestIds = computed(() => {
-  let questIds = props.questNameData.quests.map(val => val.id);
-  questIds = [...new Set(questIds)];
-  questIds = questIds.map((questId) => ({
-    id: questId,
-    TMP_is_active: Boolean(props.questNameData.quests.filter(val => val.id === questId && val.TMP_is_active).length),
-  }))
-  return questIds
-})
+});
 
 const isCollapsed = ref<boolean>(false);
 const highlightedComparison = ref<FilterComparison | ''>('');
 const highlightedId = ref<number | string>('');
-const entryEdit = ref('');
 
 const questDataLoaded = ref<boolean>(false);
 const questData = ref({
@@ -100,17 +88,7 @@ async function loadQuestData(questId: string) {
 const journalHighlightStore = useJournalHighlight();
 const getHighlight = computed(() => {
   return journalHighlightStore.getJournalHighlight;
-})
-
-const getLatestDisposition = computed(() => {
-  if (!questData.value.entries.length || !questData.value.entries[0].data.disposition)
-    return '10';
-  return (
-    Math.floor(
-      Math.max(...questData.value.entries.map((val) => parseInt(val.data.disposition))) / 10 + 1,
-    ) * 10
-  ).toString();
-})
+});
 
 watch(getHighlight, async (newValue) => {
   if (!newValue?.id) {

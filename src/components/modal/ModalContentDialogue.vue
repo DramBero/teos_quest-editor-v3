@@ -68,6 +68,13 @@
       </div>
     </div>
     <div class="dialogue-questions">
+      <button
+        type="button"
+        class="dialogue-questions__add"
+        @click="handleAddTopic"
+      >
+        <TdesignAdd />
+      </button>
       <div class="dialogue-questions__container" v-if="greetingsList?.length">
         <div 
           v-for="(question, index) in greetingsList" 
@@ -121,6 +128,8 @@ import SVGSpinners90RingWithBg from '~icons/svg-spinners/90-ring-with-bg';
 import { useClassicView, useClassicViewTopic } from '@/stores/classicView';
 import TdesignClose from '~icons/tdesign/close';
 import TdesignList from '~icons/tdesign/list';
+import TdesignAdd from '~icons/tdesign/add';
+import ContextMenu from '@imengyu/vue3-context-menu';
 
 const props = defineProps({
   speaker: {
@@ -248,8 +257,8 @@ function transformChoiceStringToObjects(input: string, entryId: string) {
 const topicChoices = computed(() => {
   const choices = [];
   for (const answer of currentAnswers.value) {
-    if (/choice\s+/i.test(answer.script_text)) {
-      const regex = /choice\s+(.*?)(?:\\n|$)/gi;
+    if (/choice:?\s+/i.test(answer.script_text)) {
+      const regex = /choice:?\s+(.*?)(?:\\n|$)/gi;
       let match;
 
       const scriptStrings = answer.script_text.split('\r\n');
@@ -318,6 +327,89 @@ async function setCurrentAnswers(selectedTopic: string, selectedTopicType: strin
   topicType.value = selectedTopicType;
   currentTopic.value = selectedTopic;
 }
+
+function handleAddTopic(e) {
+  ContextMenu.showContextMenu({
+    x: e.x,
+    y: e.y,
+    items: [
+      {
+        label: "Greeting",
+        children: [
+          {
+            label: 'Greeting 0 (priority)',
+          },
+          {
+            label: 'Greeting 1 (priority quest)',
+          },
+          {
+            label: 'Greeting 2 (vamp/nude)',
+          },
+          {
+            label: 'Greeting 3 (MT/creatures)',
+          },
+          {
+            label: 'Greeting 4 (desease/writ)',
+          },
+          {
+            label: 'Greeting 5 (quests)',
+          },
+          {
+            label: 'Greeting 6 (faction)',
+          },
+          {
+            label: 'Greeting 7 (class)',
+          },
+          {
+            label: 'Greeting 8 (clothes)',
+          },
+          {
+            label: 'Greeting 9 (location)',
+          },
+        ],
+      },
+      {
+        label: "Persuasion",
+        children: [
+          {
+            label: 'Bribe Fail',
+          },
+          {
+            label: 'Bribe Success',
+          },
+          {
+            label: 'Admire Fail',
+          },
+          {
+            label: 'Admire Success',
+          },
+          {
+            label: 'Intimidate Fail',
+          },
+          {
+            label: 'Intimidate Success',
+          },
+          {
+            label: 'Taunt Fail',
+          },
+          {
+            label: 'Taunt Success',
+          },
+          {
+            label: 'Info Refusal',
+          },
+          {
+            label: 'Service Refusal',
+          },
+        ],
+      },
+      {
+        label: "Topic",
+      },
+    ]
+  });
+}
+
 function deleteEntry(id) {
   // this.$store.commit('deleteDialogueEntry', id);
 }
@@ -506,7 +598,7 @@ watch(currentTopic, (async (newValue) => {
       border-bottom: 2px solid rgb(202, 165, 96);
       height: 40px;
       min-height: 40px;
-      margin-bottom: 2px;
+      margin-bottom: 15px;
     }
 
     &__frame {
@@ -683,7 +775,23 @@ watch(currentTopic, (async (newValue) => {
     max-width: 300px;
     border-left: 2px solid rgb(202, 165, 96);
     overflow-y: scroll;
-
+    &__add {
+      background-color: rgba(202, 165, 96, 0.6);
+      color: black;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 8px;
+      width: 35px;
+      height: 35px;
+      position: absolute;
+      bottom: 20px;
+      right: 20px;
+      transition: all .15s ease-in;
+      &:hover {
+        background-color: rgba(202, 165, 96, 1);
+      }
+    }
     &__topic {
       padding: 10px 10px 0px 10px;
       cursor: pointer;

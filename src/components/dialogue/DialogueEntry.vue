@@ -3,8 +3,20 @@
     'highlight-even_new': props.answer.TMP_is_active,
     'highlight-even_mod': props.answer.old_values && props.answer.old_values.length > 1,
   }">
+    <button 
+      class="dialogue-add dialogue-add_top"
+      @click="addDialogue('top')"
+    >
+      <TdesignAdd />
+    </button>
+    <button 
+      class="dialogue-add dialogue-add_bottom"
+      @click="addDialogue('bottom')"
+    >
+      <TdesignAdd />
+    </button>
     <div class="dialogue-answers-answer__above" v-if="!props.editMode"></div>
-    <div class="dialogue-answers-answer__above-add" v-if="props.editMode">
+      <div class="dialogue-answers-answer__above-add" v-if="props.editMode">
         <button class="entry-control-button" @click="addEntry([props.answer.prev_id, props.answer.id])">
         <!-- <icon name="plus" class="entry-control-button__icon" color="#E1FF00" scale="1"></icon> -->
         </button>
@@ -12,40 +24,43 @@
         @click="pasteDialogueFromClipboard([props.answer.prev_id, props.answer.id])">
         <!-- <icon name="clipboard" class="entry-control-button__icon" color="#E1FF00" scale="1"></icon> -->
         </button>
-    </div>
-    <form @submit.prevent="editDialogue" class="dialogue-answers-answer-wrapper">
-        <div class="dialogue-answers-answer" :class="{
-        'dialogue-answers-answer_modified': props.answer.old_values && props.answer.old_values.length,
-        'dialogue-answers-answer_edit': props.editMode,
-        }">
-        <div class="dialogue-answers-answer-modified" v-if="props.answer.old_values && props.answer.old_values.length > 1">
+      </div>
+      <form @submit.prevent="editDialogue" class="dialogue-answers-answer-wrapper">
+        <div 
+          class="dialogue-answers-answer" 
+          :class="{
+            'dialogue-answers-answer_modified': props.answer.old_values && props.answer.old_values.length,
+            'dialogue-answers-answer_edit': props.editMode,
+          }"
+        >
+          <div class="dialogue-answers-answer-modified" v-if="props.answer.old_values && props.answer.old_values.length > 1">
             * Modified in {{ props.answer.old_values.slice(-2)[0].TMP_dep }}
             <span class="dialogue-answers-answer-modified_dirty"
               v-if="getIsDirty">
               (possibly dirtied by CS)
             </span>
-        </div>
-        <div class="dialogue-answers-answer__ids" v-if="false">
+          </div>
+          <div class="dialogue-answers-answer__ids" v-if="false">
             <div class="prev-id">{{ props.answer.prev_id || '-' }} (before)</div>
             <div class="curr-id">id: {{ props.answer.id }}</div>
-        </div>
+          </div>
 
-        <DialogueEntryFilters 
-          :answer="props.answer" 
-          :speaker="props.speaker" 
-          :editMode="props.editMode" 
-          :topicChoices="props.topicChoices"
-          @fetchTopic="fetchTopic"
-        />
+          <DialogueEntryFilters 
+            :answer="props.answer" 
+            :speaker="props.speaker" 
+            :editMode="props.editMode" 
+            :topicChoices="props.topicChoices"
+            @fetchTopic="fetchTopic"
+          />
 
-        <div class="dialogue-answers-answer__text">
-          <editor-content :editor="editor" />
-        </div>
+          <div class="dialogue-answers-answer__text">
+            <editor-content :editor="editor" />
+          </div>
 
 <!--         <div v-if="editedEntry !== props.answer.id" class="dialogue-answers-answer__text"
             v-html="getHyperlinkedAnswer(props.answer.text)" @click="handleAnswerClick($event)"></div> -->
 
-        <div class="dialogue-entry__choices">
+          <div class="dialogue-entry__choices">
             <div 
             v-for="choice, choiceIndex in topicChoices.filter(val => val.entryId === props.answer.id)"
             :key="choiceIndex"
@@ -58,7 +73,7 @@
             <div class="choice__text">
                 {{ choice.text }}
             </div>
-            </div>
+          </div>
         </div>
 
         <DialogueEntryResults :editMode="props.editMode" :code="getLanguage(props.answer.script_text, 'Lua (MWSE)')"
@@ -70,19 +85,7 @@
             <div class="prev-id">{{ props.answer.id }} (id)</div>
             <div class="curr-id">next id: {{ props.answer.next_id || '-' }}</div>
         </div>
-        </div>
-        <!-- <icon v-if="editMode && editedEntry !== answer.id" name="pen" color="#E1FF00" class="icon_gold"
-        scale="1" @click="editedEntry = answer.id"></icon> -->
-        <div class="entry-edit-controls" v-if="props.editMode && editedEntry == props.answer.id">
-        <button type="submit">
-            <!-- <icon name="save" color="#E1FF00" class="icon_gold" scale="1"></icon> -->
-        </button>
-        <!-- <icon name="copy" color="#E1FF00" class="icon_gold" scale="1" @click.prevent="setClipboard(answer)">
-        </icon> -->
-        <!-- <icon name="ban" color="#E1FF00" class="icon_gold" scale="1" @click.prevent="editedEntry = ''"></icon>
-        <icon name="trash" color="#E1FF00" class="icon_gold" scale="1"
-            @click.prevent="deleteEntry(answer.id)"></icon> -->
-        </div>
+      </div>
     </form>
   </div>
 </template>
@@ -95,8 +98,10 @@ import { useEditor, EditorContent } from '@tiptap/vue-3';
 import StarterKit from '@tiptap/starter-kit';
 
 import { watchDebounced } from '@vueuse/core';
-import { editTopicText } from '@/api/idb.js';
+import { editTopicText, addDialogueEntry } from '@/api/idb.js';
 import { computed, ref, watch } from 'vue';
+
+import TdesignAdd from '~icons/tdesign/add';
 
 const props = defineProps({
   answer: {
@@ -127,6 +132,10 @@ const props = defineProps({
 })
 
 const answerText = ref('');
+
+function addDialogue() {
+  addDialogueEntry(props.speaker.speakerId, props.answer.TMP_topic, props.answer.TMP_type, props.speaker.speakerType);
+}
 
 watch(() => props.answer, (newValue) => {
   answerText.value = newValue.text;
@@ -218,6 +227,7 @@ function applyFilter(filter) {
 }
 
 .highlight-even {
+  position: relative;
   background: rgb(0, 0, 0);
   background: linear-gradient(90deg,
       rgba(0, 0, 0, 0) 0%,
@@ -244,6 +254,25 @@ function applyFilter(filter) {
     &:nth-child(even) {
       background-color: rgba(44, 51, 92, 0.3);
     }
+  }
+}
+
+.dialogue-add {
+  position: absolute;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  opacity: 0;
+  &:hover {
+    background-color: rgba(182, 145, 76, 0.1);
+    opacity: 1;
+  }
+  &_top {
+    top: -12px;
+  }
+  &_bottom {
+    bottom: -12px;
   }
 }
 </style>
