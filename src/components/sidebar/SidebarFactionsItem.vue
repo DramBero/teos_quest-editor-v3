@@ -52,7 +52,7 @@
           ].includes(props.faction[0]?.type)"
           type="button"
           class="faction__message"
-          @click.stop="openDialogue(props.faction[0]?.id || props.faction[0]?.name)"
+          @click.stop="openDialogue(props.faction[0])"
         >
           <TdesignChatMessageFilled />
         </button>
@@ -97,10 +97,11 @@ const getSpeakerType = computed(() => {
   }
 })
 
-function openDialogue(speakerId: String) {
+function openDialogue(speaker) {
   selectedSpeakerStore.setSelectedSpeaker({
-    speakerId: speakerId,
-    speakerType: getSpeakerType.value
+    speakerId: speaker.id || speaker.name,
+    speakerType: getSpeakerType.value,
+    speaker: speaker, 
   });
 }
 

@@ -32,7 +32,7 @@ const getSpeakerData = computed(() => {
     <ModalFrame />
     <ModalClassicView />
     <CWorkspace />
-    <ModalMain v-show="getSpeakerData.speakerId" :header="getSpeakerData.speakerId">
+    <ModalMain v-show="getSpeakerData.speakerId" :header="getSpeakerData.speakerName || getSpeakerData.speakerId">
       <ModalContentDialogue :speaker="getSpeakerData"/>
     </ModalMain>
   </div>

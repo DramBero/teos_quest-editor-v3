@@ -68,21 +68,45 @@
       </div>
     </div>
     <div class="dialogue-questions">
-      <div class="dialogue-questions__container" v-if="greetingsList.length">
-        <div class="dialogue-questions__topic" v-for="(question, index) in greetingsList" :key="index"
-          @click="setCurrentAnswers(question, 'Greeting')">
-          {{ question }}
+      <div class="dialogue-questions__container" v-if="greetingsList?.length">
+        <div 
+          v-for="(question, index) in greetingsList" 
+          :key="index"
+          class="dialogue-questions__topic" 
+          :class="{
+            'dialogue-questions__topic_new': question.TMP_is_active,
+            'dialogue-questions__topic_mod': false && question.TMP_is_active,
+          }"
+          @click="setCurrentAnswers(question.TMP_topic, 'Greeting')"
+        >
+          {{ question.TMP_topic }}
         </div>
       </div>
-      <div class="dialogue-questions__container" v-if="persuasionsList.length">
-        <div class="dialogue-questions__topic" v-for="(question, index) in persuasionsLists" :key="index"
-          @click="setCurrentAnswers(question, 'Persuasion')">
-          {{ question }}
+      <div class="dialogue-questions__container" v-if="persuasionsList?.length">
+        <div 
+          v-for="(question, index) in persuasionsLists" 
+          :key="index"
+          class="dialogue-questions__topic" 
+          :class="{
+            'dialogue-questions__topic_new': question.TMP_is_active,
+            'dialogue-questions__topic_mod': false && question.TMP_is_active,
+          }"
+          @click="setCurrentAnswers(question.TMP_topic, 'Persuasion')"
+        >
+          {{ question.TMP_topic }}
         </div>
       </div>
-      <div class="dialogue-questions__topic" v-for="(question, index) in topicsList" :key="index"
-        @click="setCurrentAnswers(question, 'Topic')">
-        {{ question }}
+      <div 
+        v-for="(question, index) in topicsList" 
+        :key="index"
+        class="dialogue-questions__topic" 
+        :class="{
+          'dialogue-questions__topic_new': question.TMP_is_active,
+          'dialogue-questions__topic_mod': false && question.TMP_is_active,
+        }"
+        @click="setCurrentAnswers(question.TMP_topic, 'Topic')"
+      >
+        {{ question.TMP_topic }}
       </div>
     </div>
   </div>
@@ -663,10 +687,21 @@ watch(currentTopic, (async (newValue) => {
     &__topic {
       padding: 10px 10px 0px 10px;
       cursor: pointer;
-      color: rgb(112, 126, 207);
-
-      &:hover {
-        color: rgb(159, 169, 223);
+        color: rgb(202, 165, 96);
+        &:hover {
+          color: rgb(223, 200, 157);
+        }
+      &_new {
+        color: rgb(89, 170, 106);
+        &:hover {
+          color: rgb(156, 207, 167);
+        }
+      }
+      &_mod {
+        color: rgb(112, 126, 207);
+        &:hover {
+          color: rgb(159, 169, 223);
+        }
       }
     }
 

@@ -224,32 +224,58 @@ export const findNPCByName = async function (npcName, size = 20) {
   }
 };
 
+function addTopicEntries(original, entries) {
+  let dialogue = {
+    topics: [],
+    greetings: [],
+    persuasions: [],
+  };
+  for (let type of ['Topic', 'Greeting', 'Persuasion']) {
+    const filteredEntries = entries.filter(val => val.TMP_type === type);
+    const uniqueEntryNames = [...new Set(filteredEntries.map(val => val.TMP_topic))];
+    for (let entry of uniqueEntryNames) {
+      dialogue[`${type.toLowerCase()}s`] = [
+        ...dialogue[`${type.toLowerCase()}s`],
+        filteredEntries.find(val => val.TMP_topic == entry),
+      ]
+    }
+  }
+  return {
+    topics: [...original.topics, ...dialogue.topics],
+    greetings: [...original.greetings, ...dialogue.greetings],
+    persuasions: [...original.persuasions, ...dialogue.persuasions],
+  }
+}
+
 export const fetchTopicListByNPC = async function (npcID, speakerType) {
-  console.log('started:', npcID, speakerType)
   const speakerTypeKey = getSpeakerTypeKey(speakerType);
   if (!databases['activePlugin']) {
     await initPlugin('activePlugin');
   }
   const activePlugin = databases['activePlugin'];
+  let topicList = {
+    topics: [],
+    greetings: [],
+    persuasions: [],
+  };
   try {
     let entries = await activePlugin.pluginData
       .where(JSON.parse(`{"${speakerTypeKey}": "${npcID}"}`))
       .toArray();
-    let dialogue = {};
-    dialogue.topics = [
-      ...new Set(entries.filter((val) => val.TMP_type === 'Topic').map((entry) => entry.TMP_topic)),
-    ];
-    dialogue.greetings = [
-      ...new Set(
-        entries.filter((val) => val.TMP_type === 'Greeting').map((entry) => entry.TMP_topic),
-      ),
-    ];
-    dialogue.persuasions = [
-      ...new Set(
-        entries.filter((val) => val.TMP_type === 'Persuasion').map((entry) => entry.TMP_topic),
-      ),
-    ];
-    return dialogue;
+    topicList = addTopicEntries(topicList, entries)
+
+    const dependecies = await getDependencies();
+    for (let dep of dependecies.reverse()) {
+      let dependencyDB = databases[dep];
+      if (!dependencyDB) {
+        continue;
+      }
+      let depEntries = await dependencyDB.pluginData
+        .where(JSON.parse(`{"${speakerTypeKey}": "${npcID}"}`))
+        .toArray();
+      topicList = addTopicEntries(topicList, depEntries)
+    }
+    return topicList;
   } catch (error) {
     throw error;
   }

@@ -129,117 +129,6 @@ const getFaceData = computed(() => {
   }
 });
 
-const getFaceData2 = computed(() => {
-  switch (speakerData.value?.head?.toLowerCase()) {
-    case 'b_n_argonian_f_head_01': return '/meshes/b_n_argonian_f_head_01.glb';
-    case 'b_n_argonian_f_head_02': return '/meshes/b_n_argonian_f_head_02.glb';
-    case 'b_n_argonian_f_head_03': return '/meshes/b_n_argonian_f_head_03.glb';
-    case 'b_v_argonian_f_head_01': return '/meshes/b_v_argonian_f_head_01.glb';
-
-    case 'b_n_argonian_m_head_01': return '/meshes/b_n_argonian_m_head_01.glb';
-    case 'b_n_argonian_m_head_02': return '/meshes/b_n_argonian_m_head_02.glb';
-    case 'b_n_argonian_m_head_03': return '/meshes/b_n_argonian_m_head_03.glb';
-    case 'b_v_argonian_m_head_01': return '/meshes/b_v_argonian_m_head_01.glb';
-
-    case 'b_n_breton_f_head_01': return '/meshes/b_n_breton_f_head_01.glb';
-    case 'b_n_breton_f_head_02': return '/meshes/b_n_breton_f_head_02.glb';
-    case 'b_n_breton_f_head_03': return '/meshes/b_n_breton_f_head_03.glb';
-    case 'b_n_breton_f_head_04': return '/meshes/b_n_breton_f_head_04.glb';
-    case 'b_n_breton_f_head_05': return '/meshes/b_n_breton_f_head_05.glb';
-    case 'b_n_breton_f_head_06': return '/meshes/b_n_breton_f_head_06.glb';
-    case 'b_v_breton_f_head_01': return '/meshes/b_v_breton_f_head_01.glb';
-
-    case 'b_n_breton_m_head_01': return '/meshes/b_n_breton_m_head_01.glb';
-
-    case 'b_n_khajiit_f_head_01': return '/meshes/b_n_khajiit_f_head_01.glb';
-    case 'b_n_khajiit_f_head_02': return '/meshes/b_n_khajiit_f_head_02.glb';
-    case 'b_n_khajiit_f_head_03': return '/meshes/b_n_khajiit_f_head_03.glb';
-    case 'b_n_khajiit_f_head_04': return '/meshes/b_n_khajiit_f_head_04.glb';
-    case 'b_v_khajiit_f_head_01': return '/meshes/b_v_khajiit_f_head_01.glb';
-
-    case 'b_n_khajiit_m_head_01': return '/meshes/b_n_khajiit_m_head_01.glb';
-    case 'b_n_khajiit_m_head_02': return '/meshes/b_n_khajiit_m_head_02.glb';
-    case 'b_n_khajiit_m_head_03': return '/meshes/b_n_khajiit_m_head_03.glb';
-    case 'b_n_khajiit_m_head_04': return '/meshes/b_n_khajiit_m_head_04.glb';
-    case 'b_v_khajiit_m_head_01': return '/meshes/b_v_khajiit_m_head_01.glb';
-
-
-    case 'b_n_high elf_m_head_01': return '/meshes/b_n_high elf_m_head_01.glb';
-    case 'b_n_high elf_m_head_02': return '/meshes/b_n_high elf_m_head_02.glb';
-    case 'b_n_high elf_m_head_03': return '/meshes/b_n_high elf_m_head_03.glb';
-    case 'b_n_high elf_m_head_04': return '/meshes/b_n_high elf_m_head_04.glb';
-    case 'b_n_high elf_m_head_05': return '/meshes/b_n_high elf_m_head_05.glb';
-    case 'b_n_high elf_m_head_06': return '/meshes/b_n_high elf_m_head_06.glb';
-    case 'b_v_high elf_m_head_01': return '/meshes/b_v_high elf_m_head_01.glb';
-
-    case 'b_n_high elf_f_head_01': return '/meshes/b_n_high elf_f_head_01.glb';
-    case 'b_n_high elf_f_head_02': return '/meshes/b_n_high elf_f_head_02.glb';
-    case 'b_n_high elf_f_head_03': return '/meshes/b_n_high elf_f_head_03.glb';
-    case 'b_n_high elf_f_head_04': return '/meshes/b_n_high elf_f_head_04.glb';
-    case 'b_n_high elf_f_head_05': return '/meshes/b_n_high elf_f_head_05.glb';
-    case 'b_n_high elf_f_head_06': return '/meshes/b_n_high elf_f_head_06.glb';
-    case 'b_v_high elf_f_head_01': return '/meshes/b_v_high elf_f_head_01.glb';
-
-
-    case 'b_n_dark elf_m_head_01': return '/meshes/b_n_dark elf_m_head_01.glb';
-    case 'b_n_dark elf_m_head_02': return '/meshes/b_n_dark elf_m_head_02.glb';
-    case 'b_n_dark elf_m_head_03': return '/meshes/b_n_dark elf_m_head_03.glb';
-    case 'b_n_dark elf_m_head_04': return '/meshes/b_n_dark elf_m_head_04.glb';
-    case 'b_n_dark elf_m_head_05': return '/meshes/b_n_dark elf_m_head_05.glb';
-    case 'b_n_dark elf_m_head_06': return '/meshes/b_n_dark elf_m_head_06.glb';
-    case 'b_n_dark elf_m_head_07': return '/meshes/b_n_dark elf_m_head_07.glb';
-    case 'b_n_dark elf_m_head_08': return '/meshes/b_n_dark elf_m_head_08.glb';
-    case 'b_n_dark elf_m_head_09': return '/meshes/b_n_dark elf_m_head_09.glb';
-    case 'b_n_dark elf_m_head_10': return '/meshes/b_n_dark elf_m_head_10.glb';
-    case 'b_n_dark elf_m_head_11': return '/meshes/b_n_dark elf_m_head_11.glb';
-    case 'b_n_dark elf_m_head_12': return '/meshes/b_n_dark elf_m_head_12.glb';
-    case 'b_n_dark elf_m_head_13': return '/meshes/b_n_dark elf_m_head_13.glb';
-    case 'b_n_dark elf_m_head_14': return '/meshes/b_n_dark elf_m_head_14.glb';
-    case 'b_n_dark elf_m_head_15': return '/meshes/b_n_dark elf_m_head_15.glb';
-    case 'b_n_dark elf_m_head_16': return '/meshes/b_n_dark elf_m_head_16.glb';
-    case 'b_n_dark elf_m_head_17': return '/meshes/b_n_dark elf_m_head_17.glb';
-    case 'b_v_dark elf_m_head_01': return '/meshes/b_v_dark elf_m_head_01.glb';
-
-    case 'b_n_dark elf_f_head_01': return '/meshes/b_n_dark elf_f_head_01.glb';
-    case 'b_n_dark elf_f_head_02': return '/meshes/b_n_dark elf_f_head_02.glb';
-    case 'b_n_dark elf_f_head_03': return '/meshes/b_n_dark elf_f_head_03.glb';
-    case 'b_n_dark elf_f_head_04': return '/meshes/b_n_dark elf_f_head_04.glb';
-    case 'b_n_dark elf_f_head_05': return '/meshes/b_n_dark elf_f_head_05.glb';
-    case 'b_n_dark elf_f_head_06': return '/meshes/b_n_dark elf_f_head_06.glb';
-    case 'b_n_dark elf_f_head_07': return '/meshes/b_n_dark elf_f_head_07.glb';
-    case 'b_n_dark elf_f_head_08': return '/meshes/b_n_dark elf_f_head_08.glb';
-    case 'b_n_dark elf_f_head_09': return '/meshes/b_n_dark elf_f_head_09.glb';
-    case 'b_n_dark elf_f_head_10': return '/meshes/b_n_dark elf_f_head_10.glb';
-    case 'b_v_dark elf_f_head_01': return '/meshes/b_v_dark elf_f_head_01.glb';
-
-
-    case 'b_n_imperial_m_head_01': return '/meshes/b_n_imperial_m_head_01.glb';
-    case 'b_n_imperial_m_head_02': return '/meshes/b_n_imperial_m_head_02.glb';
-    case 'b_n_imperial_m_head_03': return '/meshes/b_n_imperial_m_head_03.glb';
-    case 'b_n_imperial_m_head_04': return '/meshes/b_n_imperial_m_head_04.glb';
-    case 'b_n_imperial_m_head_05': return '/meshes/b_n_imperial_m_head_05.glb';
-    case 'b_n_imperial_m_head_06': return '/meshes/b_n_imperial_m_head_06.glb';
-    case 'b_n_imperial_m_head_07': return '/meshes/b_n_imperial_m_head_07.glb';
-    case 'b_v_imperial_m_head_01': return '/meshes/b_v_imperial_m_head_01.glb';
-
-
-    case 'b_n_nord_m_head_01': return '/meshes/b_n_nord_m_head_01.glb';
-    case 'b_n_nord_m_head_02': return '/meshes/b_n_nord_m_head_02.glb';
-    case 'b_n_nord_m_head_03': return '/meshes/b_n_nord_m_head_03.glb';
-    case 'b_n_nord_m_head_04': return '/meshes/b_n_nord_m_head_04.glb';
-    case 'b_n_nord_m_head_05': return '/meshes/b_n_nord_m_head_05.glb';
-    case 'b_n_nord_m_head_06': return '/meshes/b_n_nord_m_head_06.glb';
-    case 'b_n_nord_m_head_07': return '/meshes/b_n_nord_m_head_07.glb';
-    case 'b_n_nord_m_head_08': return '/meshes/b_n_nord_m_head_08.glb';
-    case 'b_n_nord_m_head_09': return '/meshes/b_n_nord_m_head_09.glb';
-
-    case 'b_n_wood elf_m_head_02': return '/meshes/b_n_wood elf_m_head_02.glb';
-    case 'b_n_breton_m_head_08': return '/meshes/b_n_breton_m_head_08.glb';
-    
-    default: return '';
-  }
-})
-
 const getHairData = computed(() => {
   try {
     const filePath = `/meshes/${speakerData.value?.hair?.toLowerCase()}.glb`;
@@ -249,15 +138,6 @@ const getHairData = computed(() => {
     return '';
   }
 });
-
-const getHairData2 = computed(() => {
-  switch(speakerData.value?.hair?.toLowerCase()) {
-    case 'b_n_dark elf_f_hair_03': return '/meshes/b_n_dark elf_f_hair_03.glb';
-    case 'b_n_imperial_m_hair_01': return '/meshes/b_n_imperial_m_hair_01.glb';
-    case 'b_n_imperial_m_hair_04': return '/meshes/b_n_imperial_m_hair_04.glb';
-    default: return '';
-  }
-})
 
 watch(getFaceData, () => {
   
@@ -321,12 +201,9 @@ const selectedSpeakerStore = useSelectedSpeaker();
 function openDialogueModal() {
   selectedSpeakerStore.setSelectedSpeaker({
     speakerId: props.speakerId,
-    speakerType: props.speakerType
-  })
-/*   this.$store.commit('setDialogueModal', {
-    speakerId: this.speakerId,
-    speakerType: this.speakerType,
-  }); */
+    speakerType: props.speakerType,
+    speakerName: speakerData.value?.name,
+  });
 }
 </script>
 
