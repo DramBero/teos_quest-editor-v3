@@ -161,21 +161,20 @@ async function fetchFactions(options: FetchFactionsOptions) {
 };
 
 const factionSearch = ref<String>('');
-watch(factionSearch, (newValue) => {
+
+function searchFactions() {
   if (factionSearch.value === '') {
     filteredFactions.value = factions.value;
   } else {
     filteredFactions.value = factions.value
-      .filter((val) => val[0].name?.toLowerCase().includes(newValue.toLowerCase()) 
-        || val[0].id?.toLowerCase().includes(newValue.toLowerCase()))
+      .filter((val) => val[0].name?.toLowerCase().includes(factionSearch.value.toLowerCase()) 
+        || val[0].id?.toLowerCase().includes(factionSearch.value.toLowerCase()))
   }
-}, {
-  immediate: true,
-});
+}
 
-watch(factions, (newValue) => {
-  filteredFactions.value = factions.value;
-})
+watch(factionSearch, searchFactions, { immediate: true });
+
+watch(factions, searchFactions)
 </script>
 
 <style lang="scss" scoped>

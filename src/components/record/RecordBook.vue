@@ -315,7 +315,7 @@ function handleIsScrollChange(event) {
 const leftPage = useTemplateRef('leftPage');
 const rightPage = useTemplateRef('rightPage');
 
-const offset = -9;
+const offset = -0;
 
 async function updatePages() {
   await new Promise((resolve) => setTimeout(resolve, 1));
