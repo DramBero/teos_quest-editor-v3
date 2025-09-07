@@ -153,7 +153,7 @@ const FireSpellCast = defineAsyncComponent(
 function iconComponent(key){
   switch(key) {
     case 'scripts': return GameIconsGears;
-    case 'factions': return GameIconsOrganigram;
+    case 'social': return GameIconsOrganigram;
     case 'actors': return GameIconsCharacter;
     case 'items': return GameIconsGauntlet;
     case 'magic': return FireSpellCast;

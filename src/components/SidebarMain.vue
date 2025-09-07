@@ -68,8 +68,8 @@ const categories = [
   {
     name: 'Magic',
     items: [
-      'Spell',
       'MagicEffect',
+      'Spell',
       'Enchanting',
       'Alchemy',
     ]

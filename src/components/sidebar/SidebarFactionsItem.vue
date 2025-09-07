@@ -5,57 +5,63 @@
     :class="{'faction_selected': getSelectedRecord?.[0]?.id && getSelectedRecord?.[0]?.id === props.faction[0].id }"
     @click="handleSelect"
   >
-    <div class="faction-left">
-      <div class="faction__title">
-        <div v-if="props.faction[0].TMP_is_active && props.faction.length > 1" class="quest-status quest-status_mod">
-          Mod
+    <div class="faction-top">
+      <div class="faction-left">
+        <div class="faction__title">
+          <div v-if="props.faction[0].TMP_is_active && props.faction.length > 1" class="quest-status quest-status_mod">
+          </div>
+          <div v-else-if="faction[0].TMP_is_active" class="quest-status quest-status_new">
+          </div>
+          <span :title="getName">
+            {{ getName }}
+          </span>
         </div>
-        <div v-else-if="faction[0].TMP_is_active" class="quest-status quest-status_new">
-          New
-        </div>
-        {{ getName }}
+        <span class="faction__id">{{ getId }}</span>
+        <input 
+          v-if="props.faction[0].type === 'GlobalVariable'"
+          type="text" 
+          disabled 
+          class="faction__value" 
+          :value="props.faction[0].value?.data"
+        />
+        <textarea 
+          v-if="props.faction[0].type === 'GameSetting'"
+          type="text" 
+          disabled 
+          :value="props.faction[0].value?.data"
+        />
       </div>
-      <span class="faction__id">{{ getId }}</span>
-      <input 
-        v-if="props.faction[0].type === 'GlobalVariable'"
-        type="text" 
-        disabled 
-        class="faction__value" 
-        :value="props.faction[0].value?.data"
-      />
-      <textarea 
-        v-if="props.faction[0].type === 'GameSetting'"
-        type="text" 
-        disabled 
-        :value="props.faction[0].value?.data"
-      />
+      <div class="faction-right">
+        <table class="faction-deps">
+          <tbody>
+            <tr v-for="dep in faction" :key="dep.TMP_dep">
+              <td>
+                {{ dep.TMP_dep }}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <button
+          v-if="[
+            'Npc',
+            'Creature',
+            'Cell',
+            'Race',
+            'Faction',
+            'Class'
+          ].includes(props.faction[0]?.type)"
+          type="button"
+          class="faction__message"
+          @click.stop="openDialogue(props.faction[0]?.id || props.faction[0]?.name)"
+        >
+          <TdesignChatMessageFilled />
+        </button>
+      </div>
     </div>
-    <div class="faction-right">
-      <table class="faction-deps">
-        <tbody>
-          <tr v-for="dep in faction" :key="dep.TMP_dep">
-            <td>
-              {{ dep.TMP_dep }}
-            </td>
-          </tr>
-        </tbody>
-      </table>
-      <button
-        v-if="[
-          'Npc',
-          'Creature',
-          'Cell',
-          'Race',
-          'Faction',
-          'Class'
-        ].includes(props.faction[0]?.type)"
-        type="button"
-        class="faction__message"
-        @click.stop="openDialogue(props.faction[0]?.id || props.faction[0]?.name)"
-      >
-        <TdesignChatMessageFilled />
-      </button>
-    </div>
+    <MagicEffects 
+      v-if="['Enchanting', 'Spell', 'Alchemy'].includes(props.faction[0]?.type)"
+      :effects="props.faction[0].effects"
+    />
   </button>
 </template>
 
@@ -64,6 +70,7 @@ import { useSelectedRecord } from '@/stores/selectedRecord';
 import { useSelectedSpeaker } from '@/stores/selectedSpeaker';
 import { computed } from 'vue';
 import TdesignChatMessageFilled from '~icons/tdesign/chat-message-filled';
+import MagicEffects from './MagicEffects.vue';
 
 const props = defineProps<{
   faction: Array<Object>;
@@ -100,8 +107,9 @@ function openDialogue(speakerId: String) {
 const getName = computed(() => {
   switch(props.faction[0]?.type) {
     case 'Skill': return props.faction[0].skill_id;
-    case 'Enchantment': return props.faction[0].effect_id;
     case 'Cell': return props.faction[0].name || props.faction[0].region;
+    case 'MagicEffect': return props.faction[0].effect_id;
+    case 'Enchanting': return props.faction[0].id;
     default: return props.faction[0].name;
   } 
 });
@@ -111,6 +119,7 @@ const getId = computed(() => {
     case 'Cell': return `${props.faction[0]?.data?.grid?.[0]}:${props.faction[0]?.data?.grid?.[1]}`;
     case 'PathGrid': return `${props.faction[0]?.data?.grid?.[0]}:${props.faction[0]?.data?.grid?.[1]}`;
     case 'Landscape': return `${props.faction[0].grid?.[0]}:${props.faction[0].grid?.[1]}`;
+    case 'MagicEffect': return props.faction[0].description;
     default: return props.faction[0]?.id;
   }
 })
@@ -119,7 +128,7 @@ const getId = computed(() => {
 <style lang="scss">
 .faction {
   display: flex;
-  justify-content: space-between;
+  flex-direction: column;
   text-align: left;
   gap: 5px;
   padding: 8px 12px;
@@ -132,6 +141,10 @@ const getId = computed(() => {
   }
   &:disabled {
     pointer-events: none;
+  }
+  &-top {
+    display: flex;
+    justify-content: space-between;
   }
   &_selected {
     background-color: rgba(202, 165, 96, 0.1);
@@ -153,7 +166,14 @@ const getId = computed(() => {
     font-size: 22px;
     color: rgb(202, 165, 96);
     display: flex;
+    align-items: center;
     gap: 7px;
+    span {
+      max-width: 220px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
   }
   &__message {
     svg {
