@@ -41,27 +41,37 @@ const TMPfields = [
   'TMP_id',
 ]
 
-let activePluginTypeCount = {}
+let activePluginTypeCount = {};
+let journalCount = 0;
 
 export async function countTypes() {
-  console.log('counting')
-  const activePlugin = databases['activePlugin'];
-  const items = await activePlugin.pluginData.toArray();
-  activePluginTypeCount = {};
-  items.forEach(item => {
-    if (activePluginTypeCount[item.type]) {
-      activePluginTypeCount[item.type]++;
-    } else {
-      activePluginTypeCount[item.type] = 1;
-    }
-  });
+  try {
+    const activePlugin = databases['activePlugin'];
+    const items = await activePlugin.pluginData.toArray();
+    activePluginTypeCount = {};
+    items.forEach(item => {
+      if (activePluginTypeCount[item.type]) {
+        activePluginTypeCount[item.type]++;
+      } else {
+        activePluginTypeCount[item.type] = 1;
+      }
+    });
+    journalCount = await activePlugin.pluginData
+      .where('dialogue_type')
+      .equals('Journal')
+      .count();
+  } catch (error) {
+    console.error(error);
+  }
 }
 
 export async function getCountTypes() {
   // await initPlugin('activePlugin');
   await countTypes();
-  console.log('COUNT:', activePluginTypeCount)
-  return activePluginTypeCount;
+  return {
+    ...activePluginTypeCount,
+    Journal: journalCount,
+  };
 }
 
 export const initPlugin = async function (pluginName) {
@@ -69,7 +79,7 @@ export const initPlugin = async function (pluginName) {
   let activePlugin = getDB(pluginName);
   activePlugin.version(1).stores({
     pluginData:
-      'TMP_index,type,TMP_is_active,TMP_topic,TMP_type,TMP_info_id,TMP_prev_id,TMP_next_id,TMP_speaker_id,TMP_speaker_cell,TMP_speaker_faction,TMP_speaker_class,TMP_speaker_race,TMP_id,name',
+      'TMP_index,type,dialogue_type,TMP_is_active,TMP_topic,TMP_type,TMP_info_id,TMP_prev_id,TMP_next_id,TMP_speaker_id,TMP_speaker_cell,TMP_speaker_faction,TMP_speaker_class,TMP_speaker_race,TMP_id,name',
   });
   await activePlugin.open().catch((err) => {
     console.error(err.stack || err);

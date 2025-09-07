@@ -2,10 +2,6 @@
   <div class="frame">
     <div class="frame-controls">
       <div class="frame-controls-left">
-        <div class="frame-controls-types__type frame-controls-types__type_active" :style="{ gap: '10px' }"
-          @click="addDialogue()">
-          Add <!-- <icon name="plus-circle" scale="1"></icon> -->
-        </div>
         <div class="frame-controls-types__secondary" :style="{ gap: '10px' }" @click="openClassicView()">
           Classic view
         </div>

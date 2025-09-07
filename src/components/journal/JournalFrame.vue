@@ -124,7 +124,7 @@ const questNames = computed(() => {
 
 const selectedQuest = computed(() => questNames.value.find(val => val.name === selectedQuestName.value) || {});
 
-const { list, containerProps, wrapperProps } = useVirtualList(questNames, { itemHeight: 85 });
+const { list, containerProps, wrapperProps } = useVirtualList(questNames, { itemHeight: 76 });
 
 const getQuestNameList = computed(() => {
   return list.value;
@@ -250,8 +250,8 @@ export default {
   border-radius: 8px;
   line-height: 23px;
   font-size: 20px;
-  padding: 0 15px 15px 15px;
-  margin: 5px;
+  padding: 0 10px 5px 10px;
+  // margin: 5px;
   position: relative;
   background-color: rgb(207, 191, 159);
   &_selected {
@@ -277,7 +277,7 @@ export default {
     position: sticky;
     top: -15px;
     z-index: 15;
-    padding-top: 15px;
+    padding-top: 5px;
     background-color: rgba(207, 191, 159, 0.9);
   }
   &_mod {
@@ -304,6 +304,7 @@ export default {
     display: flex;
     align-items: center;
     gap: 7px;
+    height: 59px;
     &:hover {
       color: rgb(180, 80, 60);
     }
@@ -334,10 +335,12 @@ export default {
     border-radius: 8px;
     height: fit-content;
     &_mod {
-      background-color: rgb(126, 126, 179);
+      background-color: rgba(140, 140, 194, 0.9);
+      color: black;
     }
     &_new {
-      background-color: rgb(89, 170, 106);
+      background-color: rgba(140, 219, 157, 0.9);
+      color: black;
     }
   }
   &-id {

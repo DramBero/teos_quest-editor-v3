@@ -1,79 +1,17 @@
 <template>
   <div class="sidebar" v-if="getSidebarActive">
     <JournalFrame v-show="getSidebarActive === 'Journal'" :key="4" />
-    <SidebarFactions 
-      v-show="getSidebarActive === 'Social'"
-      title="Social"
-      :entryTypes="[
-        'Class',
-        'Faction',
-        'Race',
-        'Skill',
-        'Birthsign',
-      ]"
-      modificator="factions"
-    />
-    <SidebarFactions 
-      v-show="getSidebarActive === 'Actors'"
-      title="Actors"
-      :entryTypes="[
-        'Npc',
-        'Creature',
-        'LeveledCreature',
-      ]"
-      modificator="actors"
-    />
-    <SidebarFactions 
-      v-show="getSidebarActive === 'Items'"
-      title="Items"
-      :entryTypes="[
-        'Book',
-        'Clothing',
-        'Armor',
-        'Weapon',
-        'MiscItem',
-        'RepairItem',
-        'Apparatus',
-        'Lockpick',
-        'Probe',
-        'Ingredient',
-        'Alchemy',
-        'LeveledItem',
-      ]"
-      modificator="items"
-    />
-    <SidebarFactions 
-      v-show="getSidebarActive === 'Scripts'"
-      title="Scripts"
-      :entryTypes="[
-        'Script',
-        'GlobalVariable',
-        'StartScript',
-        'GameSetting',
-      ]"
-      modificator="scripts"
-    />
-    <SidebarFactions 
-      v-show="getSidebarActive === 'Magic'"
-      title="Magic"
-      :entryTypes="[
-        'Spell',
-        'MagicEffect',
-        'Enchanting',
-        'Alchemy',
-      ]"
-      modificator="magic"
-    />
-    <SidebarFactions 
-      v-show="getSidebarActive === 'Interact'"
-      title="Interact"
-      :entryTypes="[
-        'Door',
-        'Activator',
-        'Container',
-      ]"
-      modificator="interact"
-    />
+    <template 
+      v-for="category in categories" 
+      :key="category.name"
+    >
+      <SidebarFactions 
+        v-show="getSidebarActive === category.name"
+        :title="category.name"
+        :entryTypes="category.items"
+        :modificator="category.name.toLowerCase()"
+      />
+    </template>
   </div>
 </template>
 
@@ -82,6 +20,85 @@ import JournalFrame from '@/components/journal/JournalFrame.vue';
 import SidebarFactions from '@/components/sidebar/SidebarFactions.vue';
 import { useSidebar } from '@/stores/sidebar';
 import { computed } from 'vue';
+
+const categories = [
+  {
+    name: 'Social',
+    items: [
+      'Class',
+      'Faction',
+      'Race',
+      'Skill',
+      'Birthsign',
+    ]
+  },
+  {
+    name: 'Actors',
+    items: [
+      'Npc',
+      'Creature',
+      'LeveledCreature',
+    ]
+  },
+  {
+    name: 'Items',
+    items: [
+      'Book',
+      'Clothing',
+      'Armor',
+      'Weapon',
+      'MiscItem',
+      'RepairItem',
+      'Apparatus',
+      'Lockpick',
+      'Probe',
+      'Ingredient',
+      'Alchemy',
+      'LeveledItem',
+    ]
+  },
+  {
+    name: 'Scripts',
+    items: [
+      'Script',
+      'GlobalVariable',
+      'StartScript',
+    ]
+  },
+  {
+    name: 'Magic',
+    items: [
+      'Spell',
+      'MagicEffect',
+      'Enchanting',
+      'Alchemy',
+    ]
+  },
+  {
+    name: 'Interact',
+    items: [
+      'Door',
+      'Activator',
+      'Container',
+    ]
+  },
+  {
+    name: 'World',
+    items: [
+      'Cell',
+      'Region',
+      'Sound',
+      'SoundGen',
+      'LandscapeTexture',
+      'Static',
+      'Bodypart',
+      'Light',
+      'Landscape',
+      'PathGrid',
+      'GameSetting',
+    ]
+  },
+]
 
 const sidebarStore = useSidebar();
 const getSidebarActive = computed(() => {

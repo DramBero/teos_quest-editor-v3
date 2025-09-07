@@ -5,6 +5,9 @@
       @click="toggleSidebarActive('Journal')">
       <GameIconsBookmarklet />
       <span>Journal</span>
+      <div v-if="getCountTypes['Journal']" class="workspace-controls__amount">
+        {{ getCountTypes['Journal'] }}
+      </div>
     </div>
 <!--     <div class="workspace-controls__button"
       :class="{ 'workspace-controls__button_active': getSidebarActive === 'Header' }"
@@ -12,68 +15,28 @@
        <GameIconsGears />
       <span>Header</span>
     </div> -->
-    <div 
-      class="workspace-controls__button"
-      :class="{ 'workspace-controls__button_active': getSidebarActive === 'Social' }"
-      @click="toggleSidebarActive('Social')"
-    >
-      <GameIconsOrganigram />
-      <span>Social</span>
-    </div>
-    <div 
-      class="workspace-controls__button"
-      :class="{ 'workspace-controls__button_active': getSidebarActive === 'Actors' }"
-      @click="toggleSidebarActive('Actors')"
-    >
-      <GameIconsCharacter />
-      <span>Actors</span>
-    </div>
     <div
+      v-for="category in categories"
+      :key="category.name"
       class="workspace-controls__button"
-      :class="{ 'workspace-controls__button_active': getSidebarActive === 'Items' }"
-      @click="toggleSidebarActive('Items')"
+      :class="{ 'workspace-controls__button_active': getSidebarActive === category.name }"
+      @click="toggleSidebarActive(category.name)"
     >
-      <GameIconsGauntlet />
-      <span>Items</span>
-    </div>
-    <div
-      class="workspace-controls__button"
-      :class="{ 'workspace-controls__button_active': getSidebarActive === 'Scripts' }"
-      @click="toggleSidebarActive('Scripts')"
-    >
-      <GameIconsGears />
-      <span>Scripts</span>
-    </div>
-    <div
-      class="workspace-controls__button"
-      :class="{ 'workspace-controls__button_active': getSidebarActive === 'Magic' }"
-      @click="toggleSidebarActive('Magic')"
-    >
-      <FireSpellCast />
-      <span>Magic</span>
-    </div>
-    <div
-      class="workspace-controls__button"
-      :class="{ 'workspace-controls__button_active': getSidebarActive === 'Interact' }"
-      @click="toggleSidebarActive('Interact')"
-    >
-      <OpenChest />
-      <span>Interact</span>
+      <component
+        :is="iconComponent(category.name?.toLowerCase())"
+      />
+      <span>{{ category.name }}</span>
+      <div v-if="getCategoryAmount(category.name)" class="workspace-controls__amount">
+        {{ getCategoryAmount(category.name) }}
+      </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import { useCountTypes } from '@/stores/countTypes';
 import { useSidebar } from '@/stores/sidebar';
-import { computed } from 'vue';
-
-import GameIconsBookmarklet from '~icons/game-icons/bookmarklet';
-import GameIconsGears from '~icons/game-icons/gears';
-import GameIconsOrganigram from '~icons/game-icons/organigram';
-import GameIconsCharacter from '~icons/game-icons/character';
-import GameIconsGauntlet from '~icons/game-icons/gauntlet';
-import FireSpellCast from '~icons/game-icons/fire-spell-cast';
-import OpenChest from '~icons/game-icons/open-chest';
+import { computed, defineAsyncComponent } from 'vue';
 
 const sidebarStore = useSidebar();
 function toggleSidebarActive(value: string) {
@@ -82,6 +45,133 @@ function toggleSidebarActive(value: string) {
 const getSidebarActive = computed(() => {
   return sidebarStore.getActiveItem;
 });
+
+const categories = [
+  {
+    name: 'Social',
+    items: [
+      'Class',
+      'Faction',
+      'Race',
+      'Skill',
+      'Birthsign',
+    ]
+  },
+  {
+    name: 'Actors',
+    items: [
+      'Npc',
+      'Creature',
+      'LeveledCreature',
+    ]
+  },
+  {
+    name: 'Items',
+    items: [
+      'Book',
+      'Clothing',
+      'Armor',
+      'Weapon',
+      'MiscItem',
+      'RepairItem',
+      'Apparatus',
+      'Lockpick',
+      'Probe',
+      'Ingredient',
+      'Alchemy',
+      'LeveledItem',
+    ]
+  },
+  {
+    name: 'Scripts',
+    items: [
+      'Script',
+      'GlobalVariable',
+      'StartScript',
+    ]
+  },
+  {
+    name: 'Magic',
+    items: [
+      'Spell',
+      'MagicEffect',
+      'Enchanting',
+      'Alchemy',
+    ]
+  },
+  {
+    name: 'Interact',
+    items: [
+      'Door',
+      'Activator',
+      'Container',
+    ]
+  },
+  {
+    name: 'World',
+    items: [
+      'Cell',
+      'Region',
+      'Sound',
+      'SoundGen',
+      'LandscapeTexture',
+      'Static',
+      'Bodypart',
+      'Light',
+      'Landscape',
+      'PathGrid',
+      'GameSetting',
+    ]
+  },
+]
+
+const GameIconsBookmarklet = defineAsyncComponent(
+  () => import('~icons/game-icons/bookmarklet/GameIconsBookmarklet.vue')
+);
+const GameIconsGears = defineAsyncComponent(
+  () => import('~icons/game-icons/gears/GameIconsGears.vue')
+);
+const GameIconsOrganigram = defineAsyncComponent(
+  () => import('~icons/game-icons/organigram/GameIconsOrganigram.vue')
+);
+const GameIconsCharacter = defineAsyncComponent(
+  () => import('~icons/game-icons/character/GameIconsCharacter.vue')
+);
+const GameIconsGauntlet = defineAsyncComponent(
+  () => import('~icons/game-icons/gauntlet/GameIconsGauntlet.vue')
+);
+const GameIconsMedievalVillage01 = defineAsyncComponent(
+  () => import('~icons/game-icons/medieval-village-01/GameIconsMedievalVillage01.vue')
+);
+const OpenChest = defineAsyncComponent(
+  () => import('~icons/game-icons/open-chest/OpenChest.vue')
+);
+const FireSpellCast = defineAsyncComponent(
+  () => import('~icons/game-icons/fire-spell-cast/FireSpellCast.vue')
+);
+
+function iconComponent(key){
+  switch(key) {
+    case 'scripts': return GameIconsGears;
+    case 'factions': return GameIconsOrganigram;
+    case 'actors': return GameIconsCharacter;
+    case 'items': return GameIconsGauntlet;
+    case 'magic': return FireSpellCast;
+    case 'interact': return OpenChest;
+    case 'world': return GameIconsMedievalVillage01;
+    default: return GameIconsBookmarklet;
+  }
+}
+
+const countTypesStore = useCountTypes();
+const getCountTypes = computed(() => countTypesStore.getTypesAmount);
+
+function getCategoryAmount(category) {
+  const types = categories.find(val => val.name === category)?.items || [];
+  const amounts = types.map(val => getCountTypes.value?.[val] || 0);
+  const amount = amounts.reduce((a, b) => a + b, 0);
+  return amount;
+}
 </script>
 
 <style lang="scss">
@@ -94,7 +184,20 @@ const getSidebarActive = computed(() => {
   display: flex;
   flex-direction: column;
   gap: 10px;
-
+  &__amount {
+    background-color: rgba(81, 220, 111, 0.9);
+    border-radius: 10px;
+    color: black;
+    font-size: 15px;
+    font-family: 'Pelagiad';
+    display: flex;
+    align-items: center;
+    justify-content: center;;
+    padding: 0px 5px;
+    position: absolute;
+    top: 5px;
+    right: 5px;
+  }
   &__button {
     width: 100%;
     user-select: none;

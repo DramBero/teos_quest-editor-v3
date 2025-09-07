@@ -433,9 +433,10 @@ watch(isScroll, updatePages, {immediate: true});
     }
   }
   &_scroll {
+    padding: 10px 40px;
     .record-book__text {
       line-height: 32px;
-      min-height: 400px;
+      min-height: 100px;
     }
   }
   &_book {

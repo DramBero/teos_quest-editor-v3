@@ -77,6 +77,9 @@ const GameIconsCharacter = defineAsyncComponent(
 const GameIconsGauntlet = defineAsyncComponent(
   () => import('~icons/game-icons/gauntlet/GameIconsGauntlet.vue')
 );
+const GameIconsMedievalVillage01 = defineAsyncComponent(
+  () => import('~icons/game-icons/medieval-village-01/GameIconsMedievalVillage01.vue')
+);
 const OpenChest = defineAsyncComponent(
   () => import('~icons/game-icons/open-chest/OpenChest.vue')
 );
@@ -92,6 +95,7 @@ const iconComponent = computed(() => {
     case 'items': return GameIconsGauntlet;
     case 'magic': return FireSpellCast;
     case 'interact': return OpenChest;
+    case 'world': return GameIconsMedievalVillage01;
     default: return GameIconsBookmarklet;
   }
 })
@@ -148,9 +152,20 @@ async function fetchFactions(options: FetchFactionsOptions) {
       idKey = 'skill_id';
     } else if (selectedType.value === 'MagicEffect') {
       idKey = 'effect_id';
+    } else if (selectedType.value === 'Cell') {
+      idKey = 'name';
+    } else if (selectedType.value === 'PathGrid') {
+      idKey = 'TMP_index';
     }
-    const uniqueIds = [...new Set(response.map((val) => val[idKey]))];
-    const uniqueFactions = uniqueIds.map(val => response.filter(faction => faction[idKey] === val));
+    let uniqueIds = [];
+    let uniqueFactions = [];
+    if (selectedType.value === 'Landscape') {
+      uniqueIds = [...new Set(response.map((val) => `${val.grid?.[0]}:${val.grid?.[1]}`))];
+      uniqueFactions = uniqueIds.map(val => response.filter(faction => `${faction.grid?.[0]}:${faction.grid?.[1]}` === val));
+    } else {
+      uniqueIds = [...new Set(response.map((val) => val[idKey]))];
+      uniqueFactions = uniqueIds.map(val => response.filter(faction => faction[idKey] === val));
+    }
     factions.value = uniqueFactions;
     countTypesStore.updateCountTypes();
   } catch (error) {
@@ -317,7 +332,10 @@ watch(factions, searchFactions)
     @include dot-bg-big(rgb(57, 68, 80), rgba(255, 255, 255, 0.02));
   }
   &_interact {
-    @include dot-bg-big(rgb(94, 86, 57), rgba(255, 255, 255, 0.02));
+    @include dot-bg-big(rgb(91, 62, 28), rgba(255, 255, 255, 0.02));
+  }
+  &_world {
+    @include dot-bg-big(rgb(55, 85, 76), rgba(255, 255, 255, 0.02));
   }
 }
 
@@ -361,11 +379,11 @@ watch(factions, searchFactions)
     }
   }
   &__amount {
-    background-color: rgba(89, 170, 106, 0.7);
+    background-color: rgba(140, 219, 157, 0.9);
     border-radius: 10px;
-    color: white;
+    color: black;
     font-size: 15px;
-    font-family: 'Consolas';
+    font-family: 'Pelagiad';
     display: flex;
     align-items: center;
     justify-content: center;;
