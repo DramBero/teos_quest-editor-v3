@@ -15,7 +15,7 @@
         </div>
         {{ getName }}
       </div>
-      <span class="faction__id">{{ props.faction[0].id }}</span>
+      <span class="faction__id">{{ getId }}</span>
       <input 
         v-if="props.faction[0].type === 'GlobalVariable'"
         type="text" 
@@ -99,11 +99,20 @@ function openDialogue(speakerId: String) {
 
 const getName = computed(() => {
   switch(props.faction[0]?.type) {
-    case 'Landscape': return `${props.faction[0].grid?.[0]}:${props.faction[0].grid?.[1]}`;
     case 'Skill': return props.faction[0].skill_id;
     case 'Enchantment': return props.faction[0].effect_id;
+    case 'Cell': return props.faction[0].name || props.faction[0].region;
     default: return props.faction[0].name;
   } 
+});
+
+const getId = computed(() => {
+  switch(props.faction[0]?.type) {
+    case 'Cell': return `${props.faction[0]?.data?.grid?.[0]}:${props.faction[0]?.data?.grid?.[1]}`;
+    case 'PathGrid': return `${props.faction[0]?.data?.grid?.[0]}:${props.faction[0]?.data?.grid?.[1]}`;
+    case 'Landscape': return `${props.faction[0].grid?.[0]}:${props.faction[0].grid?.[1]}`;
+    default: return props.faction[0]?.id;
+  }
 })
 </script>
 

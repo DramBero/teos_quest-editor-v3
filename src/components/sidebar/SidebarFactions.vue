@@ -90,7 +90,7 @@ const FireSpellCast = defineAsyncComponent(
 const iconComponent = computed(() => {
   switch(props.modificator) {
     case 'scripts': return GameIconsGears;
-    case 'factions': return GameIconsOrganigram;
+    case 'social': return GameIconsOrganigram;
     case 'actors': return GameIconsCharacter;
     case 'items': return GameIconsGauntlet;
     case 'magic': return FireSpellCast;
@@ -153,7 +153,7 @@ async function fetchFactions(options: FetchFactionsOptions) {
     } else if (selectedType.value === 'MagicEffect') {
       idKey = 'effect_id';
     } else if (selectedType.value === 'Cell') {
-      idKey = 'name';
+      idKey = 'TMP_index';
     } else if (selectedType.value === 'PathGrid') {
       idKey = 'TMP_index';
     }
@@ -316,7 +316,7 @@ watch(factions, searchFactions)
 }
 
 .journal-frame {
-  &_factions {
+  &_social {
     @include dot-bg-big(rgb(59, 45, 59), rgba(255, 255, 255, 0.02));
   }
   &_actors {

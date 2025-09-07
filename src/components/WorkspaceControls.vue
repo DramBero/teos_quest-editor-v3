@@ -5,7 +5,7 @@
       @click="toggleSidebarActive('Journal')">
       <GameIconsBookmarklet />
       <span>Journal</span>
-      <div v-if="getCountTypes['Journal']" class="workspace-controls__amount">
+      <div v-if="getCountTypes?.['Journal']" class="workspace-controls__amount">
         {{ getCountTypes['Journal'] }}
       </div>
     </div>

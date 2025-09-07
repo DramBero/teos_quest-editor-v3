@@ -336,10 +336,12 @@ export default {
     height: fit-content;
     &_mod {
       background-color: rgba(140, 140, 194, 0.9);
+      border: solid 1px rgba(79, 79, 136, 0.9);
       color: black;
     }
     &_new {
       background-color: rgba(140, 219, 157, 0.9);
+      border: solid 1px rgba(65, 140, 82, 0.9);
       color: black;
     }
   }
