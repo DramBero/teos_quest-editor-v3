@@ -224,6 +224,8 @@ function parseText(text: String) {
   newText = newText.replace(/--/g, '\u2011\u2011');
   newText = newText.replace(/“/g, '"');
   newText = newText.replace(/”/g, '"');
+  newText = newText.replace(/\[/g, '<font face="Pelagiad">[</font>');
+  newText = newText.replace(/\]/g, '<font face="Pelagiad">]</font>');
   newText = newText.replace(/%[\w]+(?=\W|$)/g, (match) => {
     return `<span class="variable">${match}</span>`;
   });
@@ -410,6 +412,7 @@ watch(isScroll, updatePages, {immediate: true});
     overflow-wrap: break-word;
     height: 100%;
     overflow-y: scroll;
+    font-family: 'Magic Cards';
     // letter-spacing: 0.3px;
     line-height: 22px;
     // word-spacing: 0px;
