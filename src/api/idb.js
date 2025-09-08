@@ -609,17 +609,17 @@ export const getAllDialogue = async function (topicId) {
         continue;
       }
       let depResponse = await dependencyDB.pluginData
-        .where('type')
-        .equals('DialogueInfo')
-        .and((entry) => entry['TMP_topic'] === topicId)
+        .where('TMP_topic')
+        .equals(topicId)
+        .and((entry) => entry['type'] === 'DialogueInfo')
         .toArray();
       dialogue = [...dialogue, depResponse];
     }
     const activePlugin = databases['activePlugin'];
     const response = await activePlugin.pluginData
-      .where('type')
-      .equals('DialogueInfo')
-      .and((entry) => entry['TMP_topic'] === topicId)
+      .where('TMP_topic')
+      .equals(topicId)
+      .and((entry) => entry['type'] === 'DialogueInfo')
       .toArray();
     dialogue = [...dialogue, response];
     return dialogue;
