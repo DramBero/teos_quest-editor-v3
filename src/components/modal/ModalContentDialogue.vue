@@ -2,7 +2,7 @@
   <div class="dialogue">
     <div class="dialogue-answers">
       <div class="dialogue-answers__header" v-if="currentTopic">
-        <div class="dialogue-answers__add" v-if="editMode" @click="addEntry">Add entry</div>
+        <div></div>
         <transition name="fade" class="dialogue-answers__frame" mode="out-in" :style="{ width: '100%' }">
           <span v-show="currentTopic.trim().length">{{ currentTopic }}</span>
         </transition>
@@ -69,45 +69,48 @@
         <TdesignAdd />
       </button>
       <div class="dialogue-questions__container" v-if="greetingsList?.length">
-        <div 
+        <button 
           v-for="(question, index) in greetingsList" 
           :key="index"
           class="dialogue-questions__topic" 
           :class="{
             'dialogue-questions__topic_new': question[0].TMP_is_active,
             'dialogue-questions__topic_mod': question.length > 1 && question[0].TMP_is_active,
+            'dialogue-questions__topic_selected': question[0].TMP_topic === currentTopic,
           }"
           @click="setCurrentAnswers(question[0].TMP_topic, 'Greeting')"
         >
           {{ question[0].TMP_topic }}
-        </div>
+        </button>
       </div>
       <div class="dialogue-questions__container" v-if="persuasionsList?.length">
-        <div 
-          v-for="(question, index) in persuasionsLists" 
+        <button 
+          v-for="(question, index) in persuasionsList" 
           :key="index"
           class="dialogue-questions__topic" 
           :class="{
             'dialogue-questions__topic_new': question[0].TMP_is_active,
             'dialogue-questions__topic_mod': question.length > 1 && question[0].TMP_is_active,
+            'dialogue-questions__topic_selected': question[0].TMP_topic === currentTopic,
           }"
           @click="setCurrentAnswers(question[0].TMP_topic, 'Persuasion')"
         >
           {{ question[0].TMP_topic }}
-        </div>
+        </button>
       </div>
-      <div 
+      <button 
         v-for="(question, index) in topicsList" 
         :key="index"
         class="dialogue-questions__topic" 
         :class="{
           'dialogue-questions__topic_new': question[0].TMP_is_active,
           'dialogue-questions__topic_mod': question.length > 1 && question[0].TMP_is_active,
+          'dialogue-questions__topic_selected': question[0].TMP_topic === currentTopic,
         }"
         @click="setCurrentAnswers(question[0].TMP_topic, 'Topic')"
       >
         {{ question[0].TMP_topic }}
-      </div>
+      </button>
     </div>
   </div>
 </template>
@@ -115,7 +118,7 @@
 <script setup lang="ts">
 import { useSelectedSpeaker } from '@/stores/selectedSpeaker';
 import DialogueEntry from '@/components/dialogue/DialogueEntry.vue';
-import { fetchTopicListByNPC, getOrderedEntriesByTopic } from '@/api/idb.js';
+import { fetchTopicListByNPC, getOrderedEntriesByTopic, addDialogueEntry } from '@/api/idb.js';
 import { computed, reactive, ref, toRefs, watch } from 'vue';
 import SVGSpinners90RingWithBg from '~icons/svg-spinners/90-ring-with-bg';
 import { useClassicView, useClassicViewTopic } from '@/stores/classicView';
@@ -170,6 +173,21 @@ async function fetchTopics() {
 }
 
 watch(speaker, fetchTopics);
+
+async function addDialogue(
+  topicName: string,
+  topicType: string,
+) {
+  return
+  await addDialogueEntry(
+    props.speaker.speakerId,
+    topicName,
+    topicType,
+    props.speaker.speakerType,
+  );
+  setCurrentAnswers(topicName, topicType);
+  fetchTopics();
+}
 
 const currentAnswers = computed(() => {
   let answers;
@@ -265,45 +283,7 @@ async function setClipboard(entry) {
   await new Promise((resolve) => setTimeout(resolve, 2500));
   this.infoMessage = ''; */
 }
-function addEntry(location) {
-/*   if (!this.currentTopic) return;
-  if (!location)
-    location = this.$store.getters['getBestOrderLocationForNpc']([
-      this.speaker.speakerId,
-      this.currentTopic,
-      this.topicType,
-      this.getSpeakerType,
-    ]);
-  console.log(location);
-  if (location[0]) {
-    this.$store.commit('addDialogue', [
-      this.getSpeakerType,
-      this.speaker.speaker_id,
-      this.currentTopic,
-      this.topicType,
-      location[0],
-      'next',
-      'New entry',
-    ]);
-  } else if (!location[0] && location[1]) {
-    this.$store.commit('addDialogue', [
-      this.getSpeakerType,
-      this.speaker.speaker_id,
-      this.currentTopic,
-      this.topicType,
-      location[1],
-      'prev',
-      'New entry',
-    ]);
-  } */
-}
-function editDialogue() {
-/*   this.$store.commit('editDialogueEntry', [
-    this.editedEntry,
-    event.target.elements.entryText.value,
-  ]);
-  this.editedEntry = ''; */
-}
+
 async function setCurrentAnswers(selectedTopic: string, selectedTopicType: string) {
   topicType.value = 'Topic';
   currentTopic.value = ' ';
@@ -322,33 +302,63 @@ function handleAddTopic(e) {
         children: [
           {
             label: 'Greeting 0 (priority)',
+            onClick: () => {
+              addDialogue('Greeting 0', 'Greeting');
+            }
           },
           {
             label: 'Greeting 1 (priority quest)',
+            onClick: () => {
+              addDialogue('Greeting 1', 'Greeting');
+            }
           },
           {
             label: 'Greeting 2 (vamp/nude)',
+            onClick: () => {
+              addDialogue('Greeting 2', 'Greeting');
+            }
           },
           {
             label: 'Greeting 3 (MT/creatures)',
+            onClick: () => {
+              addDialogue('Greeting 3', 'Greeting');
+            }
           },
           {
             label: 'Greeting 4 (desease/writ)',
+            onClick: () => {
+              addDialogue('Greeting 4', 'Greeting');
+            }
           },
           {
             label: 'Greeting 5 (quests)',
+            onClick: () => {
+              addDialogue('Greeting 5', 'Greeting');
+            }
           },
           {
             label: 'Greeting 6 (faction)',
+            onClick: () => {
+              addDialogue('Greeting 6', 'Greeting');
+            }
           },
           {
             label: 'Greeting 7 (class)',
+            onClick: () => {
+              addDialogue('Greeting 7', 'Greeting');
+            }
           },
           {
             label: 'Greeting 8 (clothes)',
+            onClick: () => {
+              addDialogue('Greeting 8', 'Greeting');
+            }
           },
           {
             label: 'Greeting 9 (location)',
+            onClick: () => {
+              addDialogue('Greeting 9', 'Greeting');
+            }
           },
         ],
       },
@@ -357,33 +367,63 @@ function handleAddTopic(e) {
         children: [
           {
             label: 'Bribe Fail',
+            onClick: () => {
+              addDialogue('Bribe Fail', 'Persuasion');
+            }
           },
           {
             label: 'Bribe Success',
+            onClick: () => {
+              addDialogue('Bribe Success', 'Persuasion');
+            }
           },
           {
             label: 'Admire Fail',
+            onClick: () => {
+              addDialogue('Admire Fail', 'Persuasion');
+            }
           },
           {
             label: 'Admire Success',
+            onClick: () => {
+              addDialogue('Admire Success', 'Persuasion');
+            }
           },
           {
             label: 'Intimidate Fail',
+            onClick: () => {
+              addDialogue('Intimidate Fail', 'Persuasion');
+            }
           },
           {
             label: 'Intimidate Success',
+            onClick: () => {
+              addDialogue('Intimidate Success', 'Persuasion');
+            }
           },
           {
             label: 'Taunt Fail',
+            onClick: () => {
+              addDialogue('Taunt Fail', 'Persuasion');
+            }
           },
           {
             label: 'Taunt Success',
+            onClick: () => {
+              addDialogue('Taunt Success', 'Persuasion');
+            }
           },
           {
             label: 'Info Refusal',
+            onClick: () => {
+              addDialogue('Info Refusal', 'Persuasion');
+            }
           },
           {
             label: 'Service Refusal',
+            onClick: () => {
+              addDialogue('Service Refusal', 'Persuasion');
+            }
           },
         ],
       },
@@ -415,7 +455,6 @@ async function fetchTopic(topic: string, loading=false) {
 }
 
 async function handleUpdateAll() {
-  console.log('UPDATE ALL')
   fetchTopics();
   fetchTopic(currentTopic.value, false);
 }
@@ -596,6 +635,7 @@ watch(currentTopic, (async (newValue) => {
       display: flex;
       flex-direction: column;
       //gap: 20px;
+      text-align: center;
       max-width: 100%;
       overflow-y: scroll;
       overflow-x: hidden;
@@ -783,7 +823,9 @@ watch(currentTopic, (async (newValue) => {
       }
     }
     &__topic {
-      padding: 10px 10px 0px 10px;
+      padding: 5px 10px 5px 10px;
+      width: 100%;
+      text-align: left;
       cursor: pointer;
         color: rgb(202, 165, 96);
         &:hover {
@@ -800,6 +842,9 @@ watch(currentTopic, (async (newValue) => {
         &:hover {
           color: rgb(159, 169, 223);
         }
+      }
+      &_selected {
+        background-color: rgba(255, 255, 255, 0.2);
       }
     }
 

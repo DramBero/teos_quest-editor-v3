@@ -135,7 +135,7 @@ const emit = defineEmits(['applyFilter', 'setCurrentAnswers', 'updateAll']);
 const answerText = ref('');
 
 async function addDialogue(direction: 'prev' | 'next') {
-  return;
+  return
   await addDialogueEntry(
     props.speaker.speakerId,
     props.answer.TMP_topic,

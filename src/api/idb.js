@@ -277,7 +277,9 @@ export const fetchTopicListByNPC = async function (npcID, speakerType) {
     }
     for (let type of ['topics', 'greetings', 'persuasions']) {
       const uniqueEntries = [...new Set(topicList[type].map(val => val.TMP_topic))];
-      topicList[type] = uniqueEntries.map(val => topicList[type].filter((i) => i.TMP_topic === val));
+      let topics = uniqueEntries.map(val => topicList[type].filter((i) => i.TMP_topic === val));
+      topics.sort((a, b) => a[0].TMP_topic.localeCompare(b[0].TMP_topic));
+      topicList[type] = topics;
     }
     console.log('LIST:', topicList)
     return topicList;
@@ -1468,25 +1470,25 @@ export async function addDialogueEntry(
     await addEntry(topicObject);
     await addEntry(newEntry);
   } else {
-    return;
+    await addEntry(newEntry, lastActiveEntry.TMP_index);
     let prevEntry;
     let nextEntry;
     let lastEntry = await activePlugin.pluginData
       .where('TMP_topic')
-      .equals(questId)
+      .equals(topicId)
       .toArray();
-    if (prevId) {
+    if (prev_id) {
       prevEntry = await activePlugin.pluginData
         .where('TMP_id')
-        .equals(prevId)
+        .equals(prev_id)
         .toArray();
     } else {
       prevEntry = lastEntry;
     }
-    if (nextId) {
+    if (next_id) {
       nextEntry = await activePlugin.pluginData
         .where('TMP_id')
-        .equals(nextId)
+        .equals(next_id)
         .toArray();
     }
     if (prevEntry.length) {
@@ -1507,7 +1509,6 @@ export async function addDialogueEntry(
           TMP_prev_id: generatedId,
         });
     }
-
   }
 
   /*
