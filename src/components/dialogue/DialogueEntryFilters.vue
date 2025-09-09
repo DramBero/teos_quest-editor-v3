@@ -112,7 +112,7 @@
       <div class="comparisons__overlay">
         <div
           @click.prevent
-          ref="comparisons"
+          ref="comparisonsElement"
           class="comparisons"
           @mouseleave="removeHighlight"
           tabindex="0"
@@ -178,7 +178,6 @@ interface TopicChoice {
 const props = defineProps<{
   answer: Object;
   speaker: string;
-  editMode: boolean;
   onlyFilters: boolean;
   topicChoices: TopicChoice[];
 }>();
@@ -337,10 +336,13 @@ function getChoiceFilters(choiceId: number) {
 };
 
 const getFiltersByInfoId = computed(() => {
-  return props.answer.filters;
+  return props.answer?.filters || [];
 })
 
 const getOtherSpeakers = computed(() => {
+  if (!props.answer) {
+    return [];
+  }
   return [
     {
       type: 'Speaker ID',
@@ -384,7 +386,6 @@ const getOtherSpeakers = computed(() => {
 const journalHighlightStore = useJournalHighlight();
 const sidebarStore = useSidebar();
 function handleFilter(filter) {
-  console.log('handleFilter:', filter)
   if (filter.function === 'JournalType') {
     if (sidebarStore.getActiveItem !== 'Journal') {
       sidebarStore.setActiveItem('Journal');
@@ -474,13 +475,13 @@ function handleDrop(event) {
     this.newFilterType = event.dataTransfer.getData('type');
     this.showComparisons = true;
     await new Promise((resolve) => setTimeout(resolve, 100));
-    this.$refs.comparisons.focus();
+    this.$refs.comparisonsElement.focus();
   }
 */
 }
 
-function comparisonOver(comparison) {
-  let filter = {
+function comparisonOver(comparison: string) {
+  const filter = {
     id: newFilterTopic.value,
     value: {
       data: newFilterIndex.value,

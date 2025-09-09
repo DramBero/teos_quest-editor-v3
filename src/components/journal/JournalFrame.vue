@@ -237,7 +237,7 @@ export default {
   overflow-y: auto;
   overflow-x: hidden;
   flex-grow: 1;
-  padding: 10px 0px 10px 10px;
+  padding: 10px;
   gap: 5px;
   flex-direction: column;
   align-items: center;

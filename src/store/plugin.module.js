@@ -1,5 +1,4 @@
 import Vue from "vue";
-import { importPlugin, getDB, initPlugin, fetchNPCData, fetchAllDialogueBySpeaker, fetchAllQuestIDs, fetchQuestByID, fetchTopicListByNPC, getOrderedEntriesByTopic } from '@/api/idb';
 
 const state = {
   activePlugin: [],

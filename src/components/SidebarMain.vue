@@ -71,7 +71,6 @@ const categories = [
       'MagicEffect',
       'Spell',
       'Enchanting',
-      'Alchemy',
     ]
   },
   {

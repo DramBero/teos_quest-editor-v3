@@ -5,13 +5,13 @@
   }">
     <button 
       class="dialogue-add dialogue-add_top"
-      @click="addDialogue('top')"
+      @click="addDialogue('prev')"
     >
       <TdesignAdd />
     </button>
     <button 
       class="dialogue-add dialogue-add_bottom"
-      @click="addDialogue('bottom')"
+      @click="addDialogue('next')"
     >
       <TdesignAdd />
     </button>
@@ -45,12 +45,11 @@
             <div class="curr-id">id: {{ props.answer.id }}</div>
           </div>
 
-          <DialogueEntryFilters 
+          <DialogueEntryFilters
             :answer="props.answer" 
             :speaker="props.speaker" 
-            :editMode="props.editMode" 
             :topicChoices="props.topicChoices"
-            @fetchTopic="fetchTopic"
+            @fetchTopic="() => {}"
           />
 
           <div class="dialogue-answers-answer__text">
@@ -131,10 +130,21 @@ const props = defineProps({
   },
 })
 
+const emit = defineEmits(['applyFilter', 'setCurrentAnswers', 'updateAll']);
+
 const answerText = ref('');
 
-function addDialogue() {
-  addDialogueEntry(props.speaker.speakerId, props.answer.TMP_topic, props.answer.TMP_type, props.speaker.speakerType);
+async function addDialogue(direction: 'prev' | 'next') {
+  return;
+  await addDialogueEntry(
+    props.speaker.speakerId,
+    props.answer.TMP_topic,
+    props.answer.TMP_type,
+    props.speaker.speakerType,
+    props.answer.id,
+    direction,
+  );
+  emit('updateAll');
 }
 
 watch(() => props.answer, (newValue) => {
@@ -190,8 +200,6 @@ const getIsDirty = computed(() => {
   return JSON.stringify(entryOneNonId) === JSON.stringify(entryTwoNonId);
 })
 
-const emit = defineEmits(['applyFilter', 'setCurrentAnswers']);
-
 function handleAnswerClick(e) {
   if (e.target.className == 'dialogue-answers-answer__text_hyperlink') {
     emit('setCurrentAnswers', e.target.innerText, 'Topic');
@@ -210,10 +218,6 @@ function getHyperlinkedAnswer(text) {
     }
   }
   return hyperlinkedAnswer;
-}
-
-function addEntry() {
-
 }
 
 function applyFilter(filter) {

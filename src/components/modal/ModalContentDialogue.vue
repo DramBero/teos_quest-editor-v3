@@ -3,7 +3,7 @@
     <div class="dialogue-answers">
       <div class="dialogue-answers__header" v-if="currentTopic">
         <div class="dialogue-answers__add" v-if="editMode" @click="addEntry">Add entry</div>
-        <transition name="fadeHeight" class="dialogue-answers__frame" mode="out-in" :style="{ width: '100%' }">
+        <transition name="fade" class="dialogue-answers__frame" mode="out-in" :style="{ width: '100%' }">
           <span v-show="currentTopic.trim().length">{{ currentTopic }}</span>
         </transition>
         <div class="dialogue-answers__edit">
@@ -35,7 +35,7 @@
         <SVGSpinners90RingWithBg :scale="10"/>
       </div>
       <div v-else>
-        <transition-group name="fadeHeight" class="dialogue-answers__frame" mode="out-in" :style="{ width: '100%' }">
+        <transition-group name="fade" class="dialogue-answers__frame" mode="out-in" :style="{ width: '100%' }">
           <DialogueEntry 
             v-for="answer in currentFilteredAnswers" 
             :key="answer.id"
@@ -46,22 +46,15 @@
             :topicsList
             @setCurrentAnswers="setCurrentAnswers"
             @applyFilter="applyFilter"
+            @updateAll="handleUpdateAll"
           />
-          <div class="dialogue-answers-answer__above dialogue-answers-answer__above_no-margin" v-if="!editMode"
-            :key="'separator'"></div>
-          <div class="dialogue-answers-answer__above-add" v-if="editMode" :key="'add-lowest'">
-            <button class="entry-control-button" @click.prevent="addEntry([getLastEntryId, ''])">
-              <!-- <icon name="plus" class="entry-control-button__icon" color="#E1FF00" scale="1"></icon> -->
-            </button>
-            <button class="entry-control-button" v-if="Object.keys(getClipboardDialogue).length"
-              @click.prevent="pasteDialogueFromClipboard([getLastEntryId, ''])">
-              <!-- <icon name="clipboard" class="entry-control-button__icon" color="#E1FF00" scale="1"></icon> -->
-            </button>
+          <div class="dialogue-answers-answer__above dialogue-answers-answer__above_no-margin"
+            :key="'separator'">
           </div>
         </transition-group>
       </div>
-      <div class="dialogue-answers__info dialogue-answers__info_error" v-if="getOrderedEntries.error_text">
-        {{ getOrderedEntries.error_text }}
+      <div class="dialogue-answers__info dialogue-answers__info_error" v-if="false">
+        {{ 'error_text' }}
       </div>
       <div class="dialogue-answers__info" v-if="infoMessage">
         {{ infoMessage }}
@@ -163,8 +156,8 @@ function deleteFilter(key: string) {
   delete appliedFiltration[key];
 }
 
-watch(speaker, async (newValue) => {
-  if (!newValue.speakerId) {
+async function fetchTopics() {
+  if (!speaker.value.speakerId) {
     topicsList.value = [];
     persuasionsList.value = [];
     greetingsList.value = [];
@@ -173,14 +166,10 @@ watch(speaker, async (newValue) => {
     topicsList.value = topicsResponse.topics;
     persuasionsList.value = topicsResponse.persuasions;
     greetingsList.value = topicsResponse.greetings;
-    console.log(topicsResponse)
   }
-})
+}
 
-const getOrderedEntries = computed(() => {
-  return [];
-//      return this.$store.getters['getOrderedEntriesByTopic']([this.currentTopic, 'Topic']);
-});
+watch(speaker, fetchTopics);
 
 const currentAnswers = computed(() => {
   let answers;
@@ -231,11 +220,6 @@ const currentFilteredAnswers = computed(() => {
 const getClipboardDialogue = computed(() => {
   return {};
   // return this.$store.getters['getClipboardDialogue'];
-});
-
-const getLastEntryId = computed(() => {
-  return '';
-  // return this.currentAnswers.at(-1).id;
 });
 
 function transformChoiceStringToObjects(input: string, entryId: string) {
@@ -410,6 +394,32 @@ function handleAddTopic(e) {
   });
 }
 
+async function fetchTopic(topic: string, loading=false) {
+  if (topic.trim()) {
+    if (loading) {
+      dialogueInfoLoading.value = true;
+    }
+    try {
+      const orderedEntriesResponse = await getOrderedEntriesByTopic(topic);
+      orderedEntries.value = orderedEntriesResponse;
+    } catch (error) {
+      console.error(error);
+    } finally {
+      if (loading) {
+        dialogueInfoLoading.value = false;
+      }
+    }
+  } else {
+    orderedEntries.value = [];
+  }
+}
+
+async function handleUpdateAll() {
+  console.log('UPDATE ALL')
+  fetchTopics();
+  fetchTopic(currentTopic.value, false);
+}
+
 function deleteEntry(id) {
   // this.$store.commit('deleteDialogueEntry', id);
 }
@@ -444,26 +454,6 @@ watch(getSpeakerData, (() => {
     this.speaker.speakerType,
   ]); */
 }))
-
-async function fetchTopic(topic, loading=false) {
-  if (topic.trim()) {
-    if (loading) {
-      dialogueInfoLoading.value = true;
-    }
-    try {
-      const orderedEntriesResponse = await getOrderedEntriesByTopic(topic);
-      orderedEntries.value = orderedEntriesResponse;
-    } catch (error) {
-      console.error(error);
-    } finally {
-      if (loading) {
-        dialogueInfoLoading.value = false;
-      }
-    }
-  } else {
-    orderedEntries.value = [];
-  }
-}
 
 const dialogueInfoLoading = ref<boolean>(false);
 watch(currentTopic, (async (newValue) => {
@@ -865,14 +855,14 @@ watch(currentTopic, (async (newValue) => {
   }
 }
 
-.fadeHeight-enter-active,
-.fadeHeight-leave-active {
+.fade-enter-active,
+.fade-leave-active {
   transition: all 0.15s cubic-bezier(1, 1, 1, 1);
   opacity: 100;
 }
 
-.fadeHeight-enter,
-.fadeHeight-leave-to {
+.fade-enter,
+.fade-leave-to {
   opacity: 0%;
 }
 </style>
