@@ -21,6 +21,8 @@
 - A video about functionality
 - Release text for Nexus
 - Finish the heads, and think of what to display for other speakers
+- Make a LOGO
+- Finalize the naming and version number
 - Build for Win (exe), Mac (dmg) and Linux (deb, rpm)
 
 # Non MVP:
