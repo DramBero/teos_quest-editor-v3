@@ -15,6 +15,12 @@
     >
       <TdesignAdd />
     </button>
+    <button
+      class="dialogue-menu"
+      @click="showMenu"
+    >
+      <TdesignMore />
+    </button>
     <div class="dialogue-answers-answer__above" v-if="!props.editMode"></div>
       <div class="dialogue-answers-answer__above-add" v-if="props.editMode">
         <button class="entry-control-button" @click="addEntry([props.answer.prev_id, props.answer.id])">
@@ -95,12 +101,16 @@ import DialogueEntryResults from '../dialogue/DialogueEntryResults.vue';
 
 import { useEditor, EditorContent } from '@tiptap/vue-3';
 import StarterKit from '@tiptap/starter-kit';
+import { Placeholder } from '@tiptap/extension-placeholder';
 
 import { watchDebounced } from '@vueuse/core';
 import { editTopicText, addDialogueEntry } from '@/api/idb.js';
 import { computed, ref, watch } from 'vue';
 
+import ContextMenu from '@imengyu/vue3-context-menu';
+
 import TdesignAdd from '~icons/tdesign/add';
+import TdesignMore from '~icons/tdesign/more';
 
 const props = defineProps({
   answer: {
@@ -128,6 +138,11 @@ const props = defineProps({
     required: false,
     default: () => [],
   },
+  orderedEntries: {
+    type: Array,
+    required: false,
+    default: () => [],
+  },
 })
 
 const emit = defineEmits(['applyFilter', 'setCurrentAnswers', 'updateAll']);
@@ -135,14 +150,28 @@ const emit = defineEmits(['applyFilter', 'setCurrentAnswers', 'updateAll']);
 const answerText = ref('');
 
 async function addDialogue(direction: 'prev' | 'next') {
-  return
+  let prevId = '';
+  let nextId = '';
+  const entryIndex = props.orderedEntries.findIndex((val) => val.id === props.answer.id);
+  if (direction === 'prev') {
+    nextId = props.answer.id;
+    if (entryIndex > 0) {
+      prevId = props.orderedEntries[entryIndex - 1]?.id;
+    }
+  } else if (direction === 'next') {
+    prevId = props.answer.id;
+    if (entryIndex < props.orderedEntries.length) {
+      nextId = props.orderedEntries[entryIndex + 1]?.id;
+    }
+  }
   await addDialogueEntry(
     props.speaker.speakerId,
     props.answer.TMP_topic,
     props.answer.TMP_type,
     props.speaker.speakerType,
     props.answer.id,
-    direction,
+    prevId,
+    nextId,
   );
   emit('updateAll');
 }
@@ -163,9 +192,20 @@ const editor = useEditor({
   content: answerText.value,
   extensions: [
     StarterKit,
+    Placeholder.configure({
+      placeholder: 'New entry',
+    }),
   ],
-  onUpdate: () => answerText.value = editor.value.getHTML(),
-})
+  autofocus: props.answer.text === '' ? 'all' : false,
+  onUpdate: () => answerText.value = editor.value?.getText(),
+});
+
+watch(answerText, (newValue) => {
+  if (!editor.value || newValue !== '') return;
+  editor.value.commands.focus('start');
+}, {
+  immediate: true,
+});
 
 function getLanguage(code, language) {
   if (!code) return '';
@@ -198,7 +238,22 @@ const getIsDirty = computed(() => {
     ),
   );
   return JSON.stringify(entryOneNonId) === JSON.stringify(entryTwoNonId);
-})
+});
+
+function showMenu(e) {
+  ContextMenu.showContextMenu({
+    x: e.x,
+    y: e.y + 30,
+    items: [
+      {
+        label: 'Copy',
+      },
+      {
+        label: 'Delete',
+      },
+    ]
+  })
+}
 
 function handleAnswerClick(e) {
   if (e.target.className == 'dialogue-answers-answer__text_hyperlink') {
@@ -278,5 +333,27 @@ function applyFilter(filter) {
   &_bottom {
     bottom: -12px;
   }
+}
+
+.dialogue-menu {
+  position: absolute;
+  top: 20px;
+  right: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  padding: 5px;
+  &:hover {
+    background-color: rgba(202, 165, 96, 0.2);
+  }
+}
+
+.tiptap p.is-editor-empty:first-child::before {
+  color: rgba(202, 165, 96, 0.5);
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
 }
 </style>

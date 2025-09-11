@@ -146,7 +146,7 @@ async function fetchFactions(options: FetchFactionsOptions) {
     if (options.loading !== false) {
       loading.value = true;
     }
-    const response = await fetchByType([selectedType.value], '', showMasters.value);
+    const response = await fetchByType([selectedType.value], showMasters.value);
     let idKey = 'id';
     if (selectedType.value === 'Skill') {
       idKey = 'skill_id';

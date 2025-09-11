@@ -470,7 +470,7 @@ export const fetchAllQuestIDs = async function (masters = false) {
   return resp;
 };
 
-export const fetchByType = async function (types, TMP_type = '', masters = true) {
+export const fetchByType = async function (types, masters = true) {
   let resp = [];
   if (!databases['activePlugin']) {
     await initPlugin('activePlugin');
@@ -479,8 +479,8 @@ export const fetchByType = async function (types, TMP_type = '', masters = true)
   try {
     const response = await activePlugin.pluginData
       .where('type')
-      .anyOf(types)
-      .and((val) => val.TMP_type === TMP_type)
+      .equals(types[0])
+      //.anyOf(types)
       .toArray();
     resp = [...resp, ...response]
   } catch (error) {
@@ -495,8 +495,8 @@ export const fetchByType = async function (types, TMP_type = '', masters = true)
       }
       let depResponse = await dependencyDB.pluginData
         .where('type')
-        .anyOf(types)
-        .and((val) => val.TMP_type === TMP_type)
+        .equals(types[0])
+        // .anyOf(types)
         .toArray();
         resp = [...resp, ...depResponse];
     }
@@ -884,12 +884,17 @@ export async function addEntry(entry, locationIndex) {
     }
     const activePlugin = databases['activePlugin'];
     if (locationIndex) {
-      const nextEntry = await activePlugin.pluginData
+      let nextEntry = await activePlugin.pluginData
         .where('TMP_index')
         .above(locationIndex)
         .limit(1)
         .first();
-      newEntry.TMP_index = newEntry.TMP_index + ((nextEntry.TMP_index - locationIndex) / 2);
+      if (!nextEntry) {
+        nextEntry = await activePlugin.pluginData.orderBy('TMP_index').last();
+        newEntry.TMP_index = nextEntry.TMP_index + 1;
+      } else {
+        newEntry.TMP_index = newEntry.TMP_index + ((nextEntry.TMP_index - locationIndex) / 2);
+      }
     }
     console.log(newEntry);
     await activePlugin.pluginData.add(newEntry);
@@ -1338,56 +1343,26 @@ export async function getBestEntryLocation(speakerId, topicId, speakerType) {
   }
 }
 
-async function findEntryIdByDirection(direction, entryId) {
-  const activePlugin = databases['activePlugin'];
-  const activePluginEntry = await activePlugin.pluginData
-    .where(direction)
-    .equals(entryId)
-    .first();
-  if (activePluginEntry) {
-    return activePluginEntry.id;
-  } else {
-    const dependecies = await getDependencies();
-    for (let dep of dependecies.reverse()) {
-      const dependencyDB = databases[dep];
-      if (!dependencyDB) {
-        continue;
-      }
-      const dependencyEntry = await dependencyDB.pluginData
-        .where(direction)
-        .equals(entryId)
-        .first();
-      if (dependencyEntry) {
-        return dependencyEntry.id;
-      }
-    }
-  }
-}
-
 export async function addDialogueEntry(
   speakerId,
   topicId,
   dialogueType,
   speakerType,
   entryId,
-  direction,
-  text='New entry'
+  prevId,
+  nextId,
+  text=''
 ) {
   let prev_id = "";
   let next_id = "";
   if (!entryId) {
     const location = await getBestEntryLocation(speakerId, topicId, speakerType);
-    console.log('LOCATION:', location);
     prev_id = location[0];
     next_id = location[1];
-  } else if (direction === 'next') {
-    prev_id = entryId;
-    next_id = await findEntryIdByDirection('prev_id', entryId);
-  } else if (direction === 'prev') {
-    next_id = entryId;
-    prev_id = await findEntryIdByDirection('next_id', entryId);
+  } else {
+    prev_id = prevId;
+    next_id = nextId;
   }
-
   let generatedId =
     Math.random().toString().slice(2, 15) +
     Math.random().toString().slice(2, 9);
@@ -1400,7 +1375,7 @@ export async function addDialogueEntry(
     TMP_topic: topicId,
     TMP_type: dialogueType
   };
-  console.log('TOPIC', topicObject)
+
   const activePlugin = databases['activePlugin'];
 
   let newEntry = {
@@ -1491,7 +1466,7 @@ export async function addDialogueEntry(
         .equals(next_id)
         .toArray();
     }
-    if (prevEntry.length) {
+    if (prevEntry && prevEntry.length) {
       await activePlugin.pluginData
         .where('TMP_id')
         .equals(prevEntry.at(-1).id)
@@ -1500,7 +1475,7 @@ export async function addDialogueEntry(
           TMP_next_id: generatedId,
         });
     }
-    if (nextEntry.length) {
+    if (nextEntry && nextEntry.length) {
       await activePlugin.pluginData
         .where('TMP_id')
         .equals(nextEntry.at(-1).id)
@@ -1512,9 +1487,6 @@ export async function addDialogueEntry(
   }
 
   /*
-    - get topic entries from active plugin
-    - if they are - don't add a topic, and just add info after last info, but check if order must be maintained
-    - sort the topics in dialogue window by alphabet
     - remember about global dialogue
     - change the icon for cells
   */

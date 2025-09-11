@@ -44,6 +44,7 @@
             :speaker="props.speaker"
             :topicChoices
             :topicsList
+            :orderedEntries
             @setCurrentAnswers="setCurrentAnswers"
             @applyFilter="applyFilter"
             @updateAll="handleUpdateAll"
@@ -178,7 +179,6 @@ async function addDialogue(
   topicName: string,
   topicType: string,
 ) {
-  return
   await addDialogueEntry(
     props.speaker.speakerId,
     topicName,
