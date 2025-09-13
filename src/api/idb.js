@@ -381,6 +381,11 @@ export const modifyEntry = async function (entry) {
       .where('TMP_index')
       .equals(entry.TMP_index)
       .modify(entry);
+    const newEntry = await activePlugin.pluginData
+      .where('TMP_index')
+      .equals(entry.TMP_index)
+      .first();
+    return newEntry;
   } catch(error) {
     console.error(error);
   }
@@ -683,6 +688,7 @@ export const getOrderedEntriesByTopic = async function (topicId) {
   if (!topicId) return [];
 
   let pluginDialogue = await getAllDialogue(topicId);
+  console.log('ALL DIALOGUE:', pluginDialogue)
   if (!pluginDialogue.flat(1).length) return [];
   let dependencies = await getDependencies();
   dependencies = dependencies.reverse();
@@ -737,6 +743,7 @@ export const getOrderedEntriesByTopic = async function (topicId) {
       };
     } else break;
   }
+  console.log('ORDERED:', orderedDialogue)
   return orderedDialogue;
 };
 
@@ -930,11 +937,14 @@ export async function deleteEntry(entry) {
   }
 }
 
-export async function deleteJournalEntry(entry) {
+export async function deleteJournalEntry(entry, isMod = false) {
   let prevEntry = [];
   let nextEntry = [];
   const activePlugin = databases['activePlugin'];
   await deleteEntry(entry);
+  if (isMod) {
+    return;
+  }
   if (entry.prev_id) {
     prevEntry = await activePlugin.pluginData
       .where('TMP_id')
@@ -948,19 +958,17 @@ export async function deleteJournalEntry(entry) {
       .toArray();
   }
   if (prevEntry.length) {
-    console.log('PREV:', prevEntry)
-    console.log('next_id', entry.next_id)
     await modifyEntry({
       TMP_index: prevEntry.at(-1)?.TMP_index,
       next_id: entry.next_id,
+      TMP_next_id: entry.next_id,
     })
   }
   if (nextEntry.length) {
-    console.log('NEXT', nextEntry)
-    console.log('prev_id', entry.prev_id)
     await modifyEntry({
       TMP_index: nextEntry.at(-1)?.TMP_index,
       prev_id: entry.prev_id,
+      TMP_prev_id: entry.prev_id,
     })
   }
 }

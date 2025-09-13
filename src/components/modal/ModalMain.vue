@@ -1,10 +1,9 @@
 <template>
   <div>
     <div class="window" :class="{ window_dialogue: dialogue }">
-      <Vue3DraggableResizable
+      <DraggableResizableVue
         class="window-frame"
         :prevent-deactivation="true"
-        class-name-handle="my-handle-class"
         v-model:w="w"
         v-model:h="h"
         v-model:x="x"
@@ -29,7 +28,7 @@
         <div class="window__content">
           <slot> </slot>
         </div>
-      </Vue3DraggableResizable>
+      </DraggableResizableVue>
     </div>
   </div>
 </template>
@@ -39,6 +38,7 @@ import { useSelectedSpeaker } from '@/stores/selectedSpeaker';
 import { useWindowSize } from '@vueuse/core';
 import { computed, onMounted, ref } from 'vue';
 import TdesignClose from '~icons/tdesign/close';
+import { DraggableResizableVue } from 'draggable-resizable-vue3';
 
 const initW = 1000;
 const initH = 600;
@@ -60,6 +60,11 @@ onMounted(() => {
   y.value = getInitCenter.value.initY;
 })
 
+function handleDragStart(event: DragEvent) {
+  event.preventDefault();
+  return false;
+}
+
 const props = defineProps({
   modalHide: String,
   header: String,
@@ -74,82 +79,6 @@ function closeModal() {
 </script>
 
 <style lang="scss">
-.my-handle-class {
-  position: absolute;
-  background-color: pink;
-  border: 1px solid black;
-  height: 14px;
-  width: 14px;
-  opacity: 0;
-  -webkit-transition: all 300ms linear;
-  -ms-transition: all 300ms linear;
-  transition: all 300ms linear;
-}
-
-.my-handle-class-tl {
-  top: -5px;
-  left: -5px;
-  z-index: 1;
-  cursor: nw-resize;
-}
-
-.my-handle-class-tm {
-  top: -5px;
-  left: 50%;
-  width: 99%;
-  transform: translateX(-50%);
-  margin-left: -7px;
-  cursor: n-resize;
-}
-
-.my-handle-class-tr {
-  top: -5px;
-  right: -5px;
-  z-index: 1;
-  cursor: ne-resize;
-}
-
-.my-handle-class-ml {
-  top: 50%;
-  margin-top: -7px;
-  height: 99%;
-  transform: translateY(-49%);
-  left: -5px;
-  cursor: w-resize;
-}
-
-.my-handle-class-mr {
-  top: 50%;
-  margin-top: -7px;
-  height: 99%;
-  transform: translateY(-49%);
-  right: -5px;
-  cursor: e-resize;
-}
-
-.my-handle-class-bl {
-  bottom: -5px;
-  z-index: 1;
-  left: -5px;
-  cursor: sw-resize;
-}
-
-.my-handle-class-bm {
-  bottom: -5px;
-  left: 50%;
-  width: 99%;
-  transform: translateX(-49%);
-  margin-left: -7px;
-  cursor: s-resize;
-}
-
-.my-handle-class-br {
-  bottom: -5px;
-  right: -5px;
-  z-index: 1;
-  cursor: se-resize;
-}
-
 .window {
   position: fixed;
   pointer-events: none;
@@ -211,7 +140,8 @@ function closeModal() {
       padding: 0 10px;
       right: 0px;
       &:hover {
-        background-color: rgba(0, 0, 0, 0);
+        background-color: rgba(202, 165, 96, 0.3);
+        color: rgba(0, 0, 0, 0.7);
       }
     }
   }

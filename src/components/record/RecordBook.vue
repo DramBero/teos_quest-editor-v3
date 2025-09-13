@@ -336,10 +336,6 @@ watch(isScroll, updatePages, {immediate: true});
 </script>
 
 <style lang="scss">
-.measurer {
-  opacity: 0;
-  pointer-events: none;
-}
 .record-book {
   padding: 10px;
   box-shadow: 2px 2px 8px 2px rgba(0, 0, 0, 0.25);

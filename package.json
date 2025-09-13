@@ -30,6 +30,7 @@
     "@vueuse/components": "^13.6.0",
     "@vueuse/core": "^13.6.0",
     "dexie": "^4.0.11",
+    "draggable-resizable-vue3": "^1.0.94-beta",
     "highlight.js": "^11.11.1",
     "legacy-encoding": "^3.0.0",
     "lowlight": "^3.3.0",
@@ -38,7 +39,6 @@
     "three": "^0.179.1",
     "vue": "^3.5.18",
     "vue-router": "^4.5.1",
-    "vue3-draggable-resizable": "^1.6.5",
     "vuedraggable": "^4.1.0",
     "windows-1251": "^3.0.4"
   },
@@ -46,6 +46,7 @@
     "@iconify-json/game-icons": "^1.2.3",
     "@iconify-json/svg-spinners": "^1.2.4",
     "@iconify-json/tdesign": "^1.2.8",
+    "@iconify/types": "^2.0.0",
     "@tauri-apps/cli": "^2.7.1",
     "@tsconfig/node22": "^22.0.2",
     "@types/codemirror": "^5.60.16",

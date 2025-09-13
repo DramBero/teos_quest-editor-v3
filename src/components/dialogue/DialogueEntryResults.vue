@@ -8,7 +8,7 @@
         {{ language }}
       </span>
       <Codemirror
-        v-model:value="code"
+        v-model:value="codeRef"
         :options="cmOptions"
       />
 <!--       <CodeEditor
@@ -37,6 +37,7 @@
 <script setup lang="ts">
 // import hljs from 'highlight.js';
 // import CodeEditor from 'simple-code-editor';
+import { watchDebounced } from "@vueuse/core";
 import Codemirror from "codemirror-editor-vue3";
 import "codemirror/mode/lua/lua.js";
 import "codemirror/theme/dracula.css";
@@ -55,29 +56,26 @@ const props = defineProps({
   },
 })
 
-const code = ref<string>('');
+const codeRef = ref<string>('');
 
 const cmOptions = {
   mode: 'text/x-lua',
   theme: 'dracula',
+  lineWrapping: true,
 }
 
+const emit = defineEmits(['update']);
+
+watchDebounced(codeRef, () => {
+  // Replaces all '\n' (without preceeding '\r') to '\r\n'
+  emit('update', codeRef.value.replace(/(?<!\r)\n/g, '\r\n'));
+}, {
+  debounce: 200,
+});
+
 onBeforeMount(() => {
-  code.value = props.code || '';
-})
-
-/*
-
-  methods: {
-    highlighterLua(code) {
-      return highlight(code, languages.lua);
-    },
-    highlighterBasic(code) {
-      return highlight(code, languages.javascript);
-    },
-  },
-
-*/
+  codeRef.value = props.code || '';
+});
 </script>
 
 <style lang="scss">
@@ -98,7 +96,7 @@ onBeforeMount(() => {
   //white-space: pre-line;
   min-width: 50%;
   border-radius: 4px;
-  font-size: 12px;
+  font-size: 14px;
   padding: 0px;
   margin: 10px 30px;
   &:focus {
@@ -115,6 +113,10 @@ onBeforeMount(() => {
     overflow-x: scroll;
     display: block;
     padding: 0 10px;
+  }
+  .codemirror-container {
+    font-size: 14px;
+    line-height: 20px;
   }
 }
 

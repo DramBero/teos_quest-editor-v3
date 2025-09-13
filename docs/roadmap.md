@@ -1,16 +1,13 @@
 # TODO before release-ready:
-- Add topic
-- Edit topic
-- Delete entry / Clear modification / Delete flag
+- Edit from master
+- Disable master dialogue
 - Copy / Paste / Replace / Switch entry
-- Add MWScript or Lua (MWSE)
 - Global dialogue
 - Filters drag and drop
 - Add filters via context menu
 - Delete filters
 - Edit filters
 - Classic menu - changing order
-- Refresh values on reload
 - Option to show not only NPC-specific dialogue for the NPC, but also his faction, race, class, rank and global dialogue. (Maybe also cell, based on his starting cell)
 - Add books
 - Edit header
@@ -21,7 +18,7 @@
 - A video about functionality
 - Release text for Nexus
 - Finish the heads, and think of what to display for other speakers
-- Make a LOGO
+- Make a logo
 - Finalize the naming and version number
 - Build for Win (exe), Mac (dmg) and Linux (deb, rpm)
 
@@ -35,6 +32,7 @@ These features are not essential for the release
 - Allows to preview all changes from current session
 ### Make dependency keys in IndexedDB not based on name
 - Allows to keep a localized master along with english one for localization
+
 # Theoretical and wished:
 Features I really wish to implement, but it would take several lifetimes. Still, some of them are realistic and maybe even would be implemented before the release.
 ### Change history

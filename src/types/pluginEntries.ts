@@ -13,6 +13,7 @@ export interface BaseEntry {
     TMP_speaker_race: string;
     TMP_topic: string;
     TMP_type: string;
+    old_values?: Object[];
 }
 
 export type FileType = 'Esp' | 'Esm';
@@ -39,6 +40,7 @@ export interface DialogueEntry extends BaseEntry {
 
 export interface InfoEntry extends BaseEntry {
     type: 'Info';
+    id: string;
     info_id: string;
     prev_id: string;
     next_id: string;
@@ -46,6 +48,14 @@ export interface InfoEntry extends BaseEntry {
     text: string;
     flags: number[];
     filters: InfoFilter;
+    old_values: InfoEntry[];
+    script_text: string;
+    speaker_id: string;
+    speaker_cell: string;
+    speaker_class: string;
+    speaker_faction: string;
+    speaker_race: string;
+    data: Object;
 }
 
 export interface NpcAiData {

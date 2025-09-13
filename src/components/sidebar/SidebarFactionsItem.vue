@@ -1,9 +1,12 @@
 <template>
   <button
     v-if="props.faction.length"
-    class="faction"
+    class="faction draggable"
     :class="{'faction_selected': getSelectedRecord?.[0]?.id && getSelectedRecord?.[0]?.id === props.faction[0].id }"
     @click="handleSelect"
+    draggable="true"
+    @dragstart="onDragStart"
+    @dragend="onDragEnd"
   >
     <div class="faction-top">
       <div class="faction-left">
@@ -82,6 +85,15 @@ const selectedRecordStore = useSelectedRecord();
 function handleSelect() {
   if (props.faction[0]?.type !== 'Book') return;
   selectedRecordStore.setSelectedRecord(props.faction);
+}
+
+function onDragStart(event: DragEvent) {
+  if (!event.dataTransfer) return;
+  event.dataTransfer.setData("application/json", JSON.stringify(props.faction[0]));
+}
+
+function onDragEnd() {
+
 }
 
 const getSelectedRecord = computed(() => selectedRecordStore.getSelectedRecord);
@@ -218,5 +230,9 @@ const getId = computed(() => {
       white-space: nowrap;
     }
   }
+}
+
+.draggable:active {
+  cursor: grabbing;
 }
 </style>

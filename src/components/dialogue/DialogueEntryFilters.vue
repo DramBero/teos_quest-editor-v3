@@ -169,6 +169,14 @@ import TdesignAddCircle from '~icons/tdesign/add-circle';
 
 import ContextMenu from '@imengyu/vue3-context-menu';
 
+import type { InfoEntry } from '@/types/pluginEntries';
+
+interface SpeakerData {
+  speakerId: string;
+  speakerType: string;
+  speakerName: string;
+}
+
 interface TopicChoice {
   id: number;
   text: string;
@@ -176,8 +184,8 @@ interface TopicChoice {
 }
 
 const props = defineProps<{
-  answer: Object;
-  speaker: string;
+  answer: InfoEntry;
+  speaker: SpeakerData;
   onlyFilters: boolean;
   topicChoices: TopicChoice[];
 }>();
@@ -197,13 +205,13 @@ async function handleAddChoiceFilter(choiceId: number) {
   emit('fetchTopic', props.answer.TMP_topic);
 }
 
-async function handleDeleteFilter(filterIndex) {
+async function handleDeleteFilter(filterIndex: number) {
   await deleteFilter(props.answer.TMP_info_id, filterIndex);
   emit('fetchTopic', props.answer.TMP_topic);
 }
 
 const getUniqueTopicChoices = computed(() => {
-  let topicChoices = [...props.topicChoices];
+  const topicChoices = [...props.topicChoices];
   let topicChoiceIds = [...new Set(topicChoices.map(val => val.id))];
   topicChoiceIds = topicChoiceIds.sort((a, b) => a - b);
   return topicChoiceIds.map((topicId: number) => ({

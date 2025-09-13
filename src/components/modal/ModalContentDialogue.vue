@@ -1,18 +1,46 @@
 <template>
   <div class="dialogue">
     <div class="dialogue-answers">
-      <div class="dialogue-answers__header" v-if="currentTopic">
+      <div class="dialogue-answers__header" v-if="currentTopic.trim().length">
         <div></div>
         <transition name="fade" class="dialogue-answers__frame" mode="out-in" :style="{ width: '100%' }">
-          <span v-show="currentTopic.trim().length">{{ currentTopic }}</span>
+          <span v-if="currentTopic.trim().length">{{ currentTopic }}</span>
         </transition>
         <div class="dialogue-answers__edit">
           <button @click="openClassicView">
             <TdesignList />
           </button>
-          <!-- <icon name="list" color="#E1FF00" class="icon_gold" scale="1" @click="openClassicView"></icon> -->
         </div>
       </div>
+      <form
+        v-else-if="newTopicMode"
+        class="dialogue-answers__header"
+        @reset.prevent="newTopicModeOff"
+        @submit.prevent="addNewTopic"
+      >
+        <div></div>
+        <transition name="fade" class="dialogue-answers__frame" mode="out-in" :style="{ width: '100%' }">
+          <template v-if="!currentTopic.trim().length && newTopicMode">
+            <input 
+              type="text"
+              ref="topicName"
+              placeholder="New topic"
+              name="topicName"
+              class="text-input"
+              v-model="newTopicName"
+              autocomplete="off"
+            />
+          </template>
+        </transition>
+        <div class="dialogue-answers__edit">
+          <button type="submit">
+            <TdesignCheck />
+          </button>
+          <button type="reset">
+            <TdesignClose />
+          </button>
+        </div>
+      </form>
       <div class="dialogue__filtrations" v-if="Object.keys(appliedFiltration).length">
         <button 
           v-if="appliedFiltration.choice"
@@ -120,12 +148,13 @@
 import { useSelectedSpeaker } from '@/stores/selectedSpeaker';
 import DialogueEntry from '@/components/dialogue/DialogueEntry.vue';
 import { fetchTopicListByNPC, getOrderedEntriesByTopic, addDialogueEntry } from '@/api/idb.js';
-import { computed, reactive, ref, toRefs, watch } from 'vue';
+import { computed, reactive, ref, toRefs, useTemplateRef, watch } from 'vue';
 import SVGSpinners90RingWithBg from '~icons/svg-spinners/90-ring-with-bg';
 import { useClassicView, useClassicViewTopic } from '@/stores/classicView';
 import TdesignClose from '~icons/tdesign/close';
 import TdesignList from '~icons/tdesign/list';
 import TdesignAdd from '~icons/tdesign/add';
+import TdesignCheck from '~icons/tdesign/check';
 import ContextMenu from '@imengyu/vue3-context-menu';
 
 const props = defineProps({
@@ -292,11 +321,40 @@ async function setCurrentAnswers(selectedTopic: string, selectedTopicType: strin
   currentTopic.value = selectedTopic;
 }
 
-function handleAddTopic(e) {
+const newTopicMode = ref(false);
+const newTopicName = ref('');
+
+const topicNameRef = useTemplateRef('topicName')
+function createNewTopic() {
+  currentTopic.value = '';
+  newTopicMode.value = true;
+  if (topicNameRef.value) {
+    topicNameRef.value.focus();
+  }
+}
+
+function addNewTopic() {
+  if (!newTopicName.value.trim()) {
+    return;
+  }
+  addDialogue(newTopicName.value, 'Topic');
+  newTopicModeOff();
+}
+
+function newTopicModeOff() {
+  newTopicMode.value = false;
+  newTopicName.value = '';
+}
+
+function handleAddTopic(e: MouseEvent) {
   ContextMenu.showContextMenu({
     x: e.x,
     y: e.y,
     items: [
+      {
+        label: "Topic",
+        onClick: createNewTopic,
+      },
       {
         label: "Greeting",
         children: [
@@ -426,9 +484,6 @@ function handleAddTopic(e) {
             }
           },
         ],
-      },
-      {
-        label: "Topic",
       },
     ]
   });
@@ -613,6 +668,12 @@ watch(currentTopic, (async (newValue) => {
       display: flex;
       align-items: center;
       right: 5px;
+      gap: 10px;
+      button {
+        &:hover {
+          opacity: 0.7;
+        }
+      }
     }
 
     &__header {
@@ -628,6 +689,13 @@ watch(currentTopic, (async (newValue) => {
       height: 40px;
       min-height: 40px;
       margin-bottom: 15px;
+      .text-input {
+        color: rgb(202, 165, 96);
+        font-size: 20px;
+        &::placeholder {
+          color: rgba(202, 165, 96, 0.5);
+        }
+      }
     }
 
     &__frame {
@@ -655,7 +723,7 @@ watch(currentTopic, (async (newValue) => {
     &-answer {
       flex-grow: 1;
       max-width: 100%;
-
+      margin-right: 50px;
       &__above {
         width: 100%;
         display: flex;

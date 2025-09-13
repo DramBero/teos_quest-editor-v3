@@ -1,7 +1,7 @@
 <template>
   <div class="highlight-even" :class="{
-    'highlight-even_new': props.answer.TMP_is_active,
-    'highlight-even_mod': props.answer.old_values && props.answer.old_values.length > 1,
+    'highlight-even_new': getEntryStatus === 'new',
+    'highlight-even_mod': getEntryStatus === 'mod',
   }">
     <button 
       class="dialogue-add dialogue-add_top"
@@ -21,22 +21,12 @@
     >
       <TdesignMore />
     </button>
-    <div class="dialogue-answers-answer__above" v-if="!props.editMode"></div>
-      <div class="dialogue-answers-answer__above-add" v-if="props.editMode">
-        <button class="entry-control-button" @click="addEntry([props.answer.prev_id, props.answer.id])">
-        <!-- <icon name="plus" class="entry-control-button__icon" color="#E1FF00" scale="1"></icon> -->
-        </button>
-        <button class="entry-control-button" v-if="Object.keys(getClipboardDialogue).length"
-        @click="pasteDialogueFromClipboard([props.answer.prev_id, props.answer.id])">
-        <!-- <icon name="clipboard" class="entry-control-button__icon" color="#E1FF00" scale="1"></icon> -->
-        </button>
-      </div>
-      <form @submit.prevent="editDialogue" class="dialogue-answers-answer-wrapper">
+    <div class="dialogue-answers-answer__above"></div>
+      <div class="dialogue-answers-answer-wrapper">
         <div 
           class="dialogue-answers-answer" 
           :class="{
             'dialogue-answers-answer_modified': props.answer.old_values && props.answer.old_values.length,
-            'dialogue-answers-answer_edit': props.editMode,
           }"
         >
           <div class="dialogue-answers-answer-modified" v-if="props.answer.old_values && props.answer.old_values.length > 1">
@@ -67,10 +57,10 @@
 
           <div class="dialogue-entry__choices">
             <div 
-            v-for="choice, choiceIndex in topicChoices.filter(val => val.entryId === props.answer.id)"
-            :key="choiceIndex"
-            class="dialogue-entry__choice"
-            @click="applyFilter({key: 'choice', value: choice.id})"
+              v-for="choice, choiceIndex in topicChoices.filter(val => val.entryId === props.answer.id)"
+              :key="choiceIndex"
+              class="dialogue-entry__choice"
+              @click="applyFilter({key: 'choice', value: choice.id})"
             >
             <div class="choice__id">
                 {{ choice.id }}
@@ -81,17 +71,25 @@
           </div>
         </div>
 
-        <DialogueEntryResults :editMode="props.editMode" :code="getLanguage(props.answer.script_text, 'Lua (MWSE)')"
-            language="Lua (MWSE)" />
-        <DialogueEntryResults :editMode="props.editMode" :code="getLanguage(props.answer.script_text, 'MWScript')"
-            language="MWScript" />
+        <DialogueEntryResults
+          v-if="getLua"
+          :code="getLua"
+          language="Lua (MWSE)"
+          @update="updateLua"
+        />
+        <DialogueEntryResults
+          v-if="getMWScript"
+          :code="getMWScript"
+          language="MWScript"
+          @update="updateMWScript"
+        />
 
         <div class="dialogue-answers-answer__ids" v-if="false">
-            <div class="prev-id">{{ props.answer.id }} (id)</div>
-            <div class="curr-id">next id: {{ props.answer.next_id || '-' }}</div>
+          <div class="prev-id">{{ props.answer.id }} (id)</div>
+          <div class="curr-id">next id: {{ props.answer.next_id || '-' }}</div>
         </div>
       </div>
-    </form>
+    </div>
   </div>
 </template>
 
@@ -104,48 +102,55 @@ import StarterKit from '@tiptap/starter-kit';
 import { Placeholder } from '@tiptap/extension-placeholder';
 
 import { watchDebounced } from '@vueuse/core';
-import { editTopicText, addDialogueEntry } from '@/api/idb.js';
+import { editTopicText, addDialogueEntry, deleteJournalEntry, modifyEntry } from '@/api/idb.js';
 import { computed, ref, watch } from 'vue';
 
-import ContextMenu from '@imengyu/vue3-context-menu';
+import ContextMenu, { type MenuItem } from '@imengyu/vue3-context-menu';
 
 import TdesignAdd from '~icons/tdesign/add';
 import TdesignMore from '~icons/tdesign/more';
 
-const props = defineProps({
-  answer: {
-    type: Object,
-    required: true,
-    default: () => ({}),
-  },
-  speaker: {
-    type: Object,
-    required: true,
-    default: () => ({}),
-  },
-  editMode: {
-    type: Boolean,
-    required: false,
-    default: false,
-  },
-  topicChoices: {
-    type: Array,
-    required: false,
-    default: () => [],
-  },
-  topicsList: {
-    type: Array,
-    required: false,
-    default: () => [],
-  },
-  orderedEntries: {
-    type: Array,
-    required: false,
-    default: () => [],
-  },
-})
+import type { InfoEntry } from '@/types/pluginEntries';
+
+interface SpeakerData {
+  speakerId: string;
+  speakerType: string;
+  speakerName: string;
+}
+
+interface TopicChoice {
+  entryId: string;
+  id: number;
+  text: string;
+}
+
+const props = defineProps<{
+  answer: InfoEntry;
+  speaker: SpeakerData;
+  topicChoices: TopicChoice[];
+  topicsList: InfoEntry[][];
+  orderedEntries: InfoEntry[];
+}>();
 
 const emit = defineEmits(['applyFilter', 'setCurrentAnswers', 'updateAll']);
+
+const getEntryStatus = computed(() => {
+  if (props.answer.TMP_is_active && props.answer.old_values && props.answer.old_values.length > 1) {
+    return 'mod';
+  } else if (props.answer.TMP_is_active) {
+    return 'new';
+  } else {
+    return '';
+  }
+});
+
+const currentEntry = ref<InfoEntry | null>(null);
+
+watch(() => props.answer, () => {
+  currentEntry.value = Object.assign({}, props.answer);
+}, {
+  immediate: true,
+})
 
 const answerText = ref('');
 
@@ -197,7 +202,7 @@ const editor = useEditor({
     }),
   ],
   autofocus: props.answer.text === '' ? 'all' : false,
-  onUpdate: () => answerText.value = editor.value?.getText(),
+  onUpdate: () => answerText.value = editor.value?.getText() || '',
 });
 
 watch(answerText, (newValue) => {
@@ -206,22 +211,6 @@ watch(answerText, (newValue) => {
 }, {
   immediate: true,
 });
-
-function getLanguage(code, language) {
-  if (!code) return '';
-  if (language === 'Lua (MWSE)') {
-    return code
-      .split('\r\n')
-      .filter((val) => val.includes(';lua '))
-      .map((val) => val.replace(';lua ', ''))
-      .join('\r\n');
-  } else if (language === 'MWScript') {
-    return code
-      .split('\r\n')
-      .filter((val) => !val.includes(';lua '))
-      .join('\r\n');
-  }
-}
 
 const getIsDirty = computed(() => {
   if (!props.answer.old_values?.length) {
@@ -240,25 +229,147 @@ const getIsDirty = computed(() => {
   return JSON.stringify(entryOneNonId) === JSON.stringify(entryTwoNonId);
 });
 
-function showMenu(e) {
+const getContextMenuItems = computed<MenuItem[]>(() => {
+  const items: MenuItem[] = [
+/*     {
+      label: 'Copy',
+    } */
+  ]
+
+  if (!getLua.value) {
+    items.push({
+      label: 'Add Lua (MWSE)',
+      divided: !getMWScript.value,
+      onClick: addLuaScript,
+    });
+  }
+
+  if (!getMWScript.value) {
+    items.push({
+      label: 'Add MWScript',
+      divided: true,
+      onClick: addMWScript,
+    });
+  }
+
+  if (getEntryStatus.value === 'new') {
+    items.push({
+      label: 'Delete',
+      onClick: () => handleDeleteEntry(false),
+    });
+  } else if (getEntryStatus.value === 'mod') {
+    items.push({
+      label: 'Revert changes',
+      onClick: () => handleDeleteEntry(true),
+    });
+  }
+
+  return items;
+})
+
+async function handleDeleteEntry(isMod: boolean) {
+  await deleteJournalEntry(props.answer, isMod);
+  emit('updateAll');
+}
+
+function useLuaResults() {
+  const getLua = computed(() => {
+    if (!currentEntry.value?.script_text) {
+      return '';
+    };
+    return currentEntry.value.script_text
+      .split('\r\n')
+      .filter((val) => val.includes(';lua '))
+      .map((val) => val.replace(';lua ', ''))
+      .join('\r\n');
+  });
+
+  async function addLuaScript() {
+    const scriptText = `;lua text\r\n${getMWScript.value}`;
+    const newEntryResponse = await modifyEntry({
+      TMP_index: props.answer.TMP_index,
+      TMP_dep: props.answer.TMP_dep,
+      script_text: scriptText,
+    });
+    if (newEntryResponse) {
+      currentEntry.value = newEntryResponse;
+    }
+  }
+
+  async function updateLua(newValue: string) {
+    const luaScripts = newValue.split('\r\n').map(val => ';lua ' + val).join('\r\n');
+    const scriptText = `${luaScripts}\r\n${getMWScript.value}`;
+    console.log('SCRIPT TEXT:', scriptText);
+    const newEntryResponse = await modifyEntry({
+      TMP_index: props.answer.TMP_index,
+      TMP_dep: props.answer.TMP_dep,
+      script_text: scriptText,
+    });
+    if (newEntryResponse) {
+      currentEntry.value = newEntryResponse;
+    }
+  }
+
+  return { getLua, addLuaScript, updateLua };
+}
+
+const { getLua, addLuaScript, updateLua } = useLuaResults();
+
+function useMWScriptResults() {
+  const getMWScript = computed(() => {
+    if (!currentEntry.value?.script_text) {
+      return '';
+    };
+    return currentEntry.value.script_text
+      .split('\r\n')
+      .filter((val) => !val.includes(';lua '))
+      .join('\r\n');
+  });
+
+  async function addMWScript() {
+    const luaValue = getLua.value.split('\r\n').map(val => `;lua ${val}`).join('\r\n');
+    const scriptText = `${luaValue}\r\ntext`;
+    const newEntryResponse = await modifyEntry({
+      TMP_index: props.answer.TMP_index,
+      TMP_dep: props.answer.TMP_dep,
+      script_text: scriptText,
+    });
+    if (newEntryResponse) {
+      currentEntry.value = newEntryResponse;
+    }
+  }
+
+  async function updateMWScript(newValue: string) {
+    const luaValue = getLua.value.split('\r\n').map(val => `;lua ${val}`).join('\r\n');
+    const scriptText = `${luaValue}\r\n${newValue}`;
+    console.log('SCRIPT TEXT:', scriptText);
+    const newEntryResponse = await modifyEntry({
+      TMP_index: props.answer.TMP_index,
+      TMP_dep: props.answer.TMP_dep,
+      script_text: scriptText,
+    });
+    if (newEntryResponse) {
+      currentEntry.value = newEntryResponse;
+    }
+  }
+
+  return { getMWScript, addMWScript, updateMWScript };
+}
+
+const { getMWScript, addMWScript, updateMWScript } = useMWScriptResults();
+
+function showMenu(e: MouseEvent) {
   ContextMenu.showContextMenu({
     x: e.x,
     y: e.y + 30,
-    items: [
-      {
-        label: 'Copy',
-      },
-      {
-        label: 'Delete',
-      },
-    ]
+    items: getContextMenuItems.value,
   })
 }
 
 function handleAnswerClick(e) {
   if (e.target.className == 'dialogue-answers-answer__text_hyperlink') {
     emit('setCurrentAnswers', e.target.innerText, 'Topic');
-    currentTopic.value = e.target.innerText;
+    // currentTopic.value = e.target.innerText;
   }
 }
 
