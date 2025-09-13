@@ -1397,6 +1397,7 @@ export async function addDialogueEntry(
     filters: [],
     flags: '',
     id: generatedId,
+    TMP_id: generatedId,
     TMP_info_id: generatedId,
     next_id: next_id || '',
     prev_id: prev_id || '',
