@@ -5,6 +5,9 @@
         <div class="frame-controls-types__secondary" :style="{ gap: '10px' }" @click="openClassicView()">
           Classic view
         </div>
+        <div class="frame-controls-types__secondary" :style="{ gap: '10px' }" @click="openGlobalDialogue()">
+          Global
+        </div>
         <!--         <form class="search-input" @submit.prevent="filterSpeakers">
         <label class="modal-field modal-field_dark">
           <input
@@ -63,6 +66,7 @@ import { fetchAllDialogueBySpeaker, fetchSpeakersAmountBySpeakerType } from '@/a
 import { computed, defineAsyncComponent, onMounted, ref, watch } from 'vue';
 import { usePrimaryModal } from '@/stores/modals';
 import { useClassicView } from '@/stores/classicView';
+import { useSelectedSpeaker } from '@/stores/selectedSpeaker';
 
 type SpeakerType = 'npc' | 'cell' | 'class' | 'faction' | 'rank' | 'global';
 
@@ -133,11 +137,14 @@ watch(currentSpeakerType,
   },
   { immediate: true },
 )
-
-const getDialogueGlobalExist = computed(() => {
-  return false;
-  // return this.$store.getters['getDialogueGlobalExist'];
-})
+const selectedSpeakerStore = useSelectedSpeaker();
+function openGlobalDialogue() {
+  selectedSpeakerStore.setSelectedSpeaker({
+    speakerId: 'Global',
+    speakerType: 'Global',
+    speakerName: 'Global Dialogue',
+  });
+}
 
 onMounted(async () => {
   for (const speakerType of speakerTypes.value) {
@@ -193,7 +200,7 @@ function openGeneric() {
 
     &-left {
       display: flex;
-      gap: 15px;
+      gap: 10px;
       align-items: center;
     }
 
@@ -205,7 +212,10 @@ function openGeneric() {
         color: rgb(202, 165, 96);
         cursor: pointer;
         transition: color 0.15s ease-in;
-
+        background: rgba(0, 0, 0, 0.85);
+        border: 2px solid rgb(120, 120, 120);
+        border-radius: 4px;
+        padding: 5px 10px;
         &:hover {
           color: rgb(223, 200, 157);
         }

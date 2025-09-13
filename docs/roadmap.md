@@ -2,7 +2,6 @@
 - Edit from master
 - Disable master dialogue
 - Copy / Paste / Replace / Switch entry
-- Global dialogue
 - Filters drag and drop
 - Add filters via context menu
 - Delete filters

@@ -259,9 +259,16 @@ export const fetchTopicListByNPC = async function (npcID, speakerType) {
     persuasions: [],
   };
   try {
-    let entries = await activePlugin.pluginData
-      .where(JSON.parse(`{"${speakerTypeKey}": "${npcID}"}`))
-      .toArray();
+    let entries = [];
+    if (speakerType !== 'Global') {
+      entries = await activePlugin.pluginData
+        .where(JSON.parse(`{"${speakerTypeKey}": "${npcID}"}`))
+        .toArray();
+    } else {
+      entries = await activePlugin.pluginData
+        .where(JSON.parse(`{"TMP_speaker_id": "", "TMP_speaker_cell": "", "TMP_speaker_class": "", "TMP_speaker_faction": "", "TMP_speaker_race": ""}`))
+        .toArray();
+    }
     topicList = addTopicEntries(topicList, entries)
 
     const dependecies = await getDependencies();
@@ -270,9 +277,16 @@ export const fetchTopicListByNPC = async function (npcID, speakerType) {
       if (!dependencyDB) {
         continue;
       }
-      let depEntries = await dependencyDB.pluginData
-        .where(JSON.parse(`{"${speakerTypeKey}": "${npcID}"}`))
-        .toArray();
+      let depEntries = [];
+      if (speakerType !== 'Global') {
+        depEntries = await dependencyDB.pluginData
+          .where(JSON.parse(`{"${speakerTypeKey}": "${npcID}"}`))
+          .toArray();
+      } else {
+        depEntries = await dependencyDB.pluginData
+          .where(JSON.parse(`{"TMP_speaker_id": "", "TMP_speaker_cell": "", "TMP_speaker_class": "", "TMP_speaker_faction": "", "TMP_speaker_race": ""}`))
+          .toArray();
+      }
       topicList = addTopicEntries(topicList, depEntries)
     }
     for (let type of ['topics', 'greetings', 'persuasions']) {
@@ -1496,29 +1510,6 @@ export async function addDialogueEntry(
   }
 
   /*
-    - remember about global dialogue
     - change the icon for cells
   */
 }
-/*
-
-    let lastIdIndex = null;
-    if (questEntries.length && questEntries.at(-1).info_id) {
-      lastIdIndex = state.activePlugin.findIndex(
-        (item) => item.info_id === questEntries.at(-1).info_id
-      );
-    }
-
-    if (speakerType && speakerType !== 'Global') newEntry[speakerType] = speakerId;
-
-    state.activePlugin.find((val) => val.info_id === prev_id) &&
-      (state.activePlugin.find((val) => val.info_id === prev_id).next_id =
-        generatedId);
-    state.activePlugin.find((val) => val.info_id === next_id) &&
-      (state.activePlugin.find((val) => val.info_id === next_id).prev_id =
-        generatedId);
-
-    if (lastIdIndex) state.activePlugin.splice(lastIdIndex, 0, newEntry);
-    else state.activePlugin = [...state.activePlugin, newEntry];
-  },
-*/

@@ -11,7 +11,7 @@
           <div class="container-topics-header">
             <div class="container-topics-header__item" :class="{
               'container-topics-header__item_current': item === topicType,
-            }" @click="topicType = item" v-for="item in ['Topic', 'Greeting', 'Persuasion', 'Journal']" :key="item">
+            }" @click="topicType = item" v-for="item in ['Topic', 'Greeting', 'Persuasion', 'Journal', 'Voice']" :key="item">
               {{ item }}
             </div>
           </div>

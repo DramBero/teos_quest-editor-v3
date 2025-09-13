@@ -41,6 +41,9 @@
           </button>
         </div>
       </form>
+      <div v-else class="dialogue-answers__header">
+
+      </div>
       <div class="dialogue__filtrations" v-if="Object.keys(appliedFiltration).length">
         <button 
           v-if="appliedFiltration.choice"
@@ -220,7 +223,7 @@ async function addDialogue(
 
 const currentAnswers = computed(() => {
   let answers;
-  if (speaker.value !== 'Global Dialogue') {
+  if (speaker.value.speakerName !== 'Global Dialogue') {
     answers = orderedEntries.value
       .filter((val) => val.TMP_topic === currentTopic.value)
       .filter((topic) =>
