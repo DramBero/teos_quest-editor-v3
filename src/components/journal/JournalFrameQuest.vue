@@ -3,7 +3,7 @@
     class="quest" 
     :class="{
       'quest_new': false && props.questNameData?.is_new && !containsMasterIds,
-      'quest_mod': false && containsActivePluginIds || (props.questNameData?.is_new && containsMasterIds),
+      'quest_mod': false && containsActivePluginIds || false && (props.questNameData?.is_new && containsMasterIds),
     }"
     ref="quest"
   >

@@ -226,7 +226,7 @@ function openDialogueModal() {
   text-align: center;
   color: rgb(202, 165, 96);
   cursor: pointer;
-  transition: all 0.1s ease-in;
+  // transition: all 0.05s ease-in;
   display: flex;
   flex-direction: column-reverse;
   position: relative;

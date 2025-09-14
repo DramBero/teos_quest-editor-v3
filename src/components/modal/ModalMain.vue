@@ -14,10 +14,12 @@
         :minWidth="550"
         :drag-handle="'.drag-handle'"
         :parent="true"
+        :handles-size="20"
+        handles-type="borders"
       >
         <div class="window-header drag-handle">
           <div class="window-header__left"></div>
-          <div class="window-header__name">{{ header }}</div>
+          <div class="window-header__name">{{ props.header }}</div>
           <div class="window-header__right">
             <div class="window-header__close" @click="closeModal">
               <!-- <icon name="times" scale="1.3"></icon> -->
@@ -60,11 +62,6 @@ onMounted(() => {
   y.value = getInitCenter.value.initY;
 })
 
-function handleDragStart(event: DragEvent) {
-  event.preventDefault();
-  return false;
-}
-
 const props = defineProps({
   modalHide: String,
   header: String,
@@ -74,7 +71,6 @@ const props = defineProps({
 const selectedSpeakerStore = useSelectedSpeaker();
 function closeModal() {
   selectedSpeakerStore.setSelectedSpeaker({})
-  // this.$store.commit(this.modalHide);
 }
 </script>
 

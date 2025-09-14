@@ -3,55 +3,21 @@
     class="dialogue-filters"
     @dragover.prevent
     @dragenter.prevent="handleDragEnter"
-    @dragleave="handleDragLeave"
+    @dragleave.prevent="handleDragLeave"
     @drop="handleDrop"
   >
-    <template
+    <DialogueEntryFilter 
       v-for="speakerType in !onlyFilters ? getOtherSpeakers : []"
       :key="speakerType.value + speakerType.type"
-    >
-      <div
-        class="dialogue-filters__filter dialogue-filters__filter_speaker"
-        tabindex="0"
-      >
-        <span class="filter__if">if </span>
-        <span class="filter__function">{{ speakerType.type }} </span>
-        <span class="filter__comparison">== </span>
-        <span class="filter__value">{{ speakerType.value }}</span>
-      </div>
-      <button 
-        class="filter-delete" 
-        @click.stop="handleDeleteFilter(filter.index)" 
-        aria-label="Delete filter"
-        label="Delete filter"
-      >
-        <TdesignClose />
-      </button>
-    </template>
-
-    <template
+      filterType="speaker"
+      :speaker="speakerType"
+    />
+    <DialogueEntryFilter 
       v-if="!onlyFilters && answer.data.disposition > 0"
       key="disposition"
-    >
-      <div
-        class="dialogue-filters__filter dialogue-filters__filter_disp"
-        tabindex="0"
-      >
-        <span class="filter__if">if </span>
-        <span class="filter__function">Disposition </span>
-        <span class="filter__comparison">> </span>
-        <span class="filter__value">{{ answer.data.disposition }}</span>
-      </div>
-      <button
-        v-if="false"
-        class="filter-delete" 
-        @click.stop="handleDeleteFilter(filter.index)" 
-        aria-label="Delete filter"
-        label="Delete filter"
-      >
-        <TdesignClose />
-      </button>
-    </template>
+      filterType="disposition"
+      :disposition="answer.data.disposition"
+    />
 
     <div class="filter-wrapper" v-for="(filter, index) in getFiltersByInfoId" :key="index">
       <div 
@@ -71,64 +37,11 @@
           </div>
         </div>
       </div>
-      <div
+      <DialogueEntryFilter 
         v-else
-        class="dialogue-filters__filter"
-        tabindex="0"
-        @click="handleFilter(filter)"
-        @focusout="removeHighlight"
-      >
-        <span class="filter__if">if </span>
-        <span class="filter__function">{{ filter.filter_type === 'Function' ? filter.function + ' ' : filter.filter_type + ' ' }}</span>
-        <span class="filter__id">{{ filter.id }} </span>
-        <span class="filter__comparison">{{ parseComparison(filter.comparison) }} </span>
-        <span class="filter__value">{{ filter.value.data }}</span>
-      </div>
-      <button 
-        class="filter-delete" 
-        @click.stop="handleDeleteFilter(filter.index)" 
-        aria-label="Delete filter"
-        label="Delete filter"
-      >
-        <TdesignClose />
-      </button>
-    </div>
-
-    <div class="dialogue-filters__filter" :key="'tempFilter'" tabindex="0" v-show="newFilterType">
-      <span class="filter__if">if </span>
-      <span class="filter__function">{{ newFilterType }} </span>
-      <span class="filter__id">{{ newFilterTopic }} </span>
-      <span class="filter__comparison">? </span>
-      <span class="filter__value">{{ newFilterIndex }}</span>
-      <span>
-<!--         <icon
-          v-if="editMode"
-          @click.stop="editFilter(filter, index)"
-          name="pen"
-          class="filter__edit"
-          scale="1"
-        ></icon> -->
-      </span>
-      <div class="comparisons__overlay">
-        <div
-          @click.prevent
-          ref="comparisonsElement"
-          class="comparisons"
-          @mouseleave="removeHighlight"
-          tabindex="0"
-          @focusout="removeTempFilter"
-        >
-          <span
-            class="comparisons__item"
-            v-for="comparison in comparisons"
-            :key="comparison.id"
-            @mouseover="comparisonOver(comparison.id)"
-            @click="addDropFilter(comparison.id)"
-          >
-            {{ comparison.text }}
-          </span>
-        </div>
-      </div>
+        filterType="filter"
+        :filter="filter"
+      />
     </div>
 
     <div
@@ -141,35 +54,27 @@
     </div>
 
     <button
-      v-if="false"
       type="button"
       class="filter__add"
       @click.prevent="handleAddFilter"
     >
       <TdesignAddCircle />
     </button>
-
-<!--     <icon
-      v-if="editMode && !newFilterType && !dragOver"
-      @click="addFilter()"
-      name="plus-circle"
-      class="icon_gray"
-      scale="1.5"
-    ></icon> -->
   </div>
 </template>
 
 <script setup lang="ts">
+import DialogueEntryFilter from '@/components/dialogue/DialogueEntryFilter.vue';
 import { useJournalHighlight } from '@/stores/journalHighlights';
 import { useSidebar } from '@/stores/sidebar';
 import { addChoiceFilter, deleteFilter } from '@/api/idb.js';
 import { computed, ref } from 'vue';
-import TdesignClose from '~icons/tdesign/close';
 import TdesignAddCircle from '~icons/tdesign/add-circle';
 
 import ContextMenu from '@imengyu/vue3-context-menu';
 
 import type { InfoEntry } from '@/types/pluginEntries';
+import { useSelectedFilter } from '@/stores/selectedFilter';
 
 interface SpeakerData {
   speakerId: string;
@@ -236,6 +141,29 @@ function handleAddFilter(e: MouseEvent) {
         label: "Choice",
         children: getTopicChoiceLabels.value,
       },
+      {
+        label: "Speaker",
+        children: [
+          {
+            label: "Speaker ID",
+          },
+          {
+            label: "Speaker Cell",
+          },
+          {
+            label: "Speaker Class",
+          },
+          {
+            label: "Speaker Faction",
+          },
+          {
+            label: "Speaker Race",
+          },
+          {
+            label: "Speaker Rank",
+          },
+        ]
+      },
       { 
         label: "Player", 
         children: [
@@ -273,8 +201,23 @@ function handleAddFilter(e: MouseEvent) {
         ]
       },
       { 
+        label: "Journal",
+        onClick: () => openAddFilter('journal'),
+      },
+      { 
+        label: "Faction",
+      },
+      { 
+        label: "Dead",
+      },
+      { 
+        label: "Item",
+      },
+      { 
+        label: "Global",
+      },
+      { 
         label: "Local",
-
       },
       { 
         label: "Weather",
@@ -303,6 +246,12 @@ function handleAddFilter(e: MouseEvent) {
           { label: "Same faction" },
           { label: "Same race" },
           { label: "Same sex" },
+          {
+            label: "Sex",
+          },
+          {
+            label: "Disposition",
+          },
         ],
       },
     ]
@@ -335,6 +284,13 @@ const comparisons = [
     text: '>',
   },
 ]
+
+const selectedFilterStore = useSelectedFilter();
+function openAddFilter(filterKey: string) {
+  selectedFilterStore.setSelectedFilter({
+    type: filterKey,
+  });
+}
 
 function getChoiceFilters(choiceId: number) {
   const texts = props.topicChoices
@@ -465,16 +421,27 @@ function parseComparison(comparison) {
   }
 }
 
-function handleDragLeave(event) {
-  dragOver.value = false;
+function handleDragLeave(event: DragEvent) {
+  const parent = event.currentTarget;
+  if (!parent?.contains(event.relatedTarget)) {
+    dragOver.value = false;
+  }
 }
 
-function handleDragEnter(event) {
+function handleDragEnter(event: DragEvent) {
   dragOver.value = true;
   //dialogue-filters
 }
 
-function handleDrop(event) {
+function handleDrop(event: DragEvent) {
+  dragOver.value = false;
+  if (!event.dataTransfer) {
+    return;
+  }
+  const transferedData = JSON.parse(event.dataTransfer.getData('application/json'));
+  selectedFilterStore.setSelectedFilter({
+    filter: transferedData,
+  });
 /*
   if (event.dataTransfer.getData('type') === 'Journal') {
     this.dragOver = false;
@@ -513,7 +480,9 @@ function removeTempFilter() {
   align-items: center;
   flex-wrap: wrap;
   &__filter {
-    display: inline-block;
+    display: flex;
+    align-items: center;
+    gap: 5px;
     cursor: pointer;
     align-items: center;
     background: rgba(255, 255, 255, 0.7);
@@ -524,6 +493,18 @@ function removeTempFilter() {
     height: fit-content;
     width: fit-content;
     //position: relative;
+    button {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      &:hover {
+        background-color: rgba(0, 0, 0, 0.1);
+      }
+      svg {
+        width: 16px;
+        height: 16px;
+      }
+    }
     &_disp {
       background: rgba(255, 255, 255, 0.2);
       color: rgb(185, 185, 166);

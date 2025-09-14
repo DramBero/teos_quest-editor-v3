@@ -58,7 +58,7 @@
                 <div class="entry-wrapper">
                   <div
                     class="quest-entry quest-entry_start"
-                    :class="{ 'quest-entry_highlighted': getIsHighlighted(0) }"
+                    :class="{ 'quest-entry_highlighted': getIsHighlighted(Infinity) }"
                   >
                     <div class="quest-entry__text"></div>
                   </div>
@@ -193,18 +193,27 @@ function editEntry(event, info_id) {
 }
 
 watch(getHighlight, async (newValue) => {
+  await new Promise((resolve) => setTimeout(resolve, 10));
+    console.log('HIGHLIGHT 1', newValue?.id || '11', selectedQuestId.value || '22')
   if (!newValue?.id) {
     highlightedId.value = '';
     highlightedComparison.value = '';
   }
-  else if (newValue.id === props.questNameData?.id) {
+  else if (newValue.id === selectedQuestId.value) {
+    console.log('HIGHLIGHT TEST')
     await new Promise((resolve) => setTimeout(resolve, 10));
     highlightedComparison.value = newValue.comparison;
     highlightedId.value = parseInt(newValue.value.data);
+    const entry = document.getElementById(`${selectedQuestId.value}-${highlightedId.value}`);
+    if (entry) {
+      entry.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
   } else {
     highlightedComparison.value = '';
     highlightedId.value = '';
   }
+}, {
+  immediate: true,
 });
 
 function deleteEntry(info_id) {

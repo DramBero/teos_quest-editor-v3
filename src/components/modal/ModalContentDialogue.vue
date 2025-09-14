@@ -872,8 +872,10 @@ watch(currentTopic, (async (newValue) => {
   }
 
   &-questions {
-    min-width: 30%;
+    // min-width: 30%;
+    min-width: 300px;
     max-width: 300px;
+    flex-grow: 0;
     border-left: 2px solid rgb(202, 165, 96);
     overflow-y: scroll;
     &__add {

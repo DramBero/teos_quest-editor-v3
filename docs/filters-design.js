@@ -249,3 +249,16 @@ Not:
         CompareLocal = 22579,          // b"3X",
         VariableCompare = 22643,       // b"sX",
     }
+
+record to filter:
+
+Cell: Cell, NotCell
+Npc: ID, NotID, Dead
+Creature: ID, NotID, Dead
+Faction: Faction, NotFaction
+Class: Class, NotClass
+Race: Race, NotRace
+Journal: Journal
+Item: Item
+Global: Global
+Skill: PCSkill

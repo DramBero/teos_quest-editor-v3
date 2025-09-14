@@ -10,6 +10,8 @@ import ModalMain from './components/modal/ModalMain.vue';
 import ModalContentDialogue from './components/modal/ModalContentDialogue.vue';
 import { useSelectedSpeaker } from './stores/selectedSpeaker.js';
 import ModalClassicView from './components/modal/ModalClassicView.vue';
+import ModalAddFilter from './components/modal/ModalAddFilter.vue';
+import { useSelectedFilter } from './stores/selectedFilter.js';
 
 const headerStore = usePluginHeader();
 onMounted(async () => {
@@ -24,6 +26,11 @@ const selectedSpeakerStore = useSelectedSpeaker();
 const getSpeakerData = computed(() => {
   return selectedSpeakerStore.getSelectedSpeaker;
 })
+
+const selectedFilterStore = useSelectedFilter();
+const getSelectedFilter = computed(() => {
+  return selectedFilterStore.getSelectedFilter;
+})
 </script>
 
 <template>
@@ -32,9 +39,16 @@ const getSpeakerData = computed(() => {
     <ModalFrame />
     <ModalClassicView />
     <CWorkspace />
-    <ModalMain v-show="getSpeakerData.speakerId" :header="getSpeakerData.speakerName || getSpeakerData.speakerId">
+    <ModalMain 
+      v-show="getSpeakerData.speakerId"
+      :header="getSpeakerData.speakerName || getSpeakerData.speaker?.name || getSpeakerData.speakerId"
+    >
       <ModalContentDialogue :speaker="getSpeakerData"/>
     </ModalMain>
+    <ModalAddFilter 
+      v-show="getSelectedFilter !== null"
+      :filter="getSelectedFilter"
+    />
   </div>
   <RouterView />
 </template>

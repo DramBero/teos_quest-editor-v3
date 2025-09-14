@@ -1,58 +1,41 @@
 <template>
   <div class="frame">
-    <div class="frame-controls">
-      <div class="frame-controls-left">
-        <div class="frame-controls-types__secondary" :style="{ gap: '10px' }" @click="openClassicView()">
-          Classic view
-        </div>
-        <div class="frame-controls-types__secondary" :style="{ gap: '10px' }" @click="openGlobalDialogue()">
-          Global
-        </div>
-        <!--         <form class="search-input" @submit.prevent="filterSpeakers">
-        <label class="modal-field modal-field_dark">
-          <input
-            class="modal-field__input"
-            name="speaker-name"
-            autocomplete="off"
-            :placeholder="'Find speaker'"
-            v-model="speakerSearch"
-          />
-        </label>
-        <button type="submit" class="search-input__button">
-          <icon name="search" class="search-input__icon" scale="1.3"></icon>
-        </button>
-      </form> -->
-      </div>
-      <div class="frame-controls-types">
-        <template v-for="speakerType in speakerTypes.filter(val => speakerTypeAmounts[val] > 0)" :key="speakerType">
-          <button 
-            class="frame-controls-types__type" 
-            :class="{
-              'frame-controls-types__type_active': currentSpeakerType === speakerType,
-            }" 
-            @click="currentSpeakerType = speakerType"
-            :title="getTitle(speakerType)"
-          >
-            <component 
-              :is="speakerTypeIcon(speakerType)"
-            />
-            {{ speakerTypeAmounts[speakerType] }}
-          </button>
-        </template>
-        <!--         <div
-          class="frame-controls-types__type frame-controls-types__type_generic"
-          @click="openGeneric"
-          v-if="getDialogueGlobalExist"
-        >
-          Global
-        </div> -->
-      </div>
-    </div>
     <div class="frame-dialogue__wrapper">
+      <div class="frame-controls">
+        <div class="frame-controls-left">
+          <div class="frame-controls-types__secondary" :style="{ gap: '10px' }" @click="openClassicView()">
+            Classic view
+          </div>
+          <div class="frame-controls-types__secondary" :style="{ gap: '10px' }" @click="openGlobalDialogue()">
+            Global
+          </div>
+        </div>
+        <div class="frame-controls-types">
+          <template v-for="speakerType in speakerTypes.filter(val => speakerTypeAmounts[val] > 0)" :key="speakerType">
+            <button 
+              class="frame-controls-types__type" 
+              :class="{
+                'frame-controls-types__type_active': currentSpeakerType === speakerType,
+              }" 
+              @click="currentSpeakerType = speakerType"
+              :title="getTitle(speakerType)"
+            >
+              <component 
+                :is="speakerTypeIcon(speakerType)"
+              />
+              {{ speakerTypeAmounts[speakerType] }}
+            </button>
+          </template>
+        </div>
+      </div>
+
       <div name="fadeHeight" class="frame-dialogue" mode="out-in" :style="{ width: '100%' }">
-        <!-- transition-group -->
-        <DialogueFrameCard v-for="speaker in currentSpeakers" :key="speaker" :speakerId="speaker"
-          :speakerType="currentSpeakerType" />
+        <DialogueFrameCard 
+          v-for="speaker in currentSpeakers"
+          :key="speaker"
+          :speakerId="speaker"
+          :speakerType="currentSpeakerType"
+        />
       </div>
     </div>
     <Record />
@@ -63,7 +46,7 @@
 import DialogueFrameCard from '@/components/dialogue/DialogueFrameCard.vue';
 import Record from '../record/Record.vue';
 import { fetchAllDialogueBySpeaker, fetchSpeakersAmountBySpeakerType } from '@/api/idb.js';
-import { computed, defineAsyncComponent, onMounted, ref, watch } from 'vue';
+import { defineAsyncComponent, onMounted, ref, watch } from 'vue';
 import { usePrimaryModal } from '@/stores/modals';
 import { useClassicView } from '@/stores/classicView';
 import { useSelectedSpeaker } from '@/stores/selectedSpeaker';
@@ -186,7 +169,6 @@ function openGeneric() {
 <style lang="scss">
 .frame {
   display: flex;
-
   position: relative;
   transition: all 0.3s cubic-bezier(1, 1, 1, 1);
   height: 100%;
@@ -197,7 +179,12 @@ function openGeneric() {
     display: flex;
     justify-content: space-between;
     padding: 10px;
-
+    position: sticky;
+    top: 0;
+    background-color: rgba(202, 165, 96, 0.1);
+    backdrop-filter: blur(8px);
+    border-bottom: solid 3px rgba(202, 165, 96, 0.2);
+    z-index: 10;
     &-left {
       display: flex;
       gap: 10px;
@@ -209,11 +196,11 @@ function openGeneric() {
       gap: 15px;
       &__secondary {
         font-size: 20px;
-        color: rgb(202, 165, 96);
+        color: rgb(255, 239, 210);
         cursor: pointer;
         transition: color 0.15s ease-in;
-        background: rgba(0, 0, 0, 0.85);
-        border: 2px solid rgb(120, 120, 120);
+        background: rgba(202, 165, 96, 0.3);
+        border: 2px solid rgb(202, 165, 96);
         border-radius: 4px;
         padding: 5px 10px;
         &:hover {
@@ -223,11 +210,15 @@ function openGeneric() {
 
       &__type {
         display: flex;
+        align-items: center;
         gap: 5px;
         color: rgb(221, 221, 221);
         font-size: 22px;
         &_active {
           color: rgb(202, 165, 96);
+        }
+        &:hover {
+          opacity: 0.7;
         }
       }
 
@@ -279,21 +270,19 @@ function openGeneric() {
 
 .frame-dialogue {
   position: relative;
-  overflow-y: scroll;
-  //flex-grow: 1;
   align-items: flex-start;
   flex-wrap: wrap;
+  flex-grow: 1;
   padding: 20px 20px 30px 20px;
   display: flex;
-  //flex-grow: 1;
   justify-content: center;
-  margin: 0 auto;
-  //grid-template-columns: 1fr 1fr 1fr 1fr 1fr;
   gap: 10px;
-
+  height: calc(100% - 200px);
   &__wrapper {
     width: auto;
     display: flex;
+    flex-direction: column;
+    position: relative;
     justify-content: center;
     overflow-y: scroll;
   }

@@ -3,6 +3,9 @@
     :id="`${props.entry.TMP_topic}-${props.entry.data.disposition}`" 
     :key="`${props.entry.TMP_topic}-${props.entry.data.disposition}`" 
     class="entries-list__child"
+    draggable="true"
+    @dragstart="onDragStart"
+    @dragend="onDragEnd"
   >
     <div class="entry-wrapper">
       <div class="quest-entry" :class="{
@@ -116,6 +119,18 @@ async function handleDeleteEntry() {
   } catch (error) {
     console.error(error);
   }
+}
+
+function onDragStart(event: DragEvent) {
+  if (!event.dataTransfer) return;
+  const transferData = {
+    type: 'Journal',
+    entry: props.entry
+  }
+  event.dataTransfer.setData("application/json", JSON.stringify(transferData));
+}
+
+function onDragEnd() {
 }
 
 const showPrevEntry = computed(() => {

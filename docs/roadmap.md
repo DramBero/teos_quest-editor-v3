@@ -7,6 +7,7 @@
 - Delete filters
 - Edit filters
 - Classic menu - changing order
+- Update choices on results edit
 - Option to show not only NPC-specific dialogue for the NPC, but also his faction, race, class, rank and global dialogue. (Maybe also cell, based on his starting cell)
 - Add books
 - Edit header
@@ -14,6 +15,7 @@
 - Help menu
 - Watch and edit dialogue or journal changes
 - Full journal editing for master plugin
+- More error handling
 - A video about functionality
 - Release text for Nexus
 - Finish the heads, and think of what to display for other speakers

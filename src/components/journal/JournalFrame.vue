@@ -387,8 +387,8 @@ export default {
         -45deg,
         transparent,
         transparent 12px,
-        rgb(233, 203, 72) 12px,
-        rgb(233, 203, 72) 24px
+        rgba(233, 203, 72, 0.4) 12px,
+        rgba(233, 203, 72, 0.4) 24px
       );
     }
     &__add {

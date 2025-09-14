@@ -89,11 +89,14 @@ function handleSelect() {
 
 function onDragStart(event: DragEvent) {
   if (!event.dataTransfer) return;
-  event.dataTransfer.setData("application/json", JSON.stringify(props.faction[0]));
+  const transferEntry = JSON.stringify({
+    entry: props.faction[0],
+    type: props.faction[0]?.type,
+  })
+  event.dataTransfer.setData("application/json", transferEntry);
 }
 
 function onDragEnd() {
-
 }
 
 const getSelectedRecord = computed(() => selectedRecordStore.getSelectedRecord);
@@ -148,7 +151,7 @@ const getId = computed(() => {
   border-radius: 4px;
   border: solid 3px rgba(255, 255, 255, 0.1);
   background-color: rgba(255, 255, 255, 0.1);
-  transition: all .1s ease-in;
+  // transition: all .1s ease-in;
   &:hover {
     background-color: rgba(255, 255, 255, 0.06);
   }
@@ -193,11 +196,11 @@ const getId = computed(() => {
       width: 30px;
       height: 30px;
       color: rgba(255, 255, 255, 0.8);
-      transition: color .15s ease-in;
+      // transition: color .15s ease-in;
     }
     &:hover {
       svg {
-        color: rgba(255, 255, 255, 0.6);
+        color: rgba(202, 165, 96, 1);
       }
     }
   }

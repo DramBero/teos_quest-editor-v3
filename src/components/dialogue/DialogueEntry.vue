@@ -29,8 +29,8 @@
             'dialogue-answers-answer_modified': props.answer.old_values && props.answer.old_values.length,
           }"
         >
-          <div class="dialogue-answers-answer-modified" v-if="props.answer.old_values && props.answer.old_values.length > 1">
-            * Modified in {{ props.answer.old_values.slice(-2)[0].TMP_dep }}
+          <div class="dialogue-answers-answer-modified" v-if="getModificationList.length">
+            * Modification to {{ getModificationList.join(', ') }}
             <span class="dialogue-answers-answer-modified_dirty"
               v-if="getIsDirty">
               (possibly dirtied by CS)
@@ -132,7 +132,7 @@ const props = defineProps<{
   orderedEntries: InfoEntry[];
 }>();
 
-const emit = defineEmits(['applyFilter', 'setCurrentAnswers', 'updateAll']);
+const emit = defineEmits(['applyFilter', 'setCurrentAnswers', 'updateAll', 'updateChoices']);
 
 const getEntryStatus = computed(() => {
   if (props.answer.TMP_is_active && props.answer.old_values && props.answer.old_values.length > 1) {
@@ -212,6 +212,14 @@ watch(answerText, (newValue) => {
   immediate: true,
 });
 
+const getModificationList = computed(() => {
+  if (!props.answer.TMP_is_active || !props.answer.old_values.length) {
+    return [];
+  } else {
+    return props.answer.old_values.slice(0, -1).map(val => val.TMP_dep).reverse();
+  }
+})
+
 const getIsDirty = computed(() => {
   if (!props.answer.old_values?.length) {
     return false;
@@ -239,7 +247,7 @@ const getContextMenuItems = computed<MenuItem[]>(() => {
   if (!getLua.value) {
     items.push({
       label: 'Add Lua (MWSE)',
-      divided: !getMWScript.value,
+      divided: getMWScript.value,
       onClick: addLuaScript,
     });
   }
@@ -348,6 +356,7 @@ function useMWScriptResults() {
       TMP_dep: props.answer.TMP_dep,
       script_text: scriptText,
     });
+    emit('updateChoices');
     if (newEntryResponse) {
       currentEntry.value = newEntryResponse;
     }
