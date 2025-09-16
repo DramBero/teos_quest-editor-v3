@@ -1,6 +1,6 @@
 import { ref, computed } from 'vue';
 import { defineStore } from 'pinia';
-import { getCountTypes } from '@/api/idb.js';
+import { getCountTypes } from '@/api/idb.ts';
 
 export const useCountTypes = defineStore('countTypes', () => {
   const countTypes = ref<Object[]>();

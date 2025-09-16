@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import init from './tes3_wasm/tes3_wasm.js';
-import { getActiveHeader } from '@/api/idb.js';
+import { getActiveHeader } from '@/api/idb.ts';
 import { RouterView } from 'vue-router';
 import { computed, onMounted } from 'vue';
 import CWorkspace from './components/CWorkspace.vue';

@@ -31,7 +31,7 @@
 <script setup lang="ts">
 import { usePrimaryModal } from '@/stores/modals';
 import { ref } from 'vue';
-import { addJournalQuest } from '@/api/idb.js';
+import { addJournalQuest } from '@/api/idb.ts';
 
 const nameError = ref<string>('');
 const idError = ref<string>('');

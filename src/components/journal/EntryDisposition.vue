@@ -32,7 +32,7 @@
 import { ref, watch } from 'vue';
 import TdesignCheck from '~icons/tdesign/check';
 import TdesignClose from '~icons/tdesign/close';
-import { modifyEntry } from '@/api/idb.js';
+import { modifyEntry } from '@/api/idb.ts';
 import { useSelectedQuest } from '@/stores/selectedQuest';
 
 const props = defineProps<{

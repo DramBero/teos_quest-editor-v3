@@ -47,7 +47,7 @@
 
 <script setup lang="ts">
 import JournalFrameQuestTabsItem from '@/components/journal/JournalFrameQuestTabsItem.vue';
-import { addJournalQuest } from '@/api/idb.js';
+import { addJournalQuest } from '@/api/idb.ts';
 import TdesignClose from '~icons/tdesign/close';
 import TdesignAdd from '~icons/tdesign/add';
 import TdesignCheck from '~icons/tdesign/check';

@@ -1,6 +1,6 @@
 import { ref, computed } from 'vue';
 import { defineStore } from 'pinia';
-import { fetchQuestByID, fetchAllQuestIDs } from '@/api/idb.js';
+import { fetchQuestByID, fetchAllQuestIDs } from '@/api/idb.ts';
 
 export const useSelectedQuest = defineStore('selectedQuest', () => {
   interface selectedQuest {

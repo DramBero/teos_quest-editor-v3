@@ -6,7 +6,7 @@
 
 <script setup lang="ts">
 import { usePrimaryModal } from '@/stores/modals';
-import { pluginToJSON } from '@/api/idb.js';
+import { pluginToJSON } from '@/api/idb.ts';
 import { save_objects } from '@/tes3_wasm/tes3_wasm.js';
 import GameIconsSave from '~icons/game-icons/save';
 import { computed } from 'vue';

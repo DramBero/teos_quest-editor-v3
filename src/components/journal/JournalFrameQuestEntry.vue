@@ -74,7 +74,7 @@ import TdesignFlag from '~icons/tdesign/flag';
 import TdesignFlagFilled from '~icons/tdesign/flag-filled';
 import TdesignClose from '~icons/tdesign/close';
 
-import { editTopicText, addQuestEntry, modifyEntry, deleteJournalEntry } from '@/api/idb.js';
+import { editTopicText, addQuestEntry, modifyEntry, deleteJournalEntry } from '@/api/idb.ts';
 import { watchDebounced } from '@vueuse/core';
 import { useSelectedQuest } from '@/stores/selectedQuest';
 

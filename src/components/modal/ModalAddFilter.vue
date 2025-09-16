@@ -10,8 +10,8 @@
         v-model:y="y"
         :initW
         :initH
-        :minHeight="500"
-        :minWidth="300"
+        :minHeight="400"
+        :minWidth="400"
         :drag-handle="'.drag-handle'"
         :parent="true"
         :resizable="false"
@@ -28,70 +28,31 @@
             </div>
           </div>
         </div>
-        <form class="window__content add-filter" @submit.prevent>
-          <div>
-            <label>
-              <span>ID:</span>
-              <input 
-                type="text" 
-                class="text-input" 
-                placeholder="Enter text"
-                :value="getId"
-              />
-            </label>
-          </div>
-          <div class="add-filter__comparisons">
-            <button 
-              type="button"
-              @click="selectedComparison = 'Less'"
-              class="comparison__btn"
-              :class="{'comparison__btn_selected': selectedComparison === 'Less'}"
-            >
-              {{ '<' }}
-            </button>
-            <button 
-              type="button"
-              @click="selectedComparison = 'LessEqual'"
-              class="comparison__btn"
-              :class="{'comparison__btn_selected': selectedComparison === 'LessEqual'}"
-            >
-              {{ '<=' }}
-            </button>
-            <div class="comparison__column">
-              <button 
-                type="button"
-                @click="selectedComparison = 'Equal'"
-                class="comparison__btn"
-                :class="{'comparison__btn_selected': selectedComparison === 'Equal'}"
-              >
-                {{ '==' }}
-              </button>
-              <button 
-                type="button"
-                @click="selectedComparison = 'NotEqual'"
-                class="comparison__btn"
-                :class="{'comparison__btn_selected': selectedComparison === 'NotEqual'}"
-              >
-                {{ '!=' }}
-              </button>
-            </div>
-            <button 
-              type="button"
-              @click="selectedComparison = 'GreaterEqual'"
-              class="comparison__btn"
-              :class="{'comparison__btn_selected': selectedComparison === 'GreaterEqual'}"
-            >
-              {{ '>=' }}
-            </button>
-            <button 
-              type="button"
-              @click="selectedComparison = 'Greater'"
-              class="comparison__btn"
-              :class="{'comparison__btn_selected': selectedComparison === 'Greater'}"
-            >
-              {{ '>' }}
-            </button>
-          </div>
+        <div class="window__content add-filter" @submit.prevent>
+          <Vueform>
+            <SelectElement 
+              name="function"
+              label="Filter"
+              :native="false"
+              :items="[
+                'Caius',
+                'Vulpes'
+              ]"
+            />
+            <TextElement 
+              name="ID"
+              label="ID"
+            />
+            <ComparisonSelect 
+              v-model="selectedComparison"
+            />
+            <TextElement 
+              name="Value"
+              label="Value"
+              input-type="number"
+            />
+          </Vueform>
+
           <div>
             <label>
               <span>Value:</span>
@@ -108,21 +69,24 @@
           >
             Create
           </button>
-        </form>
+        </div>
       </DraggableResizableVue>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+type Comparison = 'Less' | 'LessEqual' | 'Equal' | 'NotEqual' | 'GreaterEqual' | 'Greater' | null;
+
 import { useSelectedFilter } from '@/stores/selectedFilter';
 import { useWindowSize } from '@vueuse/core';
 import { computed, onMounted, ref } from 'vue';
 import TdesignClose from '~icons/tdesign/close';
 import { DraggableResizableVue } from 'draggable-resizable-vue3';
+import ComparisonSelect from '@/components/ComparisonSelect.vue';
 
-const initW = 300;
-const initH = 500;
+const initW = 400;
+const initH = 400;
 
 const w = ref<number>(initW);
 const h = ref<number>(initH);
@@ -141,7 +105,7 @@ onMounted(() => {
   y.value = getInitCenter.value.initY;
 })
 
-const selectedComparison = ref<string>('');
+const selectedComparison = ref<Comparison>(null);
 
 const props = defineProps<{
   filter: Object | null;
@@ -261,44 +225,5 @@ const getValue = computed(() => {
   display: flex;
   flex-direction: column;
   gap: 20px;
-  &__comparisons {
-    display: flex;
-    gap: 5px;
-    align-items: center;
-    width: 100%;
-    justify-content: center;
-    .comparison__btn {
-      background-color: rgba(182, 145, 76, 0.3);
-      color: black;
-      padding: 3px 10px;
-      min-width: 40px;
-      border-radius: 4px;
-      user-select: none;
-      &:hover {
-        background-color: rgba(182, 145, 76, 0.4);
-      }
-      &_selected {
-        background-color: rgb(182, 145, 76);
-        pointer-events: none;
-      }
-    }
-    .comparison__column {
-      display: flex;
-      flex-direction: column;
-      gap: 5px;
-    }
-  }
-  label {
-    display: flex;
-    flex-direction: column;
-    gap: 3px;
-    span {
-      font-size: 16px;
-      user-select: none;
-    }
-    input {
-      border: solid 1px rgb(182, 145, 76);
-    }
-  }
 }
 </style>

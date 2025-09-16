@@ -22,7 +22,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue';
 import init, { load_objects } from '@/tes3_wasm/tes3_wasm.js';
-import { importPlugin, getActiveHeader, getHeader, deleteDB } from '@/api/idb.js';
+import { importPlugin, getActiveHeader, getHeader, deleteDB } from '@/api/idb.ts';
 import { usePluginHeader } from '@/stores/pluginHeader';
 import SVGSpinners90RingWithBg from '~icons/svg-spinners/90-ring-with-bg';
 import { useReloadTrigger } from '@/stores/reloadTrigger';

@@ -79,7 +79,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref, useTemplateRef, watch } from 'vue';
-import { addQuestEntry } from '@/api/idb.js'; 
+import { addQuestEntry } from '@/api/idb.ts'; 
 import type { FilterComparison } from '@/types/pluginEntries.ts';
 import { useJournalHighlight } from '@/stores/journalHighlights';
 import JournalFrameQuestEntry from '@/components/journal/JournalFrameQuestEntry.vue';

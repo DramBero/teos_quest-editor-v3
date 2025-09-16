@@ -45,7 +45,7 @@
 <script setup lang="ts">
 import DialogueFrameCard from '@/components/dialogue/DialogueFrameCard.vue';
 import Record from '../record/Record.vue';
-import { fetchAllDialogueBySpeaker, fetchSpeakersAmountBySpeakerType } from '@/api/idb.js';
+import { fetchAllDialogueBySpeaker, fetchSpeakersAmountBySpeakerType } from '@/api/idb.ts';
 import { defineAsyncComponent, onMounted, ref, watch } from 'vue';
 import { usePrimaryModal } from '@/stores/modals';
 import { useClassicView } from '@/stores/classicView';

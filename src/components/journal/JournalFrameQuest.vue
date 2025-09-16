@@ -27,7 +27,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref, useTemplateRef, watch } from 'vue';
-import { fetchQuestByID } from '@/api/idb.js'; 
+import { fetchQuestByID } from '@/api/idb.ts'; 
 import type { FilterComparison } from '@/types/pluginEntries.ts';
 import { useJournalHighlight } from '@/stores/journalHighlights';
 

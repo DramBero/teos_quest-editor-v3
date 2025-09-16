@@ -184,7 +184,7 @@ import sanitize from 'sanitize-html';
 import Codemirror from "codemirror-editor-vue3";
 import "codemirror/mode/htmlmixed/htmlmixed.js";
 import "codemirror/theme/dracula.css";
-import { modifyEntry } from '@/api/idb.js';
+import { modifyEntry } from '@/api/idb.ts';
 
 import TdesignCaretRight from '~icons/tdesign/caret-right';
 import TdesignCaretLeft from '~icons/tdesign/caret-left';

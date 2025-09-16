@@ -54,7 +54,7 @@
 </template>
 
 <script setup lang="ts">
-import { fetchAllQuestIDs } from '@/api/idb.js';
+import { fetchAllQuestIDs } from '@/api/idb.ts';
 import { usePrimaryModal } from '@/stores/modals';
 import { computed, onMounted, ref, watch } from 'vue';
 import JournalFrameQuest from './JournalFrameQuest.vue';

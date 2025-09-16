@@ -67,7 +67,7 @@
 import DialogueEntryFilter from '@/components/dialogue/DialogueEntryFilter.vue';
 import { useJournalHighlight } from '@/stores/journalHighlights';
 import { useSidebar } from '@/stores/sidebar';
-import { addChoiceFilter, deleteFilter } from '@/api/idb.js';
+import { addChoiceFilter, deleteFilter } from '@/api/idb.ts';
 import { computed, ref } from 'vue';
 import TdesignAddCircle from '~icons/tdesign/add-circle';
 

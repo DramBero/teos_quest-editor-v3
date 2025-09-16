@@ -150,7 +150,7 @@
 <script setup lang="ts">
 import { useSelectedSpeaker } from '@/stores/selectedSpeaker';
 import DialogueEntry from '@/components/dialogue/DialogueEntry.vue';
-import { fetchTopicListByNPC, getOrderedEntriesByTopic, addDialogueEntry } from '@/api/idb.js';
+import { fetchTopicListByNPC, getOrderedEntriesByTopic, addDialogueEntry } from '@/api/idb.ts';
 import { computed, reactive, ref, toRefs, useTemplateRef, watch } from 'vue';
 import SVGSpinners90RingWithBg from '~icons/svg-spinners/90-ring-with-bg';
 import { useClassicView, useClassicViewTopic } from '@/stores/classicView';

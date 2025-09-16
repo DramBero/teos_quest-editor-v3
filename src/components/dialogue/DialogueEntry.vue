@@ -102,7 +102,7 @@ import StarterKit from '@tiptap/starter-kit';
 import { Placeholder } from '@tiptap/extension-placeholder';
 
 import { watchDebounced } from '@vueuse/core';
-import { editTopicText, addDialogueEntry, deleteJournalEntry, modifyEntry } from '@/api/idb.js';
+import { editTopicText, addDialogueEntry, deleteJournalEntry, modifyEntry } from '@/api/idb.ts';
 import { computed, ref, watch } from 'vue';
 
 import ContextMenu, { type MenuItem } from '@imengyu/vue3-context-menu';

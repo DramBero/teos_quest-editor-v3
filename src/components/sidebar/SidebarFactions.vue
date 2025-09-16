@@ -57,7 +57,7 @@
 <script setup lang="ts">
 import SidebarFactionsItem from '@/components/sidebar/SidebarFactionsItem.vue';
 import { useCountTypes } from '@/stores/countTypes';
-import { fetchByType } from '@/api/idb.js';
+import { fetchByType } from '@/api/idb.ts';
 import { computed, defineAsyncComponent, ref, watch } from 'vue';
 import SVGSpinners90RingWithBg from '~icons/svg-spinners/90-ring-with-bg';
 import { useSelectedRecord } from '@/stores/selectedRecord';
