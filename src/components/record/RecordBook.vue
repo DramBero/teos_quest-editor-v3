@@ -352,6 +352,7 @@ watch(isScroll, updatePages, {immediate: true});
   flex-direction: column;
   position: relative;
   gap: 10px;  
+  z-index: 10;
   &__wrapper {
     display: flex;
     flex-direction: column;

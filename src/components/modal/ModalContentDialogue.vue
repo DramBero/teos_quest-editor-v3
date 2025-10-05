@@ -93,13 +93,11 @@
       </div>
     </div>
     <div class="dialogue-questions">
-      <button
-        type="button"
-        class="dialogue-questions__add"
-        @click="handleAddTopic"
-      >
-        <TdesignAdd />
-      </button>
+      <SVGSpinners90RingWithBg
+        v-if="topicsLoading"
+        class="topics-loading"
+        :scale="10"
+      />
       <div class="dialogue-questions__container" v-if="greetingsList?.length">
         <button 
           v-for="(question, index) in greetingsList" 
@@ -144,6 +142,13 @@
         {{ question[0].TMP_topic }}
       </button>
     </div>
+    <button
+      type="button"
+      class="dialogue-questions__add"
+      @click="handleAddTopic"
+    >
+      <TdesignAdd />
+    </button>
   </div>
 </template>
 
@@ -192,16 +197,24 @@ function deleteFilter(key: string) {
   delete appliedFiltration[key];
 }
 
+const topicsLoading = ref(false);
 async function fetchTopics() {
   if (!speaker.value.speakerId) {
     topicsList.value = [];
     persuasionsList.value = [];
     greetingsList.value = [];
   } else {
-    const topicsResponse = await fetchTopicListByNPC(speaker.value.speakerId, speaker.value.speakerType);
-    topicsList.value = topicsResponse.topics;
-    persuasionsList.value = topicsResponse.persuasions;
-    greetingsList.value = topicsResponse.greetings;
+    topicsLoading.value = true;
+    try {
+      const topicsResponse = await fetchTopicListByNPC(speaker.value.speakerId, speaker.value.speakerType);
+      topicsList.value = topicsResponse.topics;
+      persuasionsList.value = topicsResponse.persuasions;
+      greetingsList.value = topicsResponse.greetings;
+    } catch (error) {
+      console.error(error);
+    } finally {
+      topicsLoading.value = false;
+    }
   }
 }
 
@@ -917,7 +930,7 @@ watch(currentTopic, (async (newValue) => {
         }
       }
       &_selected {
-        background-color: rgba(255, 255, 255, 0.2);
+        background-color: rgba(202, 165, 96, 0.2);
       }
     }
 
@@ -971,6 +984,16 @@ watch(currentTopic, (async (newValue) => {
   &:hover {
     fill: rgba(255, 255, 255, 0.5);
   }
+}
+
+.dialogue-questions {
+  position: relative;
+}
+
+.topics-loading {
+  position: absolute;
+  top: 50%;
+  left: 50%;
 }
 
 .fade-enter-active,

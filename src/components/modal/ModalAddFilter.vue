@@ -10,7 +10,7 @@
         v-model:y="y"
         :initW
         :initH
-        :minHeight="400"
+        :minHeight="500"
         :minWidth="400"
         :drag-handle="'.drag-handle'"
         :parent="true"
@@ -29,7 +29,7 @@
           </div>
         </div>
         <div class="window__content add-filter" @submit.prevent>
-          <Vueform>
+          <Vueform :default="getDefaultValues">
             <SelectElement 
               name="function"
               label="Filter"
@@ -39,31 +39,21 @@
                 'Vulpes'
               ]"
             />
-            <TextElement 
-              name="ID"
-              label="ID"
+            <UISearch 
+              name="id"
+              :searchTypes="[props.filter?.type || props.filter?.filter?.type]"
+              :value="getId"
             />
             <ComparisonSelect 
               v-model="selectedComparison"
             />
             <TextElement 
-              name="Value"
+              name="value"
               label="Value"
               input-type="number"
+              :value="getValue"
             />
           </Vueform>
-
-          <div>
-            <label>
-              <span>Value:</span>
-              <input
-                type="number"
-                class="text-input"
-                placeholder="Enter number"
-                :value="getValue"
-              />
-            </label>
-          </div>
           <button 
             type="submit"
           >
@@ -84,9 +74,10 @@ import { computed, onMounted, ref } from 'vue';
 import TdesignClose from '~icons/tdesign/close';
 import { DraggableResizableVue } from 'draggable-resizable-vue3';
 import ComparisonSelect from '@/components/ComparisonSelect.vue';
+import UISearch from '@/components/ui/UISearch.vue';
 
 const initW = 400;
-const initH = 400;
+const initH = 500;
 
 const w = ref<number>(initW);
 const h = ref<number>(initH);
@@ -130,6 +121,13 @@ const getValue = computed(() => {
   switch(props.filter?.filter?.type) {
     case 'Journal': return props.filter.filter.entry?.data?.disposition;
     default: return null;
+  }
+});
+
+const getDefaultValues = computed(() => {
+  return {
+    id: getId.value,
+    value: getValue.value,
   }
 });
 </script>

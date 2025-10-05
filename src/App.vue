@@ -261,4 +261,18 @@ input::-webkit-inner-spin-button {
   border: none;
   border-radius: 4px;
 }
+
+:root, :before, :after, * {
+  --theme-accent: rgb(202, 165, 96);
+  --theme-dark: rgb(48, 48, 48);
+
+
+  --vf-bg-input: var(--theme-dark) !important;
+  --vf-color-input: white !important;
+  --vf-bg-selected: var(--theme-accent) !important;
+  --vf-color-input-success: var(--theme-accent) !important;
+  --vf-border-color-input-success: var(--theme-accent) !important;
+  --vf-font-size: 18px !important;
+
+}
 </style>

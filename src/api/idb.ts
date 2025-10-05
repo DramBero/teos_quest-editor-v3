@@ -1,24 +1,28 @@
 import Dexie from 'dexie';
 // import { active } from 'sortablejs';
 
-let databases = {};
+type Database = {
+  [key: string]: any;
+}
+
+const databases: Database = {};
 
 new Dexie('activePlugin');
 
-export const createDB = function (name) {
+export const createDB = function (name: string) {
   databases[name] = new Dexie(name);
 };
 
-export const getDB = function (name) {
+export const getDB = function (name: string) {
   return databases[name];
 };
 
-export const deleteDB = function (name) {
+export const deleteDB = function (name: string) {
   Dexie.delete(name);
   delete databases[name];
 };
 
-export const checkDB = async function (name) {
+export const checkDB = async function (name: string) {
   if (!Boolean(databases[name])) {
     await initPlugin(name);
   }
@@ -74,9 +78,9 @@ export async function getCountTypes() {
   };
 }
 
-export const initPlugin = async function (pluginName) {
+export const initPlugin = async function (pluginName: string) {
   createDB(pluginName);
-  let activePlugin = getDB(pluginName);
+  const activePlugin = getDB(pluginName);
   activePlugin.version(1).stores({
     pluginData:
       'TMP_index,type,prev_id,next_id,dialogue_type,TMP_is_active,TMP_topic,TMP_type,TMP_info_id,TMP_prev_id,TMP_next_id,TMP_speaker_id,TMP_speaker_cell,TMP_speaker_faction,TMP_speaker_class,TMP_speaker_race,TMP_id,name',
@@ -101,7 +105,7 @@ export const getDependencies = async function () {
   }
   const header = headers[0];
   const dependecies = header.masters.map((val) => val[0]);
-  for (let dependency of dependecies) {
+  for (const dependency of dependecies) {
     if (!databases[dependency]) {
       await initPlugin(dependency);
     }
@@ -113,7 +117,7 @@ export const getActiveHeader = async function () {
   return await getHeader('activePlugin');
 };
 
-export const getHeader = async function (pluginName) {
+export const getHeader = async function (pluginName: string) {
   if (!databases[pluginName]) {
     await initPlugin(pluginName);
   }
@@ -126,7 +130,7 @@ export const getHeader = async function (pluginName) {
   return header;
 };
 
-export const fetchNPCData = async function (npcID) {
+export const fetchNPCData = async function (npcID: string) {
   if (!databases['activePlugin']) {
     await initPlugin('activePlugin');
   }
@@ -141,15 +145,15 @@ export const fetchNPCData = async function (npcID) {
       return response[0];
     } else {
       const dependecies = await getDependencies();
-      for (let dep of dependecies) {
-        let dependencyDB = databases[dep];
+      for (const dep of dependecies) {
+        const dependencyDB = databases[dep];
         if (!dependencyDB) {
           await initPlugin(dep);
         }
         if (!dependencyDB) {
           continue;
         }
-        let depResponse = await dependencyDB.pluginData
+        const depResponse = await dependencyDB.pluginData
           .where('TMP_id')
           .equals(npcID)
           .and((entry) => entry['type'] === 'Npc' || entry['type'] === 'Creature')
@@ -167,7 +171,7 @@ export const fetchNPCData = async function (npcID) {
   }
 };
 
-export const findNPCByName = async function (npcName, size = 20) {
+export const findNPCByName = async function (npcName: string, size = 20) {
   if (!databases['activePlugin']) {
     await initPlugin('activePlugin');
   }
@@ -193,8 +197,8 @@ export const findNPCByName = async function (npcName, size = 20) {
       results = [...results, ...creatureResponse];
     }
     const dependecies = await getDependencies();
-    for (let dep of dependecies) {
-      let dependencyDB = databases[dep];
+    for (const dep of dependecies) {
+      const dependencyDB = databases[dep];
       if (!dependencyDB) {
         continue;
       }
@@ -230,10 +234,10 @@ function addTopicEntries(original, entries) {
     greetings: [],
     persuasions: [],
   };
-  for (let type of ['Topic', 'Greeting', 'Persuasion']) {
+  for (const type of ['Topic', 'Greeting', 'Persuasion']) {
     const filteredEntries = entries.filter(val => val.TMP_type === type);
     const uniqueEntryNames = [...new Set(filteredEntries.map(val => val.TMP_topic))];
-    for (let entry of uniqueEntryNames) {
+    for (const entry of uniqueEntryNames) {
       dialogue[`${type.toLowerCase()}s`] = [
         ...dialogue[`${type.toLowerCase()}s`],
         filteredEntries.find(val => val.TMP_topic == entry),
@@ -247,7 +251,9 @@ function addTopicEntries(original, entries) {
   }
 }
 
-export const fetchTopicListByNPC = async function (npcID, speakerType) {
+type SpeakerType = 'npc' | 'cell' | 'class' | 'faction' | 'race' | 'Global';
+
+export const fetchTopicListByNPC = async function (npcID: string, speakerType: SpeakerType) {
   const speakerTypeKey = getSpeakerTypeKey(speakerType);
   if (!databases['activePlugin']) {
     await initPlugin('activePlugin');
@@ -272,8 +278,8 @@ export const fetchTopicListByNPC = async function (npcID, speakerType) {
     topicList = addTopicEntries(topicList, entries)
 
     const dependecies = await getDependencies();
-    for (let dep of dependecies.reverse()) {
-      let dependencyDB = databases[dep];
+    for (const dep of dependecies.reverse()) {
+      const dependencyDB = databases[dep];
       if (!dependencyDB) {
         continue;
       }
@@ -289,7 +295,7 @@ export const fetchTopicListByNPC = async function (npcID, speakerType) {
       }
       topicList = addTopicEntries(topicList, depEntries)
     }
-    for (let type of ['topics', 'greetings', 'persuasions']) {
+    for (const type of ['topics', 'greetings', 'persuasions']) {
       const uniqueEntries = [...new Set(topicList[type].map(val => val.TMP_topic))];
       let topics = uniqueEntries.map(val => topicList[type].filter((i) => i.TMP_topic === val));
       topics.sort((a, b) => a[0].TMP_topic.localeCompare(b[0].TMP_topic));
@@ -302,28 +308,7 @@ export const fetchTopicListByNPC = async function (npcID, speakerType) {
   }
 };
 
-/////// FOR DEPRECATION
-export const fetchAllDialogueNPCs = async function () {
-  if (!databases['activePlugin']) {
-    await initPlugin('activePlugin');
-  }
-  const activePlugin = databases['activePlugin'];
-  try {
-    let resp;
-    await activePlugin.pluginData
-      .orderBy('TMP_speaker_id')
-      .uniqueKeys((keys) => keys.filter((val) => val !== ''))
-      .then((response) => {
-        resp = response;
-      });
-    return resp;
-  } catch (error) {
-    throw error;
-  }
-};
-//////
-
-function getSpeakerTypeKey(speakerType) {
+function getSpeakerTypeKey(speakerType: SpeakerType) {
   switch (speakerType) {
     case 'npc':
       return 'TMP_speaker_id';
@@ -340,7 +325,7 @@ function getSpeakerTypeKey(speakerType) {
   }
 }
 
-export const addChoiceFilter = async function (entryId, choiceId) {
+export const addChoiceFilter = async function (entryId: string, choiceId: number) {
   const newFilter = {
     comparison: 'Equal',
     filter_type: 'Function',
@@ -352,7 +337,7 @@ export const addChoiceFilter = async function (entryId, choiceId) {
     },
   }
   const entries = await getDialogueByTMPInfoId(entryId);
-  let entry = JSON.parse(JSON.stringify(entries.flat().at(-1)));
+  const entry = JSON.parse(JSON.stringify(entries.flat().at(-1)));
   entry.filters = [
     ...entry.filters,
     {
@@ -365,7 +350,7 @@ export const addChoiceFilter = async function (entryId, choiceId) {
   }
 }
 
-export const editTopicText = async function (entryId, text) {
+export const editTopicText = async function (entryId: string, text: string) {
   const entries = await getDialogueByTMPInfoId(entryId);
   let entry = JSON.parse(JSON.stringify(entries.flat().at(-1)));
   if (entry.text === text) return;
@@ -377,7 +362,7 @@ export const editTopicText = async function (entryId, text) {
   }
 }
 
-export const deleteFilter = async function (entryId, filterIndex) {
+export const deleteFilter = async function (entryId: string, filterIndex: number) {
   const entries = await getDialogueByTMPInfoId(entryId);
   let entry = JSON.parse(JSON.stringify(entries.flat().at(-1)));
   entry.filters = entry.filters.filter((val) => val.index !== filterIndex);
@@ -405,7 +390,7 @@ export const modifyEntry = async function (entry) {
   }
 }
 
-export const fetchAllDialogueBySpeaker = async function (speakerType) {
+export const fetchAllDialogueBySpeaker = async function (speakerType: SpeakerType) {
   const speakerTypeKey = getSpeakerTypeKey(speakerType);
   if (!databases['activePlugin']) {
     await initPlugin('activePlugin');
@@ -413,7 +398,7 @@ export const fetchAllDialogueBySpeaker = async function (speakerType) {
   const activePlugin = databases['activePlugin'];
   try {
     let resp;
-    if (speakerTypeKey === 'global') {
+    if (speakerType === 'Global') {
       console.log('NOT SUPPORTED YET');
     }
     await activePlugin.pluginData
@@ -428,7 +413,72 @@ export const fetchAllDialogueBySpeaker = async function (speakerType) {
   }
 };
 
-export const fetchSpeakersAmountBySpeakerType = async function (speakerType) {
+function getIDTypeBySearchType(searchType) {
+  switch (searchType) {
+    default: return 'TMP_id';
+  }
+}
+
+export const searchByType = async function(searchTypes: string[], string: string, dialogueType?: string) {
+  let resp = [];
+  if (searchTypes.length < 1) {
+    return [];
+  }
+  const idField = getIDTypeBySearchType(searchTypes[0]);
+  if (!databases['activePlugin']) {
+    await initPlugin('activePlugin');
+  }
+  const activePlugin = databases['activePlugin'];
+  try {
+    const response = await activePlugin.pluginData
+      .where(idField)
+      .startsWithIgnoreCase(string)
+      .and((val) => {
+        if (searchTypes.includes(val.type)) {
+          if (dialogueType) {
+            return val.TMP_type === dialogueType;
+          } else {
+            return true
+          }
+        } else {
+          return false
+        }
+      })
+      .limit(30)
+      .toArray();
+    resp = [...resp, ...response]
+  } catch (error) {
+    throw error;
+  }
+  const dependecies = await getDependencies();
+  for (let dep of dependecies.reverse()) {
+    let dependencyDB = databases[dep];
+    if (!dependencyDB) {
+      continue;
+    }
+    let depResponse = await dependencyDB.pluginData
+      .where(idField)
+      .startsWithIgnoreCase(string)
+      .and((val) => {
+        if (searchTypes.includes(val.type)) {
+          if (dialogueType) {
+            return val.TMP_type === dialogueType;
+          } else {
+            return true
+          }
+        } else {
+          return false
+        }
+      })
+      .limit(30)
+      .toArray();
+      resp = [...resp, ...depResponse];
+  }
+
+  return resp;
+}
+
+export const fetchSpeakersAmountBySpeakerType = async function (speakerType: SpeakerType) {
   console.log(`Searching for amount of speakers with type "${speakerType}"`)
   const speakerTypeKey = getSpeakerTypeKey(speakerType);
   if (!speakerTypeKey) return;
@@ -437,7 +487,7 @@ export const fetchSpeakersAmountBySpeakerType = async function (speakerType) {
   }
   const activePlugin = databases['activePlugin'];
   try {
-    if (speakerTypeKey === 'global') {
+    if (speakerType === 'Global') {
       console.log('NOT SUPPORTED YET');
     }
     let amount = 0;

@@ -1,6 +1,7 @@
 <template>
   <button
     v-if="props.faction.length"
+    type="button"
     class="faction draggable"
     :class="{'faction_selected': getSelectedRecord?.[0]?.id && getSelectedRecord?.[0]?.id === props.faction[0].id }"
     @click="handleSelect"

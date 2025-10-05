@@ -152,7 +152,6 @@
 
 <script>
 import { findNPCByName } from '@/api/idb';
-import { debounce } from '@/assets/scripts/debounce';
 export default {
   data() {
     return {
@@ -238,19 +237,6 @@ export default {
       ],
       speakerSelect: false,
     };
-  },
-  watch: {
-    inputName: {
-      handler: debounce(function () {
-        const vm = this;
-        vm.searchNPCs();
-      }, 200),
-    },
-    inputTopic() {
-      debounce(function () {
-        this.getTopics;
-      }, 1000);
-    },
   },
   methods: {
     async searchNPCs() {

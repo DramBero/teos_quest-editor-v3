@@ -31,7 +31,7 @@ const selectedRecordStore = useSelectedRecord();
 const selectedRecord = computed(() => selectedRecordStore.getSelectedRecord);
 
 const getSelectedComponent = computed(() => {
-  if (!selectedRecord.value && !selectedRecord.value.length) return null;
+  if (!selectedRecord.value || !selectedRecord.value.length) return null;
   switch(selectedRecord.value[0]?.type) {
     case 'Book': return RecordBook;
     default: return null;
@@ -48,6 +48,7 @@ function closeRecord(){
   width: 100%;
   height: 100%;
   position: absolute;
+  z-index: 50;
   &__close {
     position: absolute;
     right: 10px;
