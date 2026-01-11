@@ -19,7 +19,6 @@
 <script setup lang="ts">
 import { computed, useTemplateRef, watch } from 'vue';
 import { searchByType } from '@/api/idb.ts';
-import { filterInPlace } from '@tresjs/core/utils';
 
 const props = defineProps<{
   searchTypes: string[];

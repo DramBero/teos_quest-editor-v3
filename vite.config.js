@@ -5,6 +5,7 @@ import AutoImport from 'unplugin-auto-import/vite';
 import Icons from 'unplugin-icons/vite'
 import vue from '@vitejs/plugin-vue';
 import { templateCompilerOptions } from '@tresjs/core'
+import path from 'node:path';
 
 import vueDevTools from 'vite-plugin-vue-devtools';
 

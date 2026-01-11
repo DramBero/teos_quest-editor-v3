@@ -24,10 +24,9 @@
     "@tiptap/extension-text": "^2.11.7",
     "@tiptap/starter-kit": "^2.12.0",
     "@tiptap/vue-3": "^2.11.7",
-    "@tresjs/cientos": "^4.3.1",
-    "@tresjs/core": "^4.3.6",
-    "@tresjs/post-processing": "^2.4.0",
-    "@vueform/vueform": "^1.13.2",
+    "@tresjs/cientos": "^5.2.1",
+    "@tresjs/core": "^5.2.1",
+    "@vueform/vueform": "^1.13.6",
     "@vueuse/components": "^13.6.0",
     "@vueuse/core": "^13.6.0",
     "dexie": "^4.0.11",
@@ -73,7 +72,7 @@
     "unplugin-auto-import": "^20.0.0",
     "unplugin-icons": "^22.2.0",
     "unplugin-vue-components": "^29.0.0",
-    "vite": "npm:rolldown-vite@latest",
+    "vite": "^7.3.1",
     "vite-plugin-vue-devtools": "^8.0.0",
     "vue-tsc": "^3.0.5"
   }
