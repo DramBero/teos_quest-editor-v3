@@ -1,0 +1,26 @@
+{
+    "rules": {
+        // --- Correctness (critical bugs) ---
+        "no-unused-vars": "warn",
+        "no-useless-catch": "warn",
+        "no-extra-boolean-cast": "warn",
+        "no-unused-expressions": "warn",
+        // --- TypeScript ---
+        "typescript/no-wrapper-object-types": "warn",
+        // --- Style / Best practices ---
+        "no-console": "off",
+        "no-debugger": "error"
+    },
+    "categories": {
+        "correctness": "warn",
+        "suspicious": "warn",
+        "perf": "warn"
+    },
+    "ignorePatterns": [
+        "src/tes3_wasm/**",
+        "src/store/**",
+        "docs/**",
+        "dist/**",
+        "node_modules/**"
+    ]
+}
