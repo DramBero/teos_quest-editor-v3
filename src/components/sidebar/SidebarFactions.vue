@@ -30,8 +30,9 @@
             class="add-quest" 
             :class="{'add-quest_active': showMasters}"
             @click="showMasters = !showMasters"
+            :title="showMasters ? 'Showing all entries (incl. masters)' : 'Showing active plugin only'"
           >
-            M
+            All
           </button>
         </div>
       </div>
@@ -256,9 +257,7 @@ watch(factions, searchFactions)
 }
 .journal-frame {
   background-color: #986;
-  //box-shadow: 2px 2px 8px 2px rgba(0, 0, 0, 0.25);
   z-index: 2;
-  //padding: 10px;
   min-width: 500px;
   max-width: 500px;
   height: 100%;
@@ -268,17 +267,16 @@ watch(factions, searchFactions)
   font-family: 'Pelagiad';
   position: relative;
   &__header {
-    background-color: rgb(71, 71, 71);
-    box-shadow: 2px 2px 8px 2px rgba(0, 0, 0, 0.25);
+    background-color: rgb(56, 52, 42);
     z-index: 2;
   }
   &__controls {
-    font-size: 22px;
-    padding: 10px;
-
-    //display: flex;
+    font-size: 20px;
+    padding: 6px 10px;
+    display: flex;
+    gap: 8px;
+    align-items: center;
     width: 100%;
-    //top: 10px;
   }
 }
 .add-quest {
@@ -291,7 +289,7 @@ watch(factions, searchFactions)
   width: fit-content;
   padding: 3px 10px;
   border-radius: 4px;
-  transition: all 0.1s ease-in;
+  transition: all 80ms ease;
   &:hover {
     color: white;
     .add-quest__button {
@@ -299,7 +297,7 @@ watch(factions, searchFactions)
     }
   }
   &__button {
-    transition: all 0.1s ease-in;
+    transition: all 80ms ease;
     fill: rgb(202, 165, 96);
   }
 }
@@ -366,7 +364,7 @@ watch(factions, searchFactions)
     padding: 2px 5px;
     background-color: rgba(255, 255, 255, 0.2);
     border-radius: 4px;
-    transition: all .1s ease-in;
+    transition: all 80ms ease;
     display: flex;
     align-items: center;
     gap: 5px;

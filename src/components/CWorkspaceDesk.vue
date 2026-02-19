@@ -17,7 +17,7 @@ import DialogueFrame from './dialogue/DialogueFrame.vue';
 
 <style>
 .workspace-desk {
-  height: calc(100% - 50px);
+  height: calc(100% - 38px);
   width: 100%;
   display: flex;
 }

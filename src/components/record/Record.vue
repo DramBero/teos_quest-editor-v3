@@ -64,7 +64,7 @@ function closeRecord(){
       color: rgb(202, 165, 96);
       width: 30px;
       height: 30px;
-      transition: fill 0.15s ease-in;
+      transition: fill 80ms ease;
       &:hover {
         color: rgb(223, 200, 157);
       }

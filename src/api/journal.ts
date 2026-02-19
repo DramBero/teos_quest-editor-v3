@@ -1,3 +1,4 @@
+import Dexie from 'dexie';
 import {
     getActiveDB,
     getDependencies,
@@ -12,7 +13,7 @@ import { addEntry, deleteEntry, modifyEntry } from './import-export';
 
 export async function fetchAllQuestIDs(masters = false) {
     return Dialogues
-        .filter((val: any) => val.TMP_type === 'Journal')
+        .filter((val) => val.TMP_type === 'Journal')
         .acrossPlugins({ includeDeps: masters, reverseDeps: true });
 }
 

@@ -177,7 +177,7 @@ const getDefaultValues = computed(() => {
       user-select: none;
       padding: 8px 20px;
       height: 35px;
-      transition: all 0.2s ease-in;
+      transition: all 80ms ease;
     }
     &__close {
       color: black;

@@ -1,202 +1,102 @@
 <template>
   <div class="dialogue-card" @click="openDialogueModal" ref="hoverable">
     <span class="dialogue-card__name">{{ speakerData?.name || speakerId }}</span>
-    <div v-if="!redrawTrigger && loaded && getFaceData" :style="{'width': '160px', 'height': '160px'}">
-      <TresCanvas alpha render-mode="on-demand" :preserveDrawingBuffer="true" ref="ctxRef" v-if="!canvasLoaded">
-        <!-- <TresDirectionalLight :position="[-4, 8, 4]" :intensity="2" color="#FFFFFF"/> -->
-        <TresAmbientLight :intensity="1.7" />
-        <TresPerspectiveCamera :position="[0, 0, 0.27]" />
-        <Suspense >
-          <DialogueFrameCardModel :head="getFaceData" :hair="getHairData" />
-        </Suspense>
-<!--         <Suspense>
-          <EffectComposerPmndrs>
-            <KuwaharaPmndrs :radius="2" :sectorCount="4" />
-          </EffectComposerPmndrs>
-        </Suspense> -->
-      </TresCanvas>
-      <img
-        v-else
-        :src="canvasImage"
-        :alt="speakerData?.name || speakerId"
-        :style="{'width': '160px', 'height': '160px'}"
-      >
-    </div>
-    <template v-else-if="!redrawTrigger && loaded && getNpcFace">
-      <!-- <div class="dialogue-card__decoration"></div> -->
-      <img
-        class="dialogue-card__image"
-        :src="getNpcFace ? `/images/faces/${getNpcFace}` : ''"
-        :alt="speakerData?.name || speakerId"
-      />
-    </template>
 
+    <!-- 3D-rendered head portrait (from offscreen renderer) -->
+    <img
+      v-if="headImage"
+      class="dialogue-card__image dialogue-card__image--3d"
+      :src="headImage"
+      :alt="speakerData?.name || speakerId"
+    >
+    <!-- Fallback: race+sex sprite -->
+    <img
+      v-else-if="loaded && getNpcFace"
+      class="dialogue-card__image"
+      :src="`/images/faces/${getNpcFace}`"
+      :alt="speakerData?.name || speakerId"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
 import { fetchNPCData } from '@/api/idb';
 import { useSelectedSpeaker } from '@/stores/selectedSpeaker';
-import { computed, ref, shallowRef, watch, useTemplateRef } from 'vue';
-import DialogueFrameCardModel from './DialogueFrameCardModel.vue';
+import { computed, ref, watch, useTemplateRef } from 'vue';
+import { renderHead } from '@/services/headRenderer';
+import { useElementVisibility } from '@vueuse/core';
 
 import type { NpcEntry } from '@/types/pluginEntries.ts';
 
-import { TresCanvas } from '@tresjs/core';
+const target = useTemplateRef<HTMLDivElement>('hoverable');
+const targetIsVisible = useElementVisibility(target);
 
+const props = defineProps({
+  speakerType: { type: String },
+  speakerId: { type: String },
+});
 
-// import { EffectComposerPmndrs, KuwaharaPmndrs } from '@tresjs/post-processing';
+// ---------- State ----------
+const speakerData = ref<NpcEntry | null>(null);
+const loaded = ref(false);
+const headImage = ref('');
 
-import { useElementVisibility } from '@vueuse/core'
-
-const target = useTemplateRef<HTMLDivElement>('hoverable')
-const targetIsVisible = useElementVisibility(target)
-
-const ctxRef = shallowRef();
-const canvas = ref();
-
-watch(ctxRef, (ctx) => {
-  if (!ctx) return;
-  if(ctx.context.renderer.value) {
-    canvas.value = ctx.context.renderer.value;
-    console.log('ctxRef change', props.speakerId)
-    handleLoaded();
-  }
-})
-
+// ---------- Fetch NPC data when card becomes visible ----------
 watch(targetIsVisible, () => {
   if (targetIsVisible.value) {
     fetchCardData();
   }
-}, {
-  immediate: true,
-})
+}, { immediate: true });
 
-const canvasImage = ref<string>();
-const canvasLoaded = ref<boolean>(false);
-
-const redrawCounter = ref<number>(0);
-const redrawTrigger = ref<boolean>(false);
-async function handleLoaded() {
-  let meshLoaded = false;
-  let iteration = 0;
-  while (!meshLoaded) {
-    const dataURL = canvas.value?.domElement.toDataURL('image/png');
-    const canvasImageLength = canvasImage.value?.length || 0;
-    if (iteration > 1000) {
-      redrawCounter.value += 1;
-    }
-    if ((dataURL?.length > 1500) && (dataURL.length > canvasImageLength)) {
-      canvasImage.value = dataURL;
-    }
-    if (dataURL.length <= canvasImageLength) {
-      if (canvasImageLength > 2000) {
-        meshLoaded = true;
-        canvasLoaded.value = true;
-      }
-    }
-    await new Promise((resolve) => setTimeout(resolve, 150));
-    iteration += 1;
-  }
-}
-
-watch(redrawCounter, async () => {
-  if ((canvasImage.value?.length || 0) >= 1000) {
-    return
-  }
-  redrawTrigger.value = true;
-  await new Promise((resolve) => setTimeout(resolve, 200));
-  redrawTrigger.value = false;
-})
-
-async function redrawWatcher() {
-  if (!getFaceData.value) return;
-  while ((canvasImage.value?.length || 0) < 1000) {
-    await new Promise((resolve) => setTimeout(resolve, 2500));
-    redrawCounter.value += 1;
-  }
-}
-
-const speakerData = ref<NpcEntry | null>(null);
-
-const getFaceData = computed(() => {
-  try {
-    const filePath = `/meshes/${speakerData.value?.head?.toLowerCase()}.glb`;
-    return filePath;
-  } catch (error) {
-    console.error(error);
-    return '';
-  }
-});
-
-const getHairData = computed(() => {
-  try {
-    const filePath = `/meshes/${speakerData.value?.hair?.toLowerCase()}.glb`;
-    return filePath;
-  } catch (error) {
-    console.error(error);
-    return '';
-  }
-});
-
-watch(getFaceData, () => {
-  
-})
-
-const props = defineProps({
-  speakerType: {
-    type: String,
-  },
-  speakerId: {
-    type: String,
-  },
-})
-
-const loaded = ref<boolean>(false);
 async function fetchCardData() {
-  loaded.value = false;
-  let speakerDataResponse;
-  await fetchNPCData(props.speakerId)
-    .then((response: NpcEntry) => {
-      speakerDataResponse = response;
-    })
-    .catch((error: string) => {
-      console.log('err: ', error);
-    });
-  speakerData.value = speakerDataResponse || null;
+  if (loaded.value) return; // already loaded
+  try {
+    const data = await fetchNPCData(props.speakerId);
+    speakerData.value = data || null;
+  } catch (error) {
+    console.log('NPC fetch error:', error);
+  }
   loaded.value = true;
-  redrawWatcher();
 }
 
+// ---------- Render head portrait via offscreen renderer ----------
+watch(speakerData, async (npc) => {
+  if (!npc?.head) return;
+
+  const headPath = `/meshes/${npc.head.toLowerCase()}.glb`;
+  const hairPath = npc.hair ? `/meshes/${npc.hair.toLowerCase()}.glb` : '';
+
+  try {
+    const dataURL = await renderHead(headPath, hairPath);
+    if (dataURL) {
+      headImage.value = dataURL;
+    }
+  } catch {
+    // GLB not available — fallback to race sprite
+  }
+});
+
+// ---------- Race+sex fallback sprite ----------
 const getNpcFace = computed(() => {
   if (!speakerData.value) return '';
   const sex = speakerData.value.npc_flags?.includes('FEMALE') ? 'f' : 'm';
-  switch (speakerData.value.race) {
-    case 'Argonian':
-      return 'argonian-' + sex + '.png';
-    case 'High Elf':
-      return 'altmer-' + sex + '.png';
-    case 'Dark Elf':
-      return 'dunmer-' + sex + '.png';
-    case 'Breton':
-      return 'breton-' + sex + '.png';
-    case 'Wood Elf':
-      return 'bosmer-' + sex + '.png';
-    case 'Imperial':
-      return 'imperial-' + sex + '.png';
-    case 'Khajiit':
-      return 'khajiit-' + sex + '.png';
-    case 'Nord':
-      return 'nord-' + sex + '.png';
-    case 'Orc':
-      return 'orc-' + sex + '.png';
-    case 'Redguard':
-      return 'redguard-' + sex + '.png';
-    default:
-      return '';
-  }
-})
+  const raceMap: Record<string, string> = {
+    'Argonian': 'argonian',
+    'High Elf': 'altmer',
+    'Dark Elf': 'dunmer',
+    'Breton': 'breton',
+    'Wood Elf': 'bosmer',
+    'Imperial': 'imperial',
+    'Khajiit': 'khajiit',
+    'Nord': 'nord',
+    'Orc': 'orc',
+    'Redguard': 'redguard',
+  };
+  const race = raceMap[speakerData.value.race || ''];
+  return race ? `${race}-${sex}.png` : '';
+});
 
+// ---------- Open dialogue modal ----------
 const selectedSpeakerStore = useSelectedSpeaker();
 function openDialogueModal() {
   selectedSpeakerStore.setSelectedSpeaker({
@@ -217,7 +117,6 @@ function openDialogueModal() {
   font-size: 18px;
   background: rgba(0, 0, 0, 0.5);
   border: 1px solid rgba(0, 0, 0, 0.5);
-  //border: 3px solid rgb(202, 165, 96);
   border-radius: 8px;
   word-break: break-word;
   flex-grow: 1;
@@ -226,39 +125,30 @@ function openDialogueModal() {
   text-align: center;
   color: rgb(202, 165, 96);
   cursor: pointer;
-  // transition: all 0.05s ease-in;
   display: flex;
   flex-direction: column-reverse;
   position: relative;
   align-items: center;
-  //gap: 10px;
+
   &:hover {
     background: rgba(0, 0, 0, 0.3);
     border: 1px solid rgb(202, 165, 96);
-    // color: black;
-    .dialogue-card__decoration {
-      background: rgb(53, 44, 27);
-      transform: translateY(-65%) rotate(-8deg);
-    }
   }
-  &__decoration {
-    position: absolute;
-    top: 50%;
-    transform: translateY(-65%) rotate(-8deg);
-    width: 105px;
-    height: 105px;
-    clip-path: ellipse(50% 50% at 50% 50%);
-    background: rgb(201, 200, 199);
-    transition: all 0.25s ease-in;
-  }
+
   &__image {
     object-fit: cover;
-    //max-height: 80%;
-    transition: all 0.15s ease-in;
+    transition: all 80ms ease;
     transform: scale(0.65);
     filter: sepia(10%) contrast(140%);
     -webkit-filter: sepia(10%) contrast(140%);
     -moz-filter: sepia(10%) contrast(140%);
+
+    &--3d {
+      width: 160px;
+      height: 160px;
+      transform: scale(1);
+      filter: none;
+    }
   }
 }
 </style>

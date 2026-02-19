@@ -554,7 +554,7 @@ function removeTempFilter() {
   }
   &__edit {
     margin-left: 15px;
-    transition: all 0.2s ease-out;
+    transition: all 80ms ease;
     &:hover {
       fill: rgba(0, 0, 0, 0.5);
     }
@@ -632,7 +632,7 @@ function removeTempFilter() {
     width: 100%;
     text-align: center;
     cursor: pointer;
-    transition: all 0.05s linear;
+    transition: all 80ms ease;
     &:hover {
       background-color: rgba(255, 255, 255, 0.2);
       //color: black;

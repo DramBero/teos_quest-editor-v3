@@ -1,16 +1,21 @@
 <template>
   <div class="frame-upload">
     <h2 class="modal__title">Upload your plugin and its masters</h2>
-    <ToolBarReadFile />
-    <div class="frame-upload-deps">
-      <div class="frame-upload-deps__title" v-if="getDependencies && getDependencies.length > 0">
-        Requires:
-      </div>
-      <div class="frame-upload-deps__element" v-for="dep in getDependencies" :key="dep">
-        {{ dep }}
-        <ToolBarReadFile :dep="dep" />
-      </div>
-    </div>
+    <table class="dep-table" v-if="getDependencies && getDependencies.length > 0">
+      <tbody>
+        <tr
+          v-for="dep in getDependencies"
+          :key="dep"
+          class="dep-table__row"
+        >
+          <td class="dep-table__name">{{ dep }}</td>
+          <td class="dep-table__status">
+            <ToolBarReadFile :dep="dep" />
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    <p v-else class="frame-upload__empty">No dependencies</p>
   </div>
 </template>
 
@@ -24,34 +29,55 @@ const getHeader = computed(() => {
   return headerStore.getPluginHeader;
 })
 const getDependencies = computed(() => {
-  return getHeader.value?.masters?.map(val => val[0]) || [];
+  return getHeader.value?.masters?.map((val: any) => val[0]) || [];
 })
 </script>
 
 <style lang="scss">
 .modal__title {
   color: rgba(0, 0, 0, 0.65);
-  padding: 10px;
+  padding: 10px 10px 0;
   font-weight: 500;
-  margin-bottom: 20px;
+  margin-bottom: 12px;
 }
 
 .frame-upload {
   padding: 10px;
   margin: 2px;
   height: 100%;
-  overflow-y: scroll;
+  overflow-y: auto;
 
-  &-deps {
-    font-size: 20px;
-    margin-top: 10px;
+  &__empty {
+    color: rgba(0, 0, 0, 0.4);
+    font-style: italic;
+    padding: 10px;
+  }
+}
 
-    &__element {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin: 10px;
+.dep-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0 4px;
+
+  &__row {
+    .dep-table__name {
+      padding-left: 10px;
     }
+  }
+
+  &__name {
+    padding: 6px 12px;
+    font-size: 17px;
+    color: rgba(0, 0, 0, 0.7);
+    white-space: nowrap;
+    width: 1%;
+    vertical-align: middle;
+  }
+
+  &__status {
+    text-align: right;
+    vertical-align: middle;
+    padding: 4px 0;
   }
 }
 </style>

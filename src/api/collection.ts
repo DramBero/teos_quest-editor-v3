@@ -1,10 +1,11 @@
-import Dexie from 'dexie';
+import Dexie, { type IndexableType } from 'dexie';
 import {
     getActiveDB,
     getDependencies,
     _getDatabases,
     type QueryOptions,
 } from './db';
+import type { BaseEntry } from '@/types/pluginEntries';
 
 // ---------------------------------------------------------------------------
 //  PluginCollection — ORM-like fluent query builder for pluginData
@@ -14,7 +15,7 @@ interface CollectionConfig {
     baseFilter?: Record<string, unknown>;
     whereClause?: [string, unknown] | Record<string, unknown> | null;
     whereInClause?: [string, unknown[]] | null;
-    filterFn?: ((val: any) => boolean) | null;
+    filterFn?: ((val: BaseEntry) => boolean) | null;
     limitCount?: number | null;
     firstOnly?: boolean;
     searchClause?: [string, string] | null; // [field, searchString] for startsWithIgnoreCase
@@ -71,11 +72,11 @@ export class PluginCollection {
     }
 
     /** JS-side filter (equivalent to Dexie `.and()`) */
-    filter(fn: (val: any) => boolean): PluginCollection {
+    filter(fn: (val: BaseEntry) => boolean): PluginCollection {
         const existing = this.config.filterFn;
         // Compose filters: if there's already a filter, AND them
         const combined = existing
-            ? (val: any) => existing(val) && fn(val)
+            ? (val: BaseEntry) => existing(val) && fn(val)
             : fn;
         return this.clone({ filterFn: combined });
     }
@@ -95,18 +96,34 @@ export class PluginCollection {
     // -------------------------------------------------------------------------
 
     /** Execute on active plugin only */
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- runtime-polymorphic: returns single or array
     async activeOnly(): Promise<any> {
         const db = await getActiveDB();
-        return this.executeOn(db);
+        const results = await this.executeOn(db);
+        // Tag results as active plugin entries
+        if (this.config.firstOnly) {
+            if (results) results.TMP_is_active = true;
+        } else if (Array.isArray(results)) {
+            for (const r of results) r.TMP_is_active = true;
+        }
+        return results;
     }
 
     /** Execute on active plugin + dependencies in parallel */
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- runtime-polymorphic: returns single or array
     async acrossPlugins(options: QueryOptions = {}): Promise<any> {
         const { includeDeps = true, reverseDeps = false } = options;
         const activeDB = await getActiveDB();
 
         if (!includeDeps) {
-            return this.executeOn(activeDB);
+            const results = await this.executeOn(activeDB);
+            // Tag active results
+            if (this.config.firstOnly) {
+                if (results) results.TMP_is_active = true;
+                return results;
+            }
+            for (const r of results) r.TMP_is_active = true;
+            return results;
         }
 
         const deps = await getDependencies();
@@ -121,15 +138,25 @@ export class PluginCollection {
 
         if (this.config.firstOnly) {
             // Return the first non-null result across all DBs
-            if (activeResults) return activeResults;
+            if (activeResults) {
+                activeResults.TMP_is_active = true;
+                return activeResults;
+            }
             for (const result of depResults) {
-                if (result) return result;
+                if (result) {
+                    result.TMP_is_active = false;
+                    return result;
+                }
             }
             return null;
         }
 
+        // Tag active entries
+        for (const r of activeResults) r.TMP_is_active = true;
         const results = [...activeResults];
+        // Tag dependency entries
         for (const batch of depResults) {
+            for (const r of batch) r.TMP_is_active = false;
             results.push(...batch);
         }
         return results;
@@ -139,10 +166,12 @@ export class PluginCollection {
     //  Query builder (internal)
     // -------------------------------------------------------------------------
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Dexie query chain is inherently untyped
     private async executeOn(db: Dexie): Promise<any> {
         const { baseFilter, whereClause, whereInClause, filterFn, limitCount, firstOnly, searchClause } = this.config;
-        const table = (db as any).pluginData;
+        const table = db.table('pluginData');
 
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Dexie query chain is inherently untyped
         let query: any;
 
         // Step 1: Apply indexed where clause
@@ -151,21 +180,22 @@ export class PluginCollection {
             query = table.where(searchClause[0]).startsWithIgnoreCase(searchClause[1]);
         } else if (whereClause) {
             if (Array.isArray(whereClause)) {
-                query = table.where(whereClause[0]).equals(whereClause[1]);
+                query = table.where(whereClause[0]).equals(whereClause[1] as IndexableType);
             } else {
-                query = table.where(whereClause);
+                query = table.where(whereClause as Record<string, IndexableType>);
             }
         } else if (whereInClause) {
-            query = table.where(whereInClause[0]).anyOf(whereInClause[1]);
+            query = table.where(whereInClause[0]).anyOf(whereInClause[1] as IndexableType[]);
         } else if (baseFilter && Object.keys(baseFilter).length === 1 && baseFilter.type) {
             // Optimise: use the 'type' index directly
-            query = table.where('type').equals(baseFilter.type);
+            query = table.where('type').equals(baseFilter.type as IndexableType);
         } else {
             query = table.toCollection();
         }
 
         // Step 2: Apply base type filter (if not already used as where clause)
         const needsBaseFilter = baseFilter?.type && (searchClause || whereClause || whereInClause);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Dexie filter callback
         const combinedFilter = (val: any): boolean => {
             if (needsBaseFilter && val.type !== baseFilter.type) return false;
             if (filterFn && !filterFn(val)) return false;

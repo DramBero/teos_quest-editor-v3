@@ -678,7 +678,7 @@ Creature Target
 }
 .filter-editable {
   color: black;
-  transition: all 0.15s ease-out;
+  transition: all 80ms ease;
   cursor: pointer;
   &:hover {
     color: rgb(112, 126, 207);

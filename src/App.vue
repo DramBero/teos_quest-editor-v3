@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import init from './tes3_wasm/tes3_wasm.js';
-import { getActiveHeader } from '@/api/idb.ts';
 import { RouterView } from 'vue-router';
-import { computed, onMounted } from 'vue';
+import { computed } from 'vue';
 import CWorkspace from './components/CWorkspace.vue';
+import SessionBar from './components/session/SessionBar.vue';
+import StatusBar from './components/StatusBar.vue';
 import ModalFrame from './components/modal/ModalFrame.vue';
 import { usePluginHeader } from './stores/pluginHeader.js';
 import ModalMain from './components/modal/ModalMain.vue';
@@ -12,15 +12,10 @@ import { useSelectedSpeaker } from './stores/selectedSpeaker.js';
 import ModalClassicView from './components/modal/ModalClassicView.vue';
 import ModalAddFilter from './components/modal/ModalAddFilter.vue';
 import { useSelectedFilter } from './stores/selectedFilter.js';
+import ToastContainer from './components/ui/ToastContainer.vue';
 
+// NOTE: WASM init + session restore + header fetch are handled by SessionBar.onMounted
 const headerStore = usePluginHeader();
-onMounted(async () => {
-  await init();
-  const headerResponse = await getActiveHeader();
-  if (headerResponse) {
-    headerStore.setPluginHeader(headerResponse);
-  }
-})
 
 const selectedSpeakerStore = useSelectedSpeaker();
 const getSpeakerData = computed(() => {
@@ -38,7 +33,9 @@ const getSelectedFilter = computed(() => {
   <div>
     <ModalFrame />
     <ModalClassicView />
+    <SessionBar />
     <CWorkspace />
+    <StatusBar />
     <ModalMain 
       v-show="getSpeakerData.speakerId"
       :header="getSpeakerData.speakerName || getSpeakerData.speaker?.name || getSpeakerData.speakerId"
@@ -50,6 +47,7 @@ const getSelectedFilter = computed(() => {
       :filter="getSelectedFilter"
     />
   </div>
+  <ToastContainer />
   <RouterView />
 </template>
 
@@ -185,7 +183,7 @@ h2 {
   max-width: 100px;
   border-radius: 4px;
   cursor: pointer;
-  transition: color 0.15s ease-in;
+  transition: color 80ms ease;
 
   &_dark {
     min-width: 90px;
@@ -200,7 +198,7 @@ h2 {
     display: flex;
     justify-content: center;
     align-items: center;
-    transition: all 0.2s ease-in;
+    transition: all 80ms ease;
 
     &:hover {
       color: white;

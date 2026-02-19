@@ -784,7 +784,7 @@ function handleReorder(event) {
       color: rgb(202, 165, 96);
       width: 30px;
       height: 30px;
-      transition: fill 0.15s ease-in;
+      transition: fill 80ms ease;
       &:hover {
         color: rgb(223, 200, 157);
       }
@@ -911,7 +911,7 @@ function handleReorder(event) {
       //overflow-x: scroll;
       &__item {
         cursor: pointer;
-        transition: color 0.05s linear;
+        transition: color 80ms ease;
         color: rgb(202, 165, 96);
 
         &:hover {
@@ -932,7 +932,7 @@ function handleReorder(event) {
     &__topic {
       padding: 0 20px;
       cursor: pointer;
-      transition: color 0.15s ease-in-out;
+      transition: color 80ms ease;
       color: rgb(89, 170, 106);
 
       &:hover {
@@ -1022,7 +1022,7 @@ function handleReorder(event) {
       background-color: rgba(202, 165, 96, 0.05);
       cursor: pointer;
       user-select: none;
-      transition: all 0.1s ease-in-out;
+      transition: all 80ms ease;
       padding: 10px;
       &:hover {
         filter: brightness(130%);

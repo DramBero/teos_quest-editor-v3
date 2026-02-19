@@ -21,7 +21,7 @@ const reloadTriggered = computed(() => {
 
 <style>
 .workspace {
-  height: 100vh;
-  max-height: 100vh;
+  height: calc(100vh - 42px - 26px);
+  max-height: calc(100vh - 42px - 26px);
 }
 </style>

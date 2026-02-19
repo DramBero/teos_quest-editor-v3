@@ -1,8 +1,8 @@
 <template>
   <div class="journal-frame">
     <div class="journal-frame__header">
-      <div class="frame-title">Journal</div>
       <div class="journal-frame__controls" v-if="!selectedQuestName">
+        <span class="frame-title">Journal</span>
         <input 
           class="text-input"
           type="text" 
@@ -14,8 +14,9 @@
             class="add-quest" 
             :class="{'add-quest_active': showMasters}"
             @click="toggleMasters"
+            :title="showMasters ? 'Showing all entries (incl. masters)' : 'Showing active plugin only'"
           >
-            M
+            All
           </button>
           <button class="add-quest" @click="addQuest()">
             <TdesignAdd />
@@ -27,7 +28,6 @@
         <div class="controls">
           <button 
             class="add-quest" 
-            :class="{'add-quest_active': showMasters}"
             @click="handleQuestNameSelect(null)"
           >
             Back
@@ -188,21 +188,15 @@ export default {
 
 <style lang="scss">
 .frame-title {
-  width: 100%;
-  height: 35px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 25px;
+  font-size: 22px;
   color: rgb(202, 165, 96);
-  background: rgb(48, 48, 48);
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .journal-frame {
   background-color: rgb(163, 146, 112);
-  //box-shadow: 2px 2px 8px 2px rgba(0, 0, 0, 0.25);
   z-index: 2;
-  //padding: 10px;
   min-width: 500px;
   max-width: 500px;
   height: 100%;
@@ -213,20 +207,17 @@ export default {
   position: relative;
 
   &__header {
-    background-color: rgb(71, 71, 71);
-    box-shadow: 2px 2px 8px 2px rgba(0, 0, 0, 0.25);
+    background-color: rgb(56, 52, 42);
     z-index: 2;
   }
 
   &__controls {
-    font-size: 22px;
-    padding: 10px;
+    font-size: 20px;
+    padding: 6px 10px;
     display: flex;
-    gap: 15px;
-    justify-content: space-between;
-    //display: flex;
+    gap: 8px;
+    align-items: center;
     width: 100%;
-    //top: 10px;
   }
 }
 

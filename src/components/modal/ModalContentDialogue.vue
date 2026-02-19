@@ -627,7 +627,7 @@ watch(currentTopic, (async (newValue) => {
       &__cancel {
         display: flex;
         align-items: center;
-        transition: color ease-in 0.15s;
+        transition: color ease 80ms;
         color: white;
         position: absolute;
         right: -30px;
@@ -672,7 +672,7 @@ watch(currentTopic, (async (newValue) => {
       position: absolute;
       cursor: pointer;
       left: 5px;
-      transition: color 0.15s ease-in;
+      transition: color 80ms ease;
 
       &:hover {
         color: rgba(233, 214, 180, 1);
@@ -748,7 +748,7 @@ watch(currentTopic, (async (newValue) => {
         min-height: 1px;
         font-size: 25px;
 
-        transition: all 0.2s ease-out;
+        transition: all 80ms ease;
 
         background: rgba(202, 165, 96, 0.4);
         background: linear-gradient(90deg,
@@ -773,7 +773,7 @@ watch(currentTopic, (async (newValue) => {
           width: 100%;
           display: flex;
           justify-content: center;
-          transition: all 0.15s ease-out;
+          transition: all 80ms ease;
 
           &:hover {
             color: rgb(202, 165, 96);
@@ -903,7 +903,7 @@ watch(currentTopic, (async (newValue) => {
       position: absolute;
       bottom: 20px;
       right: 20px;
-      transition: all .15s ease-in;
+      transition: all 80ms ease;
       &:hover {
         background-color: rgba(202, 165, 96, 1);
       }
@@ -946,7 +946,7 @@ watch(currentTopic, (async (newValue) => {
 
   &__icon {
     fill: rgba(202, 165, 96, 0.3);
-    transition: fill 0.15s ease-in-out;
+    transition: fill 80ms ease;
   }
 
   &:hover {
@@ -967,7 +967,7 @@ watch(currentTopic, (async (newValue) => {
   fill: rgb(202, 165, 96);
   margin-left: 10px;
   min-width: 20px;
-  transition: fill 0.2s ease-in;
+  transition: fill 80ms ease;
   cursor: pointer;
 
   &:hover {
@@ -978,7 +978,7 @@ watch(currentTopic, (async (newValue) => {
 .icon_gray {
   fill: rgba(255, 255, 255, 0.7);
   margin-left: 10px;
-  transition: fill 0.2s ease-in;
+  transition: fill 80ms ease;
   cursor: pointer;
 
   &:hover {

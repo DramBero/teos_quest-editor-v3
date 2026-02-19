@@ -1,3 +1,73 @@
+/**
+ * App-level entry types.
+ *
+ * Combines canonical TES3 types (from ./tes3.ts) with editor-specific
+ * fields (TMP_*) that the WASM parser injects for internal use.
+ *
+ * All consumer code should import from this file — it re-exports
+ * everything from tes3.ts so a single import path covers both worlds.
+ */
+
+// Re-export all canonical TES3 types so consumers can import from one place
+export type {
+    FileType,
+    DialogueType,
+    Sex,
+    FilterType,
+    FilterComparison,
+    FilterFunction,
+    QuestState,
+    AttributeId,
+    SkillId,
+    Specialization,
+    NpcFlags,
+    ServiceFlags,
+    FactionFlags,
+    ObjectFlags,
+    FilterValue,
+    Filter,
+    DialogueData,
+    AiData,
+    AiPackageType,
+    AiWanderPackage,
+    AiTravelPackage,
+    AiEscortPackage,
+    AiFollowPackage,
+    AiActivatePackage,
+    AiPackage,
+    TravelDestination,
+    NpcStats,
+    NpcData,
+    FactionRequirement,
+    FactionReaction,
+    FactionData,
+    TES3_Dialogue,
+    TES3_DialogueInfo,
+    TES3_Npc,
+    TES3_Header,
+    TES3_Faction,
+    TES3_Record,
+} from './tes3';
+
+import type {
+    DialogueType,
+    FilterComparison,
+    FilterFunction,
+    FilterType,
+    FilterValue,
+    ObjectFlags,
+    AiData,
+    AiPackage,
+    NpcStats as TES3_NpcStats,
+    NpcData as TES3_NpcData,
+    Sex,
+    TravelDestination,
+} from './tes3';
+
+// ============================================================================
+//  BaseEntry — editor-specific fields injected by the WASM parser
+// ============================================================================
+
 export interface BaseEntry {
     TMP_dep: string;
     TMP_id: string;
@@ -13,27 +83,27 @@ export interface BaseEntry {
     TMP_speaker_race: string;
     TMP_topic: string;
     TMP_type: string;
-    old_values?: Object[];
+    old_values?: unknown[];
 }
 
-export type FileType = 'Esp' | 'Esm';
+// ============================================================================
+//  Composite entry types  (TES3 record + BaseEntry)
+// ============================================================================
 
 export interface HeaderEntry extends BaseEntry {
+    type: 'Header';
     author: string;
     description: string;
-    file_type: FileType;
-    type: 'Header';
-    flags: number[];
-    masters: Array<number | string>;
+    file_type: 'Esp' | 'Esm';
+    flags: ObjectFlags;
+    masters: Array<[string, number]>;
     num_objects: number;
     version: number;
 }
 
-export type DialogueType = 'Topic' | 'Greeting' | 'Persuasion' | 'Journal';
-
 export interface DialogueEntry extends BaseEntry {
     type: 'Dialogue';
-    flags: number[];
+    flags: ObjectFlags;
     id: string;
     dialogue_type: DialogueType;
 }
@@ -46,28 +116,29 @@ export interface InfoEntry extends BaseEntry {
     next_id: string;
     quest_name: 0 | 1;
     text: string;
-    flags: number[];
-    filters: InfoFilter;
-    old_values: InfoEntry[];
+    flags: ObjectFlags;
+    filters: InfoFilter[];
+    old_values?: InfoEntry[];
     script_text: string;
     speaker_id: string;
     speaker_cell: string;
     speaker_class: string;
     speaker_faction: string;
     speaker_race: string;
-    data: Object;
+    data: InfoData;
 }
 
-export interface NpcAiData {
-    alarm: number;
-    fight: number;
-    flee: number;
-    hello: number;
-    services: string;
-}
+// ============================================================================
+//  NPC sub-types  (backward-compat names → canonical TES3 types)
+// ============================================================================
 
+/** @deprecated Use AiData from tes3.ts instead */
+export type NpcAiData = AiData;
+
+/** @deprecated Use AiPackageType from tes3.ts instead */
 export type NpcAiPackageType = 'Travel' | 'Wander' | 'Escort' | 'Follow' | 'Activate';
 
+/** @deprecated Flat AI package shape — kept for backward compat */
 export interface NpcAiPackage {
     distance: number;
     duration: number;
@@ -84,153 +155,49 @@ export interface NpcAiPackage {
     type: NpcAiPackageType;
 }
 
-export interface NpcStats {
-    attributes: number[];
-    fatigue: number;
-    health: number;
-    magicka: number;
-    skills: number[];
-}
-
-export interface NpcData {
-    disposition: number;
-    gold: number;
-    level: number;
-    rank: number;
-    reputation: number;
-    stats: NpcStats;
-}
-
 export interface NpcEntry extends BaseEntry {
     head: string;
     hair: string;
-    ai_data: NpcAiData;
-    ai_packages: NpcAiPackage[];
+    ai_data: AiData;
+    ai_packages: AiPackage[] | NpcAiPackage[];
     blood_type: number;
     class: string;
     faction: string;
-    flags: string;
+    flags: ObjectFlags;
     id: string;
     mesh: string;
     name: string;
     npc_flags: string;
     race: string;
     script: string;
-    inventory: Array<Array<number | string>>;
+    inventory: Array<[number, string]>;
     spells: string[];
-    travel_destinations: string[];
+    travel_destinations: TravelDestination[] | string[];
+    data?: TES3_NpcData;
 }
 
-export type SpeakerSex = 'Any' | 'Male' | 'Female';
+// ============================================================================
+//  Info sub-types
+// ============================================================================
+
+/** @deprecated Use Sex from tes3.ts instead */
+export type SpeakerSex = Sex;
 
 export interface InfoData {
     dialogue_type: DialogueType;
     disposition: number;
     player_rank: number;
     speaker_race: number;
-    speaker_sex: SpeakerSex;
+    speaker_sex: Sex;
 }
 
-export type FilterComparison = 'Less' | 'LessEqual' | 'Equal' | 'NotEqual' | 'GreaterEqual' | 'Greater';
-export type FilterFunction =
-    'ReactionLow' |
-    'ReactionHigh' |
-    'RankRequirement' |
-    'Reputation' |
-    'HealthPercent' |
-    'PcReputation' |
-    'PcLevel' |
-    'PcHealthPercent' |
-    'PcMagicka' |
-    'PcFatigue' |
-    'PcStrength' |
-    'PcBlock' |
-    'PcArmorer' |
-    'PcMediumArmor' |
-    'PcHeavyArmor' |
-    'PcBluntWeapon' |
-    'PcLongBlade' |
-    'PcAxe' |
-    'PcSpear' |
-    'PcAthletics' |
-    'PcEnchant' |
-    'PcDestruction' |
-    'PcAlteration' |
-    'PcIllusion' |
-    'PcConjuration' |
-    'PcMysticism' |
-    'PcRestoration' |
-    'PcAlchemy' |
-    'PcUnarmored' |
-    'PcSecurity' |
-    'PcSneak' |
-    'PcAcrobatics' |
-    'PcLightArmor' |
-    'PcShortBlade' |
-    'PcMarksman' |
-    'PcMercantile' |
-    'PcSpeechcraft' |
-    'PcHandToHand' |
-    'PcSex' |
-    'PcExpelled' |
-    'PcCommonDisease' |
-    'PcBlightDisease' |
-    'PcClothingModifier' |
-    'PcCrimeLevel' |
-    'SameSex' |
-    'SameRace' |
-    'SameFaction' |
-    'FactionRankDifference' |
-    'Detected' |
-    'Alarmed' |
-    'Choice' |
-    'PcIntelligence' |
-    'PcWillpower' |
-    'PcAgility' |
-    'PcSpeed' |
-    'PcEndurance' |
-    'PcPersonality' |
-    'PcLuck' |
-    'PcCorprus' |
-    'Weather' |
-    'PcVampire' |
-    'Level' |
-    'Attacked' |
-    'TalkedToPc' |
-    'PcHealth' |
-    'CreatureTarget' |
-    'FriendHit' |
-    'Fight' |
-    'Hello' |
-    'Alarm' |
-    'Flee' |
-    'ShouldAttack' |
-    'Werewolf' |
-    'WerewolfKills' |
-    'NotClass' |
-    'DeadType' |
-    'NotFaction' |
-    'ItemType' |
-    'JournalType' |
-    'NotCell' |
-    'NotRace' |
-    'NotIdType' |
-    'Global' |
-    'Pcgold' |
-    'CompareGlobal' |
-    'CompareLocal' |
-    'VariableCompare';
-
 export type Slot = 'Slot0' | 'Slot1' | 'Slot2' | 'Slot3' | 'Slot4' | 'Slot5' | 'Slot6';
-export type FilterType = 'None' | 'Function' | 'Global' | 'Local' | 'Journal' | 'Item' | 'Dead' | 'NotId' | 'NotFaction' | 'NotClass' | 'NotRace' | 'NotCell' | 'NotLocal';
+
 export interface InfoFilter {
     id: string;
     slot: string;
-    filter_type: string;
-    function: string;
+    filter_type: FilterType;
+    function: FilterFunction;
     comparison: FilterComparison;
-    value: {
-        data: number | string;
-        type: string;
-    };
+    value: FilterValue;
 }

@@ -11,22 +11,24 @@ import {
     PluginData,
     collection,
 } from './collection';
+import type { NpcEntry, BaseEntry } from '@/types/pluginEntries';
+import type Dexie from 'dexie';
 
 // ---------------------------------------------------------------------------
 //  NPC / Creature lookup
 // ---------------------------------------------------------------------------
 
-export async function fetchNPCData(npcID: string) {
+export async function fetchNPCData(npcID: string): Promise<NpcEntry> {
     // Try active plugin first, then deps — return first match
     const activeDB = await getActiveDB();
     const databases = _getDatabases();
 
-    const queryFn = (db: any) =>
-        db.pluginData
-            .where('TMP_id')
-            .equals(npcID)
-            .and((entry: any) => entry.type === 'Npc' || entry.type === 'Creature')
-            .first();
+    // Use compound index [type+TMP_id] — two indexed queries instead of JS filter
+    const queryFn = async (db: Dexie): Promise<NpcEntry | undefined> => {
+        const npc = await db.table('pluginData').where({ type: 'Npc', TMP_id: npcID }).first();
+        if (npc) return npc as NpcEntry;
+        return db.table('pluginData').where({ type: 'Creature', TMP_id: npcID }).first() as Promise<NpcEntry | undefined>;
+    };
 
     const activeResult = await queryFn(activeDB);
     if (activeResult) return activeResult;
@@ -42,16 +44,16 @@ export async function fetchNPCData(npcID: string) {
     throw `NPC_NOT_FOUND: ${npcID}`;
 }
 
-export async function findNPCByName(npcName: string, size = 20) {
+export async function findNPCByName(npcName: string, size = 20): Promise<NpcEntry[]> {
     const nameLower = npcName.toLowerCase();
-    const nameFilter = (entry: any) =>
-        (entry.name as string).toLowerCase().includes(nameLower);
+    const nameFilter = (entry: BaseEntry & { name?: string }) =>
+        (entry.name as string ?? '').toLowerCase().includes(nameLower);
 
     const [npcs, creatures] = await Promise.all([
         Npcs.filter(nameFilter).limit(size).acrossPlugins(),
         Creatures.filter(nameFilter).limit(size).acrossPlugins(),
     ]);
-    return [...npcs, ...creatures];
+    return [...npcs, ...creatures] as NpcEntry[];
 }
 
 // ---------------------------------------------------------------------------
@@ -62,11 +64,11 @@ export async function searchByType(
     searchTypes: string[],
     searchString: string,
     dialogueType?: string,
-) {
+): Promise<BaseEntry[]> {
     if (searchTypes.length < 1) return [];
 
-    const typeFilter = (val: any) => {
-        if (!searchTypes.includes(val.type)) return false;
+    const typeFilter = (val: BaseEntry & { type?: string; TMP_type?: string }) => {
+        if (!searchTypes.includes(val.type ?? '')) return false;
         return dialogueType ? val.TMP_type === dialogueType : true;
     };
 
@@ -81,7 +83,7 @@ export async function searchByType(
 //  Fetch by type
 // ---------------------------------------------------------------------------
 
-export async function fetchByType(types: string[], masters = true) {
+export async function fetchByType(types: string[], masters = true): Promise<BaseEntry[]> {
     return collection()
         .whereIn('type', types)
         .acrossPlugins({ includeDeps: masters, reverseDeps: true });
@@ -91,7 +93,7 @@ export async function fetchByType(types: string[], masters = true) {
 //  Speaker stats
 // ---------------------------------------------------------------------------
 
-export async function fetchAllDialogueBySpeaker(speakerType: SpeakerType) {
+export async function fetchAllDialogueBySpeaker(speakerType: SpeakerType): Promise<string[] | undefined> {
     const speakerTypeKey = getSpeakerTypeKey(speakerType);
     const activeDB = await getActiveDB();
 
@@ -99,14 +101,14 @@ export async function fetchAllDialogueBySpeaker(speakerType: SpeakerType) {
         return undefined;
     }
 
-    return (activeDB as any).pluginData
+    return activeDB.table('pluginData')
         .orderBy(speakerTypeKey)
         .uniqueKeys((keys: string[]) => keys.filter((val) => val !== ''));
 }
 
-export async function fetchSpeakersAmountBySpeakerType(speakerType: SpeakerType) {
+export async function fetchSpeakersAmountBySpeakerType(speakerType: SpeakerType): Promise<number | undefined> {
     const speakerTypeKey = getSpeakerTypeKey(speakerType);
-    if (!speakerTypeKey) return;
+    if (!speakerTypeKey) return undefined;
 
     const activeDB = await getActiveDB();
 
@@ -115,7 +117,7 @@ export async function fetchSpeakersAmountBySpeakerType(speakerType: SpeakerType)
     }
 
     let amount = 0;
-    await (activeDB as any).pluginData
+    await activeDB.table('pluginData')
         .orderBy(speakerTypeKey)
         .eachUniqueKey((key: string) => {
             if (key !== '') amount += 1;

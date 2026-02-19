@@ -371,7 +371,7 @@ export default {
         padding: 5px 15px;
         color: black;
         cursor: pointer;
-        transition: background-color 0.05s linear;
+        transition: background-color 80ms ease;
         &:hover {
           background-color: rgba(0, 0, 0, 0.16);
         }
@@ -396,7 +396,7 @@ export default {
     min-height: 50px;
     align-items: center;
     border-top: 1px solid rgba(202, 165, 96, 0.5);
-    transition: all 0.1s ease-in;
+    transition: all 80ms ease;
     &:last-child {
       border-bottom: 1px solid rgba(202, 165, 96, 0.5);
     }

@@ -198,7 +198,7 @@ function openGeneric() {
         font-size: 20px;
         color: rgb(255, 239, 210);
         cursor: pointer;
-        transition: color 0.15s ease-in;
+        transition: color 80ms ease;
         background: rgba(202, 165, 96, 0.3);
         border: 2px solid rgb(202, 165, 96);
         border-radius: 4px;

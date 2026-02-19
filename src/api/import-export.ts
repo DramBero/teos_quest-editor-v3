@@ -1,55 +1,56 @@
 import {
     getActiveDB,
     getActiveHeader,
-    getDependencies,
     initPlugin,
     invalidateDependencyCache,
     _getDatabases,
     GENERIC_TMP,
 } from './db';
+import { logger } from '@/services/logger';
+import type { BaseEntry } from '@/types/pluginEntries';
+import type { TES3_Record } from '@/types/tes3';
 
 // ---------------------------------------------------------------------------
 //  Entry CRUD
 // ---------------------------------------------------------------------------
 
-export async function modifyEntry(entry: any) {
+export async function modifyEntry(entry: BaseEntry): Promise<BaseEntry | undefined> {
     const activeDB = await getActiveDB();
     try {
-        await activeDB.pluginData
+        const count = await activeDB.pluginData
             .where('TMP_index')
             .equals(entry.TMP_index)
             .modify(entry);
-        return activeDB.pluginData.where('TMP_index').equals(entry.TMP_index).first();
+        return count > 0 ? entry : undefined;
     } catch (error) {
-        console.error(error);
+        logger.error('CRUD', 'Failed to modify entry', error);
+        return undefined;
     }
 }
 
-export async function addEntry(entry: any, locationIndex?: number) {
+export async function addEntry(entry: Partial<BaseEntry>, locationIndex?: number): Promise<void> {
     const header = await getActiveHeader();
     const index = locationIndex || header.num_objects + 1;
     const pluginName = header.TMP_dep;
-    const databases = _getDatabases();
 
-    const newEntry = {
+    const newEntry: Record<string, unknown> = {
         ...GENERIC_TMP,
         ...entry,
         TMP_index: index,
         TMP_dep: pluginName,
-        TMP_is_active: true,
     };
 
-    const activeDB = databases['activePlugin'];
+    const activeDB = await getActiveDB();
 
     if (locationIndex) {
-        let nextEntry = await activeDB.pluginData
+        let nextEntry: BaseEntry | undefined = await activeDB.pluginData
             .where('TMP_index')
             .above(locationIndex)
             .limit(1)
             .first();
         if (!nextEntry) {
             nextEntry = await activeDB.pluginData.orderBy('TMP_index').last();
-            newEntry.TMP_index = nextEntry.TMP_index + 1;
+            newEntry.TMP_index = (nextEntry?.TMP_index ?? 0) + 1;
         } else {
             newEntry.TMP_index = locationIndex + (nextEntry.TMP_index - locationIndex) / 2;
         }
@@ -62,68 +63,48 @@ export async function addEntry(entry: any, locationIndex?: number) {
         .modify({ num_objects: header.num_objects + 1 });
 }
 
-export async function deleteEntry(entry: any) {
-    if (entry.TMP_is_active) {
-        const databases = _getDatabases();
-        const activeDB = databases['activePlugin'];
-        await activeDB.pluginData.delete(entry.TMP_index);
-        const header = await getActiveHeader();
-        await activeDB.pluginData
-            .where('type')
-            .equals('Header')
-            .modify({ num_objects: header.num_objects - 1 });
-    } else {
-        throw { key: 'MASTER_ENTRY_DELETION_NOT_IMPLEMENTED' };
-    }
+export async function deleteEntry(entry: BaseEntry): Promise<void> {
+    const activeDB = await getActiveDB();
+    await activeDB.pluginData.delete(entry.TMP_index);
+    const header = await getActiveHeader();
+    await activeDB.pluginData
+        .where('type')
+        .equals('Header')
+        .modify({ num_objects: header.num_objects - 1 });
 }
 
 // ---------------------------------------------------------------------------
 //  Index shifting
 // ---------------------------------------------------------------------------
 
-export async function shiftIndexes(index: number) {
-    const databases = _getDatabases();
-    const activeDB = databases['activePlugin'];
-    const lastEntry = await activeDB.pluginData.orderBy('TMP_index').last();
-    const lastEntryIndex = lastEntry.TMP_index;
-
-    const indexes: number[] = [];
-    for (let i = index; i <= lastEntryIndex; i++) {
-        indexes.push(i);
-    }
-    indexes.reverse();
-
-    if (!indexes.length) return;
+export async function shiftIndexes(index: number): Promise<void> {
+    const activeDB = await getActiveDB();
+    const entries: BaseEntry[] = await activeDB.pluginData
+        .where('TMP_index')
+        .aboveOrEqual(index)
+        .toArray();
+    if (!entries.length) return;
 
     await activeDB.transaction('rw', activeDB.pluginData, async () => {
-        for (const currentIndex of indexes) {
-            await activeDB.pluginData
-                .where('TMP_index')
-                .equals(currentIndex)
-                .modify({ TMP_index: currentIndex + 1 });
-        }
+        // Delete old keys first to avoid unique-constraint conflicts
+        await activeDB.pluginData.bulkDelete(entries.map((e) => e.TMP_index));
+        for (const e of entries) e.TMP_index += 1;
+        await activeDB.pluginData.bulkAdd(entries);
     });
 }
 
-export async function unshiftIndexes(index: number) {
-    const databases = _getDatabases();
-    const activeDB = databases['activePlugin'];
-    const lastEntry = await activeDB.pluginData.orderBy('TMP_index').last();
-    const lastEntryIndex = lastEntry.TMP_index;
-
-    const indexes: number[] = [];
-    for (let i = index; i <= lastEntryIndex; i++) {
-        indexes.push(i);
-    }
-    if (!indexes.length) return;
+export async function unshiftIndexes(index: number): Promise<void> {
+    const activeDB = await getActiveDB();
+    const entries: BaseEntry[] = await activeDB.pluginData
+        .where('TMP_index')
+        .aboveOrEqual(index)
+        .toArray();
+    if (!entries.length) return;
 
     await activeDB.transaction('rw', activeDB.pluginData, async () => {
-        for (const currentIndex of indexes) {
-            await activeDB.pluginData
-                .where('TMP_index')
-                .equals(currentIndex)
-                .modify({ TMP_index: currentIndex - 1 });
-        }
+        await activeDB.pluginData.bulkDelete(entries.map((e) => e.TMP_index));
+        for (const e of entries) e.TMP_index -= 1;
+        await activeDB.pluginData.bulkAdd(entries);
     });
 }
 
@@ -131,10 +112,10 @@ export async function unshiftIndexes(index: number) {
 //  Plugin import / export
 // ---------------------------------------------------------------------------
 
-export async function pluginToJSON() {
+export async function pluginToJSON(): Promise<Record<string, unknown>[] | undefined> {
     try {
-        const databases = _getDatabases();
-        const entries = await databases['activePlugin'].pluginData.toArray();
+        const activeDB = await getActiveDB();
+        const entries: BaseEntry[] = await activeDB.pluginData.toArray();
         return entries.map((entry: Record<string, unknown>) => {
             const clean: Record<string, unknown> = {};
             for (const key of Object.keys(entry)) {
@@ -145,39 +126,47 @@ export async function pluginToJSON() {
             return clean;
         });
     } catch (error) {
-        console.error(error);
+        logger.error('Export', 'Failed to export plugin to JSON', error);
+        return undefined;
     }
 }
 
+const BULK_CHUNK_SIZE = 5000;
+
+/** Raw record from WASM parser before TMP_ fields are injected */
+type RawRecord = Partial<TES3_Record> & Record<string, unknown>;
+
 export async function importPlugin(
-    pluginData: any[],
+    pluginData: RawRecord[],
+    pluginKey: string,
     pluginName: string,
-    isActive: boolean,
+    onProgress?: (ratio: number) => void,
 ) {
     let dialogueType: string | undefined;
     let dialogueId: string | undefined;
-    const activePlugin = await initPlugin(isActive ? 'activePlugin' : pluginName);
-    const tableLength = await activePlugin.pluginData.count();
+    const pluginDB = await initPlugin(pluginKey);
+    const tableLength = await pluginDB.pluginData.count();
     if (tableLength) {
-        await activePlugin.pluginData.clear();
+        await pluginDB.pluginData.clear();
     }
 
-    const entries: any[] = [];
+    const entries: Record<string, unknown>[] = [];
 
     for (let index = 0; index < pluginData.length; index++) {
         const record = pluginData[index];
-        let dialogueEntry: any;
+        let dialogueEntry: Record<string, unknown>;
 
-        if (['DialogueInfo', 'Dialogue'].includes(record.type)) {
+        if (['DialogueInfo', 'Dialogue'].includes(record.type as string)) {
             let TMP_quest_name = '';
             if (record.type === 'Dialogue') {
-                dialogueType = record.dialogue_type;
+                dialogueType = record.dialogue_type as string | undefined;
                 if (record.id) {
-                    dialogueId = record.id;
+                    dialogueId = record.id as string;
                     if (dialogueType === 'Journal') {
+                        const next = pluginData[index + 1];
                         TMP_quest_name =
-                            pluginData[index + 1]?.quest_state === 'Name'
-                                ? pluginData[index + 1]?.text || ''
+                            next?.quest_state === 'Name'
+                                ? (next?.text as string) || ''
                                 : '';
                     }
                 }
@@ -198,50 +187,35 @@ export async function importPlugin(
                 TMP_speaker_class: record.speaker_class,
                 TMP_speaker_race: record.speaker_race,
                 TMP_dep: pluginName,
-                TMP_is_active: isActive,
                 TMP_index: index,
                 TMP_quest_name,
             };
         } else {
             dialogueEntry = {
                 type: '',
+                ...GENERIC_TMP,
                 ...record,
                 TMP_id: record.id || '',
-                TMP_topic: '',
-                TMP_type: '',
-                TMP_info_id: '',
-                TMP_prev_id: '',
-                TMP_next_id: '',
-                TMP_speaker_id: '',
-                TMP_speaker_cell: '',
-                TMP_speaker_faction: '',
-                TMP_speaker_class: '',
-                TMP_speaker_race: '',
                 TMP_dep: pluginName,
-                TMP_is_active: isActive,
                 TMP_index: index,
-                TMP_quest_name: '',
             };
         }
 
         entries.push(dialogueEntry);
     }
 
-    await activePlugin.transaction('rw', activePlugin.pluginData, async () => {
-        await activePlugin.pluginData.bulkAdd(entries).catch((error: unknown) => {
-            console.error('Dexie ERROR on importing:', error);
+    // Chunked bulkAdd with progress reporting
+    const total = entries.length;
+    logger.info('Import', `Importing ${total} records for "${pluginName}"`);
+    for (let i = 0; i < total; i += BULK_CHUNK_SIZE) {
+        const chunk = entries.slice(i, i + BULK_CHUNK_SIZE);
+        await pluginDB.pluginData.bulkAdd(chunk).catch((error: unknown) => {
+            logger.error('Import', `Failed to import chunk at offset ${i}`, error);
         });
-    });
-
-    invalidateDependencyCache();
-
-    if (isActive) {
-        const dependencies = await getDependencies();
-        for (const dep of dependencies) {
-            await initPlugin(dep);
-        }
+        onProgress?.(Math.min((i + chunk.length) / total, 1));
     }
 
-    const databases = _getDatabases();
-    return databases[isActive ? 'activePlugin' : pluginName];
+    invalidateDependencyCache();
+    logger.info('Import', `Import complete: ${total} records for "${pluginName}"`);
+    return pluginDB;
 }
