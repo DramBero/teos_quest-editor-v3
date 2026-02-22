@@ -1,13 +1,14 @@
 <template>
   <transition name="fade">
-    <div v-if="selectedRecord" class="record" @click="closeRecord">
-      <button
-        type="button"
-        class="record__close"
-        @click="closeRecord"
-      >
-        <TdesignClose />
-      </button>
+    <div
+      v-if="selectedRecord"
+      class="record"
+      :class="{
+        'record_overlay': isOverlayType,
+        'record_inline': !isOverlayType,
+      }"
+      @click="isOverlayType && closeRecord()"
+    >
       <div class="record__content" @click.stop>
         <component
           :is="getSelectedComponent"
@@ -21,19 +22,30 @@
 <script setup lang="ts">
 import { useSelectedRecord } from '@/stores/selectedRecord';
 import { computed, defineAsyncComponent } from 'vue';
-import TdesignClose from '~icons/tdesign/close';
 
 const RecordBook = defineAsyncComponent(
   () => import('@/components/record/RecordBook.vue')
 );
 
+const RecordScript = defineAsyncComponent(
+  () => import('@/components/record/RecordScript.vue')
+);
+
 const selectedRecordStore = useSelectedRecord();
 const selectedRecord = computed(() => selectedRecordStore.getSelectedRecord);
 
-const getSelectedComponent = computed(() => {
+const recordType = computed(() => {
   if (!selectedRecord.value || !selectedRecord.value.length) return null;
-  switch(selectedRecord.value[0]?.type) {
+  return selectedRecord.value[0]?.type;
+});
+
+/** Script fills the right area inline; Book is an overlay */
+const isOverlayType = computed(() => recordType.value === 'Book');
+
+const getSelectedComponent = computed(() => {
+  switch(recordType.value) {
     case 'Book': return RecordBook;
+    case 'Script': return RecordScript;
     default: return null;
   }
 });
@@ -45,34 +57,33 @@ function closeRecord(){
 
 <style lang="scss">
 .record {
-  width: 100%;
-  height: 100%;
-  position: absolute;
-  z-index: 50;
-  &__close {
-    position: absolute;
-    right: 10px;
-    top: 10px;
-    background-color: rgba(0, 0, 0, 0.5);
-    border-radius: 50%;
-    width: 50px;
-    height: 50px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    svg {
-      color: rgb(202, 165, 96);
-      width: 30px;
-      height: 30px;
-      transition: fill 80ms ease;
-      &:hover {
-        color: rgb(223, 200, 157);
-      }
+  &__content {
+    height: 100%;
+  }
+
+  /* Script — fills right area inline next to sidebar */
+  &_inline {
+    flex: 1;
+    min-width: 0;
+    height: 100%;
+    position: relative;
+    z-index: 1;
+
+    .record__content {
+      padding: 0;
     }
   }
-  &__content {
-    padding: 10px 0;
+
+  /* Book — full overlay with dim background */
+  &_overlay {
+    width: 100%;
     height: 100%;
+    position: absolute;
+    z-index: 50;
+
+    .record__content {
+      padding: 10px 0;
+    }
   }
 }
 

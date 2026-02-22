@@ -1,99 +1,83 @@
 <template>
   <div v-if="code">
     <div class="results" :class="{ results_lua: language === 'Lua (MWSE)' }">
-      <span 
-        class="script-language" 
+      <span
+        class="script-language"
         :class="{ 'script-language_lua': language === 'Lua (MWSE)' }"
       >
         {{ language }}
       </span>
-      <Codemirror
-        v-model:value="codeRef"
-        :options="cmOptions"
-      />
-<!--       <CodeEditor
-        v-model="code"
-        :read-only="!editMode"
-        :display-language="false"
-        :height="'100%'"
-        :width="'100%'"
-        font-size="14px"
-        :border-radius="'0'"
-        theme="github-dark-dimmed"
-      >
-      </CodeEditor> -->
-      <!--       <prism-editor
-        class="editor-code"
-        v-model="code"
-        :readonly="!editMode"
-        :wordwrap="false"
-        :highlight="language === 'Lua' ? highlighterLua : highlighterBasic"
-        lineNumbers
-      ></prism-editor> -->
+      <div ref="editorContainer" class="results__editor" />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-// import hljs from 'highlight.js';
-// import CodeEditor from 'simple-code-editor';
-import { watchDebounced } from "@vueuse/core";
-import Codemirror from "codemirror-editor-vue3";
-import "codemirror/mode/lua/lua.js";
-import "codemirror/theme/dracula.css";
+import { ref, onMounted, onBeforeUnmount, shallowRef } from 'vue';
+import { EditorView } from '@codemirror/view';
+import { EditorState } from '@codemirror/state';
+import { vscodeDarkInlineExtensions } from '@/mwscript/cm6-theme';
+import { mwscriptBasic } from '@/mwscript/cm6-mwscript';
 
-import { onBeforeMount, ref } from 'vue';
+const props = defineProps<{
+  code?: string;
+  language?: string;
+  editMode?: boolean;
+}>();
 
-const props = defineProps({
-  code: {
-    type: String,
-  },
-  language: {
-    type: String,
-  },
-  editMode: {
-    type: Boolean,
-  },
-})
+const emit = defineEmits<{
+  (e: 'update', value: string): void;
+}>();
 
-const codeRef = ref<string>('');
+const editorContainer = ref<HTMLElement | null>(null);
+const editorView = shallowRef<EditorView | null>(null);
 
-const cmOptions = {
-  mode: 'text/x-lua',
-  theme: 'dracula',
-  lineWrapping: true,
-}
+// Theme imported from @/mwscript/cm6-theme
 
-const emit = defineEmits(['update']);
+onMounted(() => {
+  if (!editorContainer.value || !props.code) return;
 
-watchDebounced(codeRef, () => {
-  // Replaces all '\n' (without preceeding '\r') to '\r\n'
-  emit('update', codeRef.value.replace(/(?<!\r)\n/g, '\r\n'));
-}, {
-  debounce: 200,
+  const extensions = [
+    mwscriptBasic(),
+    ...vscodeDarkInlineExtensions,
+    EditorView.lineWrapping,
+    EditorState.readOnly.of(!props.editMode),
+  ];
+
+  // Listen for changes if editable
+  if (props.editMode) {
+    extensions.push(
+      EditorView.updateListener.of((update) => {
+        if (update.docChanged) {
+          const val = update.state.doc.toString();
+          emit('update', val.replace(/(?<!\r)\n/g, '\r\n'));
+        }
+      }),
+    );
+  }
+
+  const state = EditorState.create({
+    doc: props.code,
+    extensions,
+  });
+
+  editorView.value = new EditorView({
+    state,
+    parent: editorContainer.value,
+  });
 });
 
-onBeforeMount(() => {
-  codeRef.value = props.code || '';
+onBeforeUnmount(() => {
+  editorView.value?.destroy();
 });
 </script>
 
 <style lang="scss">
-.editor-code {
-  .prism-editor {
-    &__line-numbers {
-      padding-right: 10px;
-    }
-  }
-}
 .results {
   border: 1px solid rgba(170, 169, 98, 0.5);
-  font-family: 'Consolas';
+  font-family: 'Fira Code', monospace;
   background: rgb(32, 32, 22);
-  //line-height: 20px;
   position: relative;
-  //overflow-x: scroll;
-  //white-space: pre-line;
   min-width: 50%;
   border-radius: 4px;
   font-size: 14px;
@@ -109,14 +93,11 @@ onBeforeMount(() => {
       color: rgb(159, 169, 223);
     }
   }
-  &__result {
-    overflow-x: scroll;
-    display: block;
-    padding: 0 10px;
-  }
-  .codemirror-container {
-    font-size: 14px;
-    line-height: 20px;
+
+  &__editor {
+    .cm-editor {
+      height: auto;
+    }
   }
 }
 
@@ -126,7 +107,6 @@ onBeforeMount(() => {
   display: block;
   color: rgb(237, 238, 167);
   padding: 5px 10px;
-  //margin-bottom: 5px;
   font-size: 16px;
   font-weight: 500;
   &_lua {

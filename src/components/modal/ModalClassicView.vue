@@ -15,15 +15,20 @@
               {{ item }}
             </div>
           </div>
-          <div class="container-topics__topic" :class="{
-            'container-topics__topic_dep': topic.filter(
-              (val) => val && val.TMP_dep !== getPluginName,
-            ).length,
-            'container-topics__topic_mod':
-              topic.filter((val) => val && val.TMP_dep === getPluginName).length &&
-              topic.length > 1,
-            'container-topics__topic_current': getCurrentTopic === topic[0].id,
-          }" v-for="topic in topicsList" :key="topic[0].id" @click="setTopic(topic[0].id)">
+          <div
+            class="container-topics__topic"
+            :class="{
+              'container-topics__topic_dep': topic.filter(
+                (val) => val && val.TMP_dep !== getPluginName,
+              ).length,
+              'container-topics__topic_mod': getClassicTopicStatus(topic) === 'mod',
+              'container-topics__topic_current': getCurrentTopic === topic[0].id,
+            }"
+            v-for="topic in topicsList"
+            :key="topic[0].id"
+            :data-topic-id="topic[0].id"
+            @click="setTopic(topic[0].id)"
+          >
             {{ topic[0].id }}
           </div>
         </div>
@@ -56,13 +61,7 @@
             <tbody>
               <tr class="container-entries__entry" :class="{
                 'container-entries__entry_active': currentId === entry.id,
-                'container-entries__entry_new':
-                  findDialogue(entry.id).TMP_dep === getPluginName,
-                'container-entries__entry_mod':
-                  !findDialogue(entry.id).TMP_dep &&
-                  findDialogue(entry.id).old_values &&
-                  findDialogue(entry.id).old_values.length,
-                'container-entries__entry_del': findDialogue(entry.id).deleted !== undefined,
+                [`container-entries__entry_${getClassicEntryStatus(entry)}`]: getClassicEntryStatus(entry),
                 'container-entries__entry_dirty':
                   !findDialogue(entry.id).TMP_dep &&
                   findDialogue(entry.id).old_values &&
@@ -272,21 +271,23 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref, watch } from 'vue';
+import { computed, nextTick, onMounted, reactive, ref, watch } from 'vue';
 import DialogueEntryFilters from '../dialogue/DialogueEntryFilters.vue';
 import { getAllTopicsByType, getOrderedEntriesByTopic } from '@/api/idb';
 import { useClassicView, useClassicViewTopic } from '@/stores/classicView';
 import { usePluginHeader } from '@/stores/pluginHeader';
 import TdesignClose from '~icons/tdesign/close';
 import SVGSpinners90RingWithBg from '~icons/svg-spinners/90-ring-with-bg';
+import type { RecordStatus } from '@/composables/useRecordStatus';
 
-const rows = ref([]);
+
+const rows = ref<Record<string, unknown>[][]>([]);
 const updateTrigger = ref<number>(0);
 const drag = ref<boolean>(false);
 const currentId = ref<string>('');
 const editCode = ref<string>('');
 const topicType = ref<string>('Topic');
-const currentFilters = ref([]);
+const currentFilters = ref<Record<string, unknown>[]>([]);
 const currentDisp = ref<string>('');
 const showEmptySpeakers = ref<boolean>(false);
 const showEmptyPlayerFilters = ref<boolean>(false);
@@ -575,8 +576,8 @@ const filterFunctions = [
 
 const filterComparisons = ['Less', 'LessEqual', 'NotEqual', 'Equal', 'GreaterEqual', 'Greater'];
 
-const topicsList = ref([]);
-const dialogueList = ref([]);
+const topicsList = ref<Record<string, unknown>[][]>([]);
+const dialogueList = ref<Record<string, unknown>[]>([]);
 
 const classicViewStore = useClassicView();
 const classicViewTopicStore = useClassicViewTopic();
@@ -621,8 +622,39 @@ watch(topicType, async (newValue) => {
   immediate: true,
 })
 
-onMounted(() => {
+onMounted(async () => {
   rows.value = getOrderedEntries.value.map((val) => val.id);
+
+  // If a topic was pre-selected (e.g. from dialogue modal), load its type and scroll to it
+  const preselectedTopic = getCurrentTopic.value;
+  if (preselectedTopic) {
+    // Load topics for the current type first
+    const topicsResponse = await getAllTopicsByType(topicType.value);
+    topicsList.value = topicsResponse;
+
+    // Check if the pre-selected topic is in the current type list
+    const found = topicsResponse.find((t: any) => t[0]?.id === preselectedTopic);
+    if (!found) {
+      // Try to find the topic's actual type by searching other types
+      for (const type of ['Topic', 'Greeting', 'Persuasion', 'Journal', 'Voice']) {
+        if (type === topicType.value) continue;
+        const otherTopics = await getAllTopicsByType(type);
+        const foundInOther = otherTopics.find((t: any) => t[0]?.id === preselectedTopic);
+        if (foundInOther) {
+          topicType.value = type;
+          topicsList.value = otherTopics;
+          break;
+        }
+      }
+    }
+
+    // Fetch dialogue for pre-selected topic
+    await fetchDialogue(preselectedTopic);
+
+    // Scroll to the selected topic
+    await nextTick();
+    scrollToTopic(preselectedTopic);
+  }
 })
 
 function checkDirtied(entryOne, entryTwo) {
@@ -644,9 +676,19 @@ function setTopic(topic: string) {
   classicViewTopicStore.setClassicViewTopic(topic);
 }
 
-watch(getCurrentTopic, (newValue: string) => {
-  fetchDialogue(newValue);
+watch(getCurrentTopic, async (newValue: string) => {
+  await fetchDialogue(newValue);
+  await nextTick();
+  scrollToTopic(newValue);
 })
+
+function scrollToTopic(topicId: string) {
+  if (!topicId) return;
+  const el = document.querySelector(`[data-topic-id="${CSS.escape(topicId)}"]`);
+  if (el) {
+    el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+  }
+}
 
 async function fetchDialogue(topic: string) {
   if (!topic) {
@@ -666,6 +708,25 @@ async function fetchDialogue(topic: string) {
 function findDialogue(entry) {
   if (!dialogueList.value) return {};
   return dialogueList.value.find((val) => val.id == entry) || {};
+}
+
+/** Determine topic status: 'mod' if has entries from active plugin AND from other sources */
+function getClassicTopicStatus(topic: Record<string, unknown>[]): RecordStatus {
+  if (!topic?.length) return '';
+  const pluginName = getPluginName.value;
+  const hasPluginEntry = topic.some(val => val && val.TMP_dep === pluginName);
+  if (hasPluginEntry && topic.length > 1) return 'mod';
+  return '';
+}
+
+/** Determine dialogue entry status: 'new' | 'mod' | 'del' */
+function getClassicEntryStatus(entry: Record<string, unknown>): RecordStatus {
+  const d = findDialogue(entry.id);
+  if (!d || !Object.keys(d).length) return '';
+  if (d.deleted !== undefined) return 'del';
+  if (d.TMP_dep === getPluginName.value) return 'new';
+  if (!d.TMP_dep && d.old_values && (d.old_values as unknown[]).length) return 'mod';
+  return '';
 }
 
 function closeClassicView() {
@@ -858,7 +919,7 @@ function handleReorder(event) {
     }
 
     .edit__result {
-      font-family: 'Consolas';
+      font-family: 'Fira Code', monospace;
       font-size: 14px;
       height: 100%;
       border-left: 2px solid rgb(117, 87, 31);

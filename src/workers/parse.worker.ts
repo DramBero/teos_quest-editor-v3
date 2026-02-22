@@ -1,4 +1,5 @@
 import init, { load_objects } from '@/tes3_wasm/tes3_wasm.js';
+import type { TES3_Record } from '@/types/tes3';
 
 let wasmReady = false;
 
@@ -7,7 +8,7 @@ export type WorkerMessage =
 
 export type WorkerResponse =
     | { type: 'stage'; stage: string }
-    | { type: 'done'; objects: any[] }
+    | { type: 'done'; objects: TES3_Record[] }
     | { type: 'error'; message: string }
 
 self.onmessage = async (e: MessageEvent<WorkerMessage>) => {
@@ -27,10 +28,10 @@ self.onmessage = async (e: MessageEvent<WorkerMessage>) => {
             const objects = load_objects(bytes);
 
             self.postMessage({ type: 'done', objects } satisfies WorkerResponse);
-        } catch (err: any) {
+        } catch (err: unknown) {
             self.postMessage({
                 type: 'error',
-                message: err?.message || String(err),
+                message: err instanceof Error ? err.message : String(err),
             } satisfies WorkerResponse);
         }
     }

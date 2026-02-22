@@ -54,6 +54,9 @@ watch(getModal, async (newValue: string) => {
 const ModalContentUpload = defineAsyncComponent(
   () => import('@/components/modal/ModalContentUpload.vue')
 )
+const ModalContentStorage = defineAsyncComponent(
+  () => import('@/components/modal/ModalContentStorage.vue')
+)
 const ModalContentNewDialogue = defineAsyncComponent(
   () => import('@/components/modal/ModalContentNewDialogue.vue')
 )
@@ -70,6 +73,7 @@ const getModalComponent = computed(() => {
     case 'NewFilter': return ModalContentNewFilter;
     case 'NewQuest': return ModalContentNewQuest;
     case 'Upload': return ModalContentUpload;
+    case 'Storage': return ModalContentStorage;
     default: return null;
   }
 })

@@ -62,11 +62,11 @@ onMounted(() => {
   y.value = getInitCenter.value.initY;
 })
 
-const props = defineProps({
-  modalHide: String,
-  header: String,
-  dialogue: Boolean,
-});
+const props = defineProps<{
+  modalHide?: string;
+  header?: string;
+  dialogue?: boolean;
+}>();
 
 const selectedSpeakerStore = useSelectedSpeaker();
 function closeModal() {

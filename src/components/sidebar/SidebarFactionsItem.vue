@@ -12,10 +12,7 @@
     <div class="faction-top">
       <div class="faction-left">
         <div class="faction__title">
-          <div v-if="props.faction[0].TMP_is_active && props.faction.length > 1" class="quest-status quest-status_mod">
-          </div>
-          <div v-else-if="faction[0].TMP_is_active" class="quest-status quest-status_new">
-          </div>
+          <TStatusDot :status="recordStatus" />
           <span :title="getName">
             {{ getName }}
           </span>
@@ -75,24 +72,32 @@ import { useSelectedSpeaker } from '@/stores/selectedSpeaker';
 import { computed } from 'vue';
 import TdesignChatMessageFilled from '~icons/tdesign/chat-message-filled';
 import MagicEffects from './MagicEffects.vue';
+import TStatusDot from '@/components/ui/TStatusDot.vue';
+import { useRecordArrayStatus } from '@/composables/useRecordStatus';
 
 const props = defineProps<{
-  faction: Array<Object>;
-    modificator: String;
+  faction: Record<string, unknown>[];
+  modificator: string;
 }>();
+
+const { status: recordStatus } = useRecordArrayStatus(() => props.faction);
 
 const selectedRecordStore = useSelectedRecord();
 
 function handleSelect() {
-  if (props.faction[0]?.type !== 'Book') return;
+  const type = props.faction[0]?.type;
+  if (type !== 'Book' && type !== 'Script') return;
   selectedRecordStore.setSelectedRecord(props.faction);
 }
 
 function onDragStart(event: DragEvent) {
   if (!event.dataTransfer) return;
+  const entry = props.faction[0];
   const transferEntry = JSON.stringify({
-    entry: props.faction[0],
-    type: props.faction[0]?.type,
+    entry,
+    type: entry?.type,
+    draggable_type: entry?.type,
+    draggable_id: entry?.TMP_id ?? entry?.id ?? '',
   })
   event.dataTransfer.setData("application/json", transferEntry);
 }
@@ -113,7 +118,7 @@ const getSpeakerType = computed(() => {
   }
 })
 
-function openDialogue(speaker) {
+function openDialogue(speaker: Record<string, unknown>) {
   selectedSpeakerStore.setSelectedSpeaker({
     speakerId: speaker.id || speaker.name,
     speakerType: getSpeakerType.value,
@@ -207,7 +212,7 @@ const getId = computed(() => {
   }
   &__id {
     font-size: 15px;
-    font-family: 'Consolas';
+    font-family: 'Fira Code', monospace;
     color: rgba(255, 255, 255, 0.5);
   }
   &__value {

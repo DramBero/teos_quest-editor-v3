@@ -1,58 +1,55 @@
 import { ref, computed } from 'vue';
 import { defineStore } from 'pinia';
 import { fetchQuestByID, fetchAllQuestIDs } from '@/api/idb.ts';
+import type { DialogueInfoRecord } from '@/types/pluginEntries';
 
 export const useSelectedQuest = defineStore('selectedQuest', () => {
-  interface selectedQuest {
-    entries: Array<Object>;
-    entry_ids: Array<number>;
-    name: String;
-    old_names: String[];
+  interface SelectedQuest {
+    entries: DialogueInfoRecord[];
+    entry_ids: string[];
+    name: string;
+    old_names: string[];
   }
 
-  const selectedQuest = ref<selectedQuest>();
-  function setSelectedQuest(value: selectedQuest) {
+  interface FetchQuestOptions {
+    reload?: boolean;
+    fetchQuests?: boolean;
+    updateName?: boolean;
+  }
+
+  const selectedQuest = ref<SelectedQuest>();
+  function setSelectedQuest(value: SelectedQuest) {
     selectedQuest.value = value;
   }
   const getSelectedQuest = computed(() => selectedQuest.value);
 
-  const selectedQuestLoaded = ref<Boolean>();
-  function setSelectedQuestLoaded(value: Boolean) {
+  const selectedQuestLoaded = ref<boolean>();
+  function setSelectedQuestLoaded(value: boolean) {
     selectedQuestLoaded.value = value;
   }
   const getSelectedQuestLoaded = computed(() => selectedQuestLoaded.value);
 
-  const selectedQuestName = ref<String | null>();
-  function setSelectedQuestName(value: String | null) {
+  const selectedQuestName = ref<string | null>();
+  function setSelectedQuestName(value: string | null) {
     console.log('SET NAME:', value)
     selectedQuestName.value = value;
   }
   const getSelectedQuestName = computed(() => selectedQuestName.value);
 
-  interface FetchQuestOptions {
-    reload: boolean;
-    fetchQuests: boolean;
-    updateName: boolean;
-  }
-
-  async function fetchQuest(questId: String, options: FetchQuestOptions) {
+  async function fetchQuest(questId: string, options?: FetchQuestOptions) {
     try {
-      const questResponse = await fetchQuestByID(questId);
-      setSelectedQuest(questResponse)
-      if (Boolean(options?.reload !== false)) {
+      if (options?.reload !== false) {
         setSelectedQuestLoaded(false);
       }
-      if (Boolean(options?.fetchQuests) !== false) {
-        fetchQuests();
-      }
-      if (Boolean(options?.updateName) !== false && questResponse.name) {
-        setSelectedQuestName('');
-      }
-      await new Promise((resolve) => setTimeout(resolve, 1));
+      const questResponse = await fetchQuestByID(questId);
+      setSelectedQuest(questResponse);
       if (options?.reload !== false) {
         setSelectedQuestLoaded(true);
       }
-      if (Boolean(options?.updateName) !== false && questResponse.name) {
+      if (options?.fetchQuests !== false) {
+        fetchQuests();
+      }
+      if (options?.updateName !== false && questResponse.name) {
         setSelectedQuestName(questResponse.name);
       }
     } catch (error) {
@@ -60,7 +57,7 @@ export const useSelectedQuest = defineStore('selectedQuest', () => {
     }
   }
 
-  const quests = ref<Object>([]);
+  const quests = ref<Record<string, unknown>[]>([]);
   async function fetchQuests() {
     try {
       const questsResponse = await fetchAllQuestIDs(true);
@@ -72,12 +69,12 @@ export const useSelectedQuest = defineStore('selectedQuest', () => {
   const getQuests = computed(() => quests.value);
 
 
-  return { 
-    selectedQuest, 
-    selectedQuestLoaded, 
-    setSelectedQuest, 
-    setSelectedQuestLoaded, 
-    fetchQuest, 
+  return {
+    selectedQuest,
+    selectedQuestLoaded,
+    setSelectedQuest,
+    setSelectedQuestLoaded,
+    fetchQuest,
     getSelectedQuest,
     getSelectedQuestLoaded,
     selectedQuestName,

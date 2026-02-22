@@ -5,9 +5,7 @@
       @click="toggleSidebarActive('Journal')">
       <GameIconsBookmarklet />
       <span>Journal</span>
-      <div v-if="getCountTypes?.['Journal']" class="workspace-controls__amount">
-        {{ getCountTypes['Journal'] }}
-      </div>
+      <TBadge v-if="getCountTypes?.['Journal']" :count="getCountTypes['Journal']" class="workspace-controls__amount" />
     </div>
 <!--     <div class="workspace-controls__button"
       :class="{ 'workspace-controls__button_active': getSidebarActive === 'Header' }"
@@ -26,17 +24,20 @@
         :is="iconComponent(category.name?.toLowerCase())"
       />
       <span>{{ category.name }}</span>
-      <div v-if="getCategoryAmount(category.name)" class="workspace-controls__amount">
-        {{ getCategoryAmount(category.name) }}
-      </div>
+      <TBadge v-if="getCategoryAmount(category.name)" :count="getCategoryAmount(category.name)" class="workspace-controls__amount" />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { useCountTypes } from '@/stores/countTypes';
+import TBadge from '@/components/ui/TBadge.vue';
 import { useSidebar } from '@/stores/sidebar';
 import { computed, defineAsyncComponent } from 'vue';
+
+const GameIconsBookmarklet = defineAsyncComponent(
+  () => import('~icons/game-icons/bookmarklet/GameIconsBookmarklet.vue')
+);
 
 const sidebarStore = useSidebar();
 function toggleSidebarActive(value: string) {
@@ -46,121 +47,13 @@ const getSidebarActive = computed(() => {
   return sidebarStore.getActiveItem;
 });
 
-const categories = [
-  {
-    name: 'Social',
-    items: [
-      'Class',
-      'Faction',
-      'Race',
-      'Skill',
-      'Birthsign',
-    ]
-  },
-  {
-    name: 'Actors',
-    items: [
-      'Npc',
-      'Creature',
-      'LeveledCreature',
-    ]
-  },
-  {
-    name: 'Items',
-    items: [
-      'Book',
-      'Clothing',
-      'Armor',
-      'Weapon',
-      'MiscItem',
-      'RepairItem',
-      'Apparatus',
-      'Lockpick',
-      'Probe',
-      'Ingredient',
-      'Alchemy',
-      'LeveledItem',
-    ]
-  },
-  {
-    name: 'Scripts',
-    items: [
-      'Script',
-      'GlobalVariable',
-      'StartScript',
-    ]
-  },
-  {
-    name: 'Magic',
-    items: [
-      'Spell',
-      'MagicEffect',
-      'Enchanting',
-      'Alchemy',
-    ]
-  },
-  {
-    name: 'Interact',
-    items: [
-      'Door',
-      'Activator',
-      'Container',
-    ]
-  },
-  {
-    name: 'World',
-    items: [
-      'Cell',
-      'Region',
-      'Sound',
-      'SoundGen',
-      'LandscapeTexture',
-      'Static',
-      'Bodypart',
-      'Light',
-      'Landscape',
-      'PathGrid',
-      'GameSetting',
-    ]
-  },
-]
+import { CATEGORIES, getCategoryIcon, getCategoryByName } from '@/config/categories';
 
-const GameIconsBookmarklet = defineAsyncComponent(
-  () => import('~icons/game-icons/bookmarklet/GameIconsBookmarklet.vue')
-);
-const GameIconsGears = defineAsyncComponent(
-  () => import('~icons/game-icons/gears/GameIconsGears.vue')
-);
-const GameIconsOrganigram = defineAsyncComponent(
-  () => import('~icons/game-icons/organigram/GameIconsOrganigram.vue')
-);
-const GameIconsCharacter = defineAsyncComponent(
-  () => import('~icons/game-icons/character/GameIconsCharacter.vue')
-);
-const GameIconsGauntlet = defineAsyncComponent(
-  () => import('~icons/game-icons/gauntlet/GameIconsGauntlet.vue')
-);
-const GameIconsMedievalVillage01 = defineAsyncComponent(
-  () => import('~icons/game-icons/medieval-village-01/GameIconsMedievalVillage01.vue')
-);
-const OpenChest = defineAsyncComponent(
-  () => import('~icons/game-icons/open-chest/OpenChest.vue')
-);
-const FireSpellCast = defineAsyncComponent(
-  () => import('~icons/game-icons/fire-spell-cast/FireSpellCast.vue')
-);
+const categories = CATEGORIES;
 
-function iconComponent(key){
-  switch(key) {
-    case 'scripts': return GameIconsGears;
-    case 'social': return GameIconsOrganigram;
-    case 'actors': return GameIconsCharacter;
-    case 'items': return GameIconsGauntlet;
-    case 'magic': return FireSpellCast;
-    case 'interact': return OpenChest;
-    case 'world': return GameIconsMedievalVillage01;
-    default: return GameIconsBookmarklet;
-  }
+function iconComponent(categoryName: string) {
+  const cat = getCategoryByName(categoryName.charAt(0).toUpperCase() + categoryName.slice(1));
+  return getCategoryIcon(cat?.icon || '');
 }
 
 const countTypesStore = useCountTypes();

@@ -140,6 +140,7 @@ export async function importPlugin(
     pluginData: RawRecord[],
     pluginKey: string,
     pluginName: string,
+    isActive: boolean,
     onProgress?: (ratio: number) => void,
 ) {
     let dialogueType: string | undefined;
@@ -187,6 +188,7 @@ export async function importPlugin(
                 TMP_speaker_class: record.speaker_class,
                 TMP_speaker_race: record.speaker_race,
                 TMP_dep: pluginName,
+                TMP_is_active: isActive,
                 TMP_index: index,
                 TMP_quest_name,
             };
@@ -197,6 +199,7 @@ export async function importPlugin(
                 ...record,
                 TMP_id: record.id || '',
                 TMP_dep: pluginName,
+                TMP_is_active: isActive,
                 TMP_index: index,
             };
         }

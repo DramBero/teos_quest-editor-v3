@@ -34,9 +34,10 @@ import TdesignCheck from '~icons/tdesign/check';
 import TdesignClose from '~icons/tdesign/close';
 import { modifyEntry } from '@/api/idb.ts';
 import { useSelectedQuest } from '@/stores/selectedQuest';
+import type { DialogueInfoRecord } from '@/types/pluginEntries';
 
 const props = defineProps<{
-  entry: Object;
+  entry: DialogueInfoRecord;
 }>();
 
 const selectedQuestStore = useSelectedQuest();

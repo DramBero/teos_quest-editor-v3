@@ -19,21 +19,19 @@
         </button>
       </div>
       <div class="journal-frame__controls">
-        <input 
-          class="text-input"
-          type="text" 
-          v-model.trim="factionSearch" 
+        <TInput
+          v-model="factionSearch"
           placeholder="Search"
-        >
+        />
         <div class="controls">
-          <button 
-            class="add-quest" 
-            :class="{'add-quest_active': showMasters}"
+          <TButton
+            :variant="showMasters ? 'dark-active' : 'dark'"
+            size="sm"
             @click="showMasters = !showMasters"
             :title="showMasters ? 'Showing all entries (incl. masters)' : 'Showing active plugin only'"
           >
             All
-          </button>
+          </TButton>
         </div>
       </div>
     </div>
@@ -57,6 +55,8 @@
 
 <script setup lang="ts">
 import SidebarFactionsItem from '@/components/sidebar/SidebarFactionsItem.vue';
+import TInput from '@/components/ui/TInput.vue';
+import TButton from '@/components/ui/TButton.vue';
 import { useCountTypes } from '@/stores/countTypes';
 import { fetchByType } from '@/api/idb.ts';
 import { computed, defineAsyncComponent, ref, watch } from 'vue';
@@ -102,19 +102,19 @@ const iconComponent = computed(() => {
 })
 
 const props = defineProps<{
-  title: String;
-  entryTypes: String[];
-  modificator: String;
+  title: string;
+  entryTypes: string[];
+  modificator: string;
 }>();
 
-const factions = ref([]);
-const filteredFactions = ref([]);
+const factions = ref<Record<string, unknown>[][]>([]);
+const filteredFactions = ref<Record<string, unknown>[][]>([]);
 
-const loading = ref<Boolean>(false);
+const loading = ref<boolean>(false);
 
-const selectedType = ref<String>('');
+const selectedType = ref<string>('');
 
-const showMasters = ref<Boolean>(false);
+const showMasters = ref<boolean>(false);
 
 watch(() => props.entryTypes, () => {
   selectedType.value = props.entryTypes[0] || '';

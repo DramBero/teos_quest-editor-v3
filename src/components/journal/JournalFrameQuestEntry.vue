@@ -60,6 +60,9 @@
             <TdesignFlag v-else />
           </button>
         </div>
+        <div class="entry-finished-flag" v-else-if="isFinished">
+          <TdesignFlagFilled />
+        </div>
       </div>
     </div>
   </div>
@@ -68,6 +71,7 @@
 <script setup lang="ts">
 import { useEditor, EditorContent } from '@tiptap/vue-3';
 import StarterKit from '@tiptap/starter-kit';
+import { VariableHighlight } from '@/extensions/VariableHighlight';
 import { computed, ref, watch } from 'vue';
 import TdesignAdd from '~icons/tdesign/add';
 import TdesignFlag from '~icons/tdesign/flag';
@@ -80,34 +84,19 @@ import { useSelectedQuest } from '@/stores/selectedQuest';
 
 import EntryDisposition from '@/components/journal/EntryDisposition.vue';
 
-const props = defineProps({
-  entry: {
-    type: Object,
-    required: false,
-    default: () => ({}),
-  },
-  prevEntry: {
-    type: Object,
-    required: false,
-    default: () => ({}),
-  },
-  nextEntry: {
-    type: Object,
-    required: false,
-    default: () => ({}),
-  },
-  questId: {
-    type: String,
-    required: false,
-  },
-  highlightedId: {
-    type: [Number, String],
-    required: false,
-  },
-  highlightedComparison: {
-    type: String,
-    required: false,
-  },
+import type { DialogueInfoRecord, FilterComparison } from '@/types/pluginEntries';
+
+const props = withDefaults(defineProps<{
+  entry?: DialogueInfoRecord;
+  prevEntry?: DialogueInfoRecord;
+  nextEntry?: DialogueInfoRecord;
+  questId?: string;
+  highlightedId?: number | string;
+  highlightedComparison?: FilterComparison | string;
+}>(), {
+  entry: () => ({}) as DialogueInfoRecord,
+  prevEntry: () => ({}) as DialogueInfoRecord,
+  nextEntry: () => ({}) as DialogueInfoRecord,
 });
 
 const selectedQuestStore = useSelectedQuest();
@@ -200,6 +189,7 @@ const editor = useEditor({
   content: entryText.value,
   extensions: [
     StarterKit,
+    VariableHighlight,
   ],
   onUpdate: () => entryText.value = editor.value ? editor.value.getText() : '',
 })
@@ -273,6 +263,17 @@ function getIsHighlighted(entryId) {
     svg {
       transition: color .3s ease-in;
     }
+  }
+}
+
+.entry-finished-flag {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 5px;
+  opacity: 0.7;
+  svg {
+    color: rgb(202, 165, 96);
   }
 }
 

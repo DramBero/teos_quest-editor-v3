@@ -153,7 +153,7 @@ async function loadTextFromFile(event: Event) {
     };
 
     if (!props.dep) {
-      await importPlugin(objects, pluginKey, fileName, onImportProgress);
+      await importPlugin(objects, pluginKey, fileName, true, onImportProgress);
       progressPct.value = 92;
       stage.value = 'Finalizing…';
 
@@ -170,7 +170,7 @@ async function loadTextFromFile(event: Event) {
       headerStore.setPluginHeader(headerResponse);
     } else {
       const depKey = makePluginKey(props.dep, file.size);
-      await importPlugin(objects, depKey, props.dep, onImportProgress);
+      await importPlugin(objects, depKey, props.dep, false, onImportProgress);
       // Open the dep DB in memory so queryAcrossPlugins can see it
       await initPlugin(depKey);
       invalidateDependencyCache();

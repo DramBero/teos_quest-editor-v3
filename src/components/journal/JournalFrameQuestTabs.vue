@@ -91,7 +91,9 @@ function handleTabSelect(value: string) {
   model.value = value;
 }
 
-const emit = defineEmits(['update']);
+const emit = defineEmits<{
+  (e: 'update'): void;
+}>();
 
 async function addQuest() {
   try {
@@ -163,7 +165,7 @@ const editor = useEditor({
       display: flex;
       align-items: center;
       gap: 5px;
-      font-family: 'Consolas';
+      font-family: 'Fira Code', monospace;
       &::after {
         content: '';
         position: absolute;

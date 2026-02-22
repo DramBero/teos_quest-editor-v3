@@ -1,6 +1,6 @@
 <template>
   <div class="frame">
-    <div class="frame-dialogue__wrapper">
+    <div v-show="!isScriptActive" class="frame-dialogue__wrapper">
       <div class="frame-controls">
         <div class="frame-controls-left">
           <div class="frame-controls-types__secondary" :style="{ gap: '10px' }" @click="openClassicView()">
@@ -46,10 +46,17 @@
 import DialogueFrameCard from '@/components/dialogue/DialogueFrameCard.vue';
 import Record from '../record/Record.vue';
 import { fetchAllDialogueBySpeaker, fetchSpeakersAmountBySpeakerType } from '@/api/idb.ts';
-import { defineAsyncComponent, onMounted, ref, watch } from 'vue';
+import { computed, defineAsyncComponent, onMounted, ref, watch } from 'vue';
 import { usePrimaryModal } from '@/stores/modals';
 import { useClassicView } from '@/stores/classicView';
 import { useSelectedSpeaker } from '@/stores/selectedSpeaker';
+import { useSelectedRecord } from '@/stores/selectedRecord';
+
+const selectedRecordStore = useSelectedRecord();
+const isScriptActive = computed(() => {
+  const rec = selectedRecordStore.getSelectedRecord;
+  return rec?.[0]?.type === 'Script';
+});
 
 type SpeakerType = 'npc' | 'cell' | 'class' | 'faction' | 'rank' | 'global';
 
@@ -104,7 +111,7 @@ const speakerTypeAmounts = ref<Record<SpeakerType, number>>({
   global: 0,
 });
 
-const currentSpeakers = ref([]);
+const currentSpeakers = ref<string[]>([]);
 watch(currentSpeakerType,
   async (newValue: SpeakerType) => {
     try {

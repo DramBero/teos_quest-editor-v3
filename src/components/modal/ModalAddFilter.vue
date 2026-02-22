@@ -98,8 +98,10 @@ onMounted(() => {
 
 const selectedComparison = ref<Comparison>(null);
 
+import type { SelectedFilterData } from '@/stores/selectedFilter';
+
 const props = defineProps<{
-  filter: Object | null;
+  filter: SelectedFilterData | null;
 }>();
 
 const selectedFilterStore = useSelectedFilter();

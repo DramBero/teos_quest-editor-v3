@@ -9,12 +9,8 @@
     }" -->
     <div class="quest-header">
       <div class="quest-title quest-title_expanded">
-        <div v-if="props.questNameData?.is_new && containsMasterIds" class="quest-status quest-status_mod">
-          Mod
-        </div>
-        <div v-else-if="props.questNameData?.is_new" class="quest-status quest-status_new">
-          New
-        </div>
+        <TStatusDot :status="questStatus" />
+        <span v-if="questStatus" class="quest-status-label">{{ questStatus === 'mod' ? 'Mod' : 'New' }}</span>
         <QuestNameEditor 
           :default="props.questNameData?.name"
           :disabled="true || !props.questNameData?.is_new"
@@ -72,6 +68,10 @@
         <div v-else-if="questDataLoaded" class="no-entries">
           No entries yet. <a class="link" @click="createEntry">Create?</a>
         </div>
+
+        <div v-else class="loading-entries">
+          <SVGSpinners90RingWithBg class="loading-spinner" />
+        </div>
       </div>
     </div>
   </div>
@@ -87,6 +87,9 @@ import JournalFrameQuestTabs from '@/components/journal/JournalFrameQuestTabs.vu
 import QuestNameEditor from '@/components/journal/QuestNameEditor.vue';
 import { useSelectedQuest } from '@/stores/selectedQuest';
 import { pxValue, useElementVisibility } from '@vueuse/core'
+import SVGSpinners90RingWithBg from '~icons/svg-spinners/90-ring-with-bg';
+import TStatusDot from '@/components/ui/TStatusDot.vue';
+import { useRecordStatus } from '@/composables/useRecordStatus';
 
 const target = useTemplateRef<HTMLDivElement>('quest');
 const targetIsVisible = useElementVisibility(target);
@@ -102,15 +105,24 @@ async function createEntry() {
   await selectedQuestStore.fetchQuest(questId);
 }
 
-const props = defineProps({
-  questNameData: Object,
-});
+interface QuestNameData {
+  name: string;
+  id?: string;
+  is_new: boolean;
+  quests: { id: string; TMP_is_active: boolean; TMP_quest_name: string }[];
+}
+
+const props = defineProps<{
+  questNameData?: QuestNameData;
+}>();
 
 watch(() => props.questNameData, () => {
-  console.log(props.questNameData)
+  // questNameData changed
 })
 
-const emit = defineEmits(['update']);
+const emit = defineEmits<{
+  (e: 'update'): void;
+}>();
 
 function update(questId: string) {
   emit('update');
@@ -133,6 +145,14 @@ const containsMasterIds = computed(() => {
   const isActiveList = props.questNameData.quests.map(val => val.TMP_is_active);
   return isActiveList.includes(false);
 })
+
+const { status: questStatus } = useRecordStatus(
+  () => ({}),
+  {
+    isNew: () => props.questNameData?.is_new ?? false,
+    isModified: containsMasterIds,
+  },
+);
 
 const getQuestIds = computed(() => {
   let questIds = props.questNameData.quests?.map(val => val.id) || [];
@@ -194,13 +214,11 @@ function editEntry(event, info_id) {
 
 watch(getHighlight, async (newValue) => {
   await new Promise((resolve) => setTimeout(resolve, 10));
-    console.log('HIGHLIGHT 1', newValue?.id || '11', selectedQuestId.value || '22')
   if (!newValue?.id) {
     highlightedId.value = '';
     highlightedComparison.value = '';
   }
   else if (newValue.id === selectedQuestId.value) {
-    console.log('HIGHLIGHT TEST')
     await new Promise((resolve) => setTimeout(resolve, 10));
     highlightedComparison.value = newValue.comparison;
     highlightedId.value = parseInt(newValue.value.data);
@@ -373,6 +391,20 @@ input[type='reset'] {
   text-align: center;
   width: 100%;
   padding: 20px;
+}
+
+.loading-entries {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  width: 100%;
+}
+
+.loading-spinner {
+  width: 32px;
+  height: 32px;
+  color: rgb(150, 50, 30);
 }
 
 .fadeHeight-enter-active,

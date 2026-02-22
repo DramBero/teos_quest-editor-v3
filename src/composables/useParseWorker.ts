@@ -1,5 +1,6 @@
 import { ref } from 'vue';
 import type { WorkerResponse } from '@/workers/parse.worker';
+import type { TES3_Record } from '@/types/tes3';
 
 /**
  * Spawns a Web Worker to parse a .esp/.esm file via WASM.
@@ -24,11 +25,11 @@ export function useParseWorker() {
         return worker;
     }
 
-    async function parse(buffer: ArrayBuffer): Promise<any[]> {
+    async function parse(buffer: ArrayBuffer): Promise<TES3_Record[]> {
         stage.value = 'Reading…';
         const w = getWorker();
 
-        return new Promise<any[]>((resolve, reject) => {
+        return new Promise<TES3_Record[]>((resolve, reject) => {
             w.onmessage = (e: MessageEvent<WorkerResponse>) => {
                 const msg = e.data;
                 switch (msg.type) {

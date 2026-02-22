@@ -79,19 +79,21 @@ async function savePlugin() {
 </script>
 
 <style lang="scss">
+@use '@/assets/_tokens.scss' as *;
+
 .toolbar {
   position: fixed;
   top: 42px;
   width: 100%;
   height: 38px;
-  background-color: #cb9;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+  background-color: $color-bg-sidebar;
+  box-shadow: $shadow-panel;
   z-index: 3;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  font-family: 'Pelagiad';
-  padding: 0 4px;
+  font-family: $font-main;
+  padding: 0 $space-xs;
 }
 
 .pseudoheader {
@@ -103,7 +105,7 @@ async function savePlugin() {
   display: flex;
   align-items: center;
   height: 100%;
-  gap: 2px;
+  gap: $space-xs;
 
   &--center {
     position: absolute;
@@ -120,17 +122,17 @@ async function savePlugin() {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: $space-sm;
   height: 34px;
-  padding: 0 14px;
+  padding: 0 $space-md;
   background: rgba(0, 0, 0, 0.08);
   border: none;
-  border-radius: 4px;
-  color: rgb(50, 40, 25);
+  border-radius: $border-radius-sm;
+  color: $color-text-dark;
   cursor: pointer;
-  font-family: 'Pelagiad';
-  font-size: 16px;
-  transition: all 80ms ease;
+  font-family: $font-main;
+  font-size: $font-size-sm;
+  transition: all $transition-fast;
 
   svg {
     width: 18px;
@@ -152,7 +154,6 @@ async function savePlugin() {
 
   &--action {
     background: rgba(0, 0, 0, 0.12);
-    font-size: 15px;
 
     &:hover {
       background: rgba(0, 0, 0, 0.22);
@@ -163,15 +164,15 @@ async function savePlugin() {
 .toolbar__header-btn {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: $space-sm;
   height: 30px;
-  padding: 0 14px;
+  padding: 0 $space-md;
   background: rgba(0, 0, 0, 0.06);
   border: 1px solid rgba(0, 0, 0, 0.1);
-  border-radius: 4px;
+  border-radius: $border-radius-sm;
   cursor: pointer;
-  font-family: 'Pelagiad';
-  transition: all 80ms ease;
+  font-family: $font-main;
+  transition: all $transition-fast;
 
   &:hover {
     background: rgba(0, 0, 0, 0.12);
@@ -183,8 +184,8 @@ async function savePlugin() {
 }
 
 .toolbar__plugin-name {
-  font-size: 17px;
-  color: rgb(50, 40, 25);
+  font-size: $font-size-sm;
+  color: $color-text-dark;
   font-weight: 500;
 }
 
@@ -192,7 +193,7 @@ async function savePlugin() {
   width: 14px;
   height: 14px;
   opacity: 0.4;
-  transition: opacity 80ms ease;
-  color: rgb(50, 40, 25);
+  transition: opacity $transition-fast;
+  color: $color-text-dark;
 }
 </style>

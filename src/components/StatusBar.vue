@@ -17,12 +17,12 @@
     </div>
 
     <div class="status-bar__right">
-      <span class="status-bar__stat">
-        Storage: {{ storageUsed }} / {{ storageTotal }}
+      <span class="status-bar__stat status-bar__interactive" @click="openStorage" title="Manage Storage">
+        Storage: {{ storageStats.storageUsed }} / {{ storageStats.storageTotal }}
       </span>
       <template v-if="sessionStore.currentSession">
         <span class="status-bar__separator">·</span>
-        <span class="status-bar__stat">
+        <span class="status-bar__stat status-bar__interactive" @click="openDeps" title="Manage Dependencies">
           {{ sessionStore.currentSession.pluginName }} + {{ sessionStore.currentSession.dependencies.length }} dep{{ sessionStore.currentSession.dependencies.length !== 1 ? 's' : '' }}
         </span>
       </template>
@@ -33,35 +33,19 @@
 <script setup lang="ts">
 import { ref, onMounted, watch } from 'vue';
 import { useSessionStore } from '@/stores/session';
+import { usePrimaryModal } from '@/stores/modals';
+import { useStorageStats } from '@/stores/storageStats';
 
 const sessionStore = useSessionStore();
+const primaryModalStore = usePrimaryModal();
+const storageStats = useStorageStats();
 
-// -------------------------------------------------------------------------
-//  Storage estimate (real data from browser API)
-// -------------------------------------------------------------------------
-
-const storageUsed = ref('—');
-const storageTotal = ref('—');
-
-async function updateStorageEstimate() {
-  if (!navigator.storage?.estimate) return;
-  try {
-    const estimate = await navigator.storage.estimate();
-    const usedBytes = estimate.usage ?? 0;
-    const totalBytes = estimate.quota ?? 0;
-    storageUsed.value = formatStorageSize(usedBytes);
-    storageTotal.value = formatStorageSize(totalBytes);
-  } catch {
-    // Silently ignore — some browsers don't support this
-  }
+function openStorage() {
+  primaryModalStore.setActiveModal('Storage');
 }
 
-function formatStorageSize(bytes: number): string {
-  if (bytes === 0) return '0 B';
-  const k = 1024;
-  if (bytes < k * k) return `${(bytes / k).toFixed(0)} KB`;
-  if (bytes < k * k * k) return `${(bytes / (k * k)).toFixed(1)} MB`;
-  return `${(bytes / (k * k * k)).toFixed(1)} GB`;
+function openDeps() {
+  primaryModalStore.setActiveModal('Upload');
 }
 
 // -------------------------------------------------------------------------
@@ -74,7 +58,7 @@ function formatLastOpened(timestamp: number): string {
   if (seconds < 60) return 'just now';
   const minutes = Math.floor(seconds / 60);
   if (minutes < 60) return `${minutes} min ago`;
-  const hours = Math.floor(minutes / 60);
+  const hours = Math.floor(minutes / 24);
   if (hours < 24) return `${hours}h ago`;
   const days = Math.floor(hours / 24);
   return `${days}d ago`;
@@ -85,12 +69,12 @@ function formatLastOpened(timestamp: number): string {
 // -------------------------------------------------------------------------
 
 onMounted(() => {
-  updateStorageEstimate();
+  storageStats.updateStorageEstimate();
 });
 
 // Re-estimate storage when session changes (plugin loaded/deleted)
 watch(() => sessionStore.currentSession?.id, () => {
-  updateStorageEstimate();
+  storageStats.updateStorageEstimate();
 });
 </script>
 
@@ -129,9 +113,26 @@ watch(() => sessionStore.currentSession?.id, () => {
   display: flex;
   align-items: center;
   gap: 4px;
+  transition: all 0.2s;
 
   &--changes { color: rgb(100, 170, 255); }
   &--time { color: rgba(220, 220, 220, 0.45); }
+}
+
+.status-bar__interactive {
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 4px;
+  user-select: none;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+  }
+  
+  &:active {
+    background: rgba(255, 255, 255, 0.15);
+  }
 }
 
 .status-bar__dot {

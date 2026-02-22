@@ -118,6 +118,20 @@ export const useSessionStore = defineStore('session', () => {
         await saveSession({ ...toRaw(currentSession.value) });
     }
 
+    /** Update arbitrary session fields. */
+    async function updateSession(session: Session) {
+        await saveSession({ ...toRaw(session) });
+        // Update local state if it matches current
+        if (currentSession.value?.id === session.id) {
+            currentSession.value = session;
+        }
+        // Update list
+        const idx = sessions.value.findIndex(s => s.id === session.id);
+        if (idx !== -1) {
+            sessions.value[idx] = session;
+        }
+    }
+
     return {
         // state
         sessions,
@@ -134,5 +148,6 @@ export const useSessionStore = defineStore('session', () => {
         deleteSession,
         incrementChanges,
         resetChanges,
+        updateSession,
     };
 });

@@ -40,10 +40,11 @@ export function getDB(name: string): Dexie {
     return databases[name];
 }
 
-export function deleteDB(name: string) {
-    Dexie.delete(name);
+export async function deleteDB(name: string) {
+    const p = Dexie.delete(name);
     delete databases[name];
     invalidateDependencyCache();
+    return p;
 }
 
 export async function checkDB(name: string): Promise<boolean> {
@@ -199,27 +200,78 @@ export async function getDependencies(): Promise<string[]> {
     return dependencies;
 }
 
+export async function getDependencyMap(): Promise<Map<string, string>> {
+    const activeDB = await getActiveDB();
+    const header = await activeDB.pluginData.where('type').equals('Header').first();
+    if (!header) {
+        throw 'NO_HEADERFOUND';
+    }
+
+    const map = new Map<string, string>();
+    header.masters.forEach((val: string[] | [string, number]) => {
+        let key: string;
+        let name: string;
+        if (Array.isArray(val) && val.length >= 2 && typeof val[1] === 'number') {
+            key = makePluginKey(val[0], val[1]);
+            name = val[0];
+        } else {
+            // Legacy
+            name = typeof val === 'string' ? val : val[0];
+            key = name;
+        }
+        map.set(key, name);
+    });
+    return map;
+}
+
 /**
- * Check whether a dependency is loaded by scanning actual IndexedDB databases.
+ * Check whether a dependency is loaded by scanning actual IndexedDB databases
+ * AND verifying the DB contains records (not just an empty shell).
  * Deps in master lists are raw names (e.g. "Morrowind.esm") while DB keys
  * use the format "plugin_{name}_{sizeBytes}".
  */
 export async function isPluginLoaded(depName: string): Promise<boolean> {
-    // Use the native IDB API to list all databases on disk
+    const prefix = `plugin_${depName}_`;
+
+    // 1. Find matching DB name
+    let matchedDbName: string | undefined;
+
     if (typeof indexedDB.databases === 'function') {
         try {
             const allDbs = await indexedDB.databases();
-            const prefix = `plugin_${depName}_`;
-            return allDbs.some(db => db.name?.startsWith(prefix));
+            matchedDbName = allDbs.find(db => db.name?.startsWith(prefix))?.name ?? undefined;
         } catch { /* fallback below */ }
     }
+
     // Fallback: check in-memory map (older browsers without databases())
-    for (const key of Object.keys(databases)) {
-        if (key.startsWith(`plugin_${depName}_`) || key === depName) {
-            return true;
+    if (!matchedDbName) {
+        for (const key of Object.keys(databases)) {
+            if (key.startsWith(prefix) || key === depName) {
+                matchedDbName = key;
+                break;
+            }
         }
     }
-    return false;
+
+    if (!matchedDbName) return false;
+
+    // 2. Verify the DB actually has data (not just an empty shell from initPlugin)
+    try {
+        const db = databases[matchedDbName];
+        if (db?.isOpen()) {
+            const count = await db.pluginData.count();
+            return count > 0;
+        }
+        // DB exists on disk but not open in memory — open temporarily to check
+        const tempDb = new Dexie(matchedDbName);
+        tempDb.version(2).stores({ pluginData: PLUGIN_DATA_INDEXES });
+        await tempDb.open();
+        const count = await tempDb.table('pluginData').count();
+        tempDb.close();
+        return count > 0;
+    } catch {
+        return false;
+    }
 }
 
 export async function getHeader(pluginName: string) {
@@ -264,8 +316,7 @@ let journalCount = 0;
 export async function countTypes() {
     try {
         const activeDB = await getActiveDB();
-        activePluginTypeCount = {};
-        journalCount = 0;
+        const newCounts: Record<string, number> = {};
 
         // Use index-based counting — no data leaves IDB
         const types: string[] = await activeDB.pluginData.orderBy('type').uniqueKeys();
@@ -273,13 +324,17 @@ export async function countTypes() {
             types.map((type) => activeDB.pluginData.where('type').equals(type).count()),
         );
         for (let i = 0; i < types.length; i++) {
-            activePluginTypeCount[types[i]] = counts[i];
+            newCounts[types[i]] = counts[i];
         }
 
         // dialogue_type is not indexed, but only Dialogue records have it —
         // filter within the much smaller 'Dialogue' subset instead of scanning all
         const dialogues = await activeDB.pluginData.where('type').equals('Dialogue').toArray();
-        journalCount = dialogues.filter((d: any) => d.dialogue_type === 'Journal').length;
+        const newJournalCount = dialogues.filter((d: Record<string, unknown>) => d.dialogue_type === 'Journal').length;
+
+        // Assign atomically — old values stay visible until new ones are ready
+        activePluginTypeCount = newCounts;
+        journalCount = newJournalCount;
     } catch (error) {
         logger.error('DB', 'Failed to count types', error);
     }

@@ -29,7 +29,7 @@ const getHeader = computed(() => {
   return headerStore.getPluginHeader;
 })
 const getDependencies = computed(() => {
-  return getHeader.value?.masters?.map((val: any) => val[0]) || [];
+  return getHeader.value?.masters?.map((val: [string, number]) => val[0]) || [];
 })
 </script>
 

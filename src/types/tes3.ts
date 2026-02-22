@@ -338,6 +338,30 @@ export interface TES3_Faction {
 }
 
 // ============================================================================
+//  Script
+// ============================================================================
+
+/** docs/tes3/libs/esp/src/types/script.rs — ScriptHeader */
+export interface ScriptHeader {
+    num_shorts: number;
+    num_longs: number;
+    num_floats: number;
+    bytecode_length: number;
+    variables_length: number;
+}
+
+/** docs/tes3/libs/esp/src/types/script.rs — Script record */
+export interface TES3_Script {
+    type: 'Script';
+    flags: ObjectFlags;
+    id: string;
+    header: ScriptHeader;
+    variables: number[];   // raw bytes (SCVR — null-terminated var names)
+    bytecode: number[];    // raw bytes (SCDT — compiled opcodes)
+    text: string;          // source text (SCTX)
+}
+
+// ============================================================================
 //  Union of all record types the editor handles
 // ============================================================================
 
@@ -346,4 +370,5 @@ export type TES3_Record =
     | TES3_Dialogue
     | TES3_DialogueInfo
     | TES3_Npc
-    | TES3_Faction;
+    | TES3_Faction
+    | TES3_Script;

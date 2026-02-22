@@ -1,1 +1,1 @@
-export type PrimaryModal = 'Upload' | 'NewQuest' | 'NewFilter' | 'NewDialogue' | 'Dialogue' | '';
+export type PrimaryModal = 'Upload' | 'NewQuest' | 'NewFilter' | 'NewDialogue' | 'Dialogue' | 'Storage' | '';

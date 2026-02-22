@@ -21,14 +21,10 @@
         <div></div>
         <transition name="fade" class="dialogue-answers__frame" mode="out-in" :style="{ width: '100%' }">
           <template v-if="!currentTopic.trim().length && newTopicMode">
-            <input 
-              type="text"
+            <TInput
               ref="topicName"
-              placeholder="New topic"
-              name="topicName"
-              class="text-input"
               v-model="newTopicName"
-              autocomplete="off"
+              placeholder="New topic"
             />
           </template>
         </transition>
@@ -104,8 +100,8 @@
           :key="index"
           class="dialogue-questions__topic" 
           :class="{
-            'dialogue-questions__topic_new': question[0].TMP_is_active,
-            'dialogue-questions__topic_mod': question.length > 1 && question[0].TMP_is_active,
+            'dialogue-questions__topic_new': getTopicStatus(question) === 'new',
+            'dialogue-questions__topic_mod': getTopicStatus(question) === 'mod',
             'dialogue-questions__topic_selected': question[0].TMP_topic === currentTopic,
           }"
           @click="setCurrentAnswers(question[0].TMP_topic, 'Greeting')"
@@ -119,8 +115,8 @@
           :key="index"
           class="dialogue-questions__topic" 
           :class="{
-            'dialogue-questions__topic_new': question[0].TMP_is_active,
-            'dialogue-questions__topic_mod': question.length > 1 && question[0].TMP_is_active,
+            'dialogue-questions__topic_new': getTopicStatus(question) === 'new',
+            'dialogue-questions__topic_mod': getTopicStatus(question) === 'mod',
             'dialogue-questions__topic_selected': question[0].TMP_topic === currentTopic,
           }"
           @click="setCurrentAnswers(question[0].TMP_topic, 'Persuasion')"
@@ -133,8 +129,8 @@
         :key="index"
         class="dialogue-questions__topic" 
         :class="{
-          'dialogue-questions__topic_new': question[0].TMP_is_active,
-          'dialogue-questions__topic_mod': question.length > 1 && question[0].TMP_is_active,
+          'dialogue-questions__topic_new': getTopicStatus(question) === 'new',
+          'dialogue-questions__topic_mod': getTopicStatus(question) === 'mod',
           'dialogue-questions__topic_selected': question[0].TMP_topic === currentTopic,
         }"
         @click="setCurrentAnswers(question[0].TMP_topic, 'Topic')"
@@ -154,6 +150,7 @@
 
 <script setup lang="ts">
 import { useSelectedSpeaker } from '@/stores/selectedSpeaker';
+import type { DialogueInfoRecord } from '@/types/pluginEntries';
 import DialogueEntry from '@/components/dialogue/DialogueEntry.vue';
 import { fetchTopicListByNPC, getOrderedEntriesByTopic, addDialogueEntry } from '@/api/idb.ts';
 import { computed, reactive, ref, toRefs, useTemplateRef, watch } from 'vue';
@@ -164,13 +161,22 @@ import TdesignList from '~icons/tdesign/list';
 import TdesignAdd from '~icons/tdesign/add';
 import TdesignCheck from '~icons/tdesign/check';
 import ContextMenu from '@imengyu/vue3-context-menu';
+import TInput from '@/components/ui/TInput.vue';
+import type { RecordStatus } from '@/composables/useRecordStatus';
 
-const props = defineProps({
-  speaker: {
-    type: Object,
-    required: false,
-    default: () => ({}),
-  },
+/** Same logic as useRecordArrayStatus but callable in v-for without composable */
+function getTopicStatus(question: Record<string, unknown>[]): RecordStatus {
+  if (!question?.length) return '';
+  const first = question[0];
+  if (!first.TMP_is_active) return '';
+  if (question.length > 1) return 'mod';
+  return 'new';
+}
+
+const props = withDefaults(defineProps<{
+  speaker?: { speakerId?: string; speakerType?: string };
+}>(), {
+  speaker: () => ({}) as { speakerId?: string; speakerType?: string },
 })
 const { speaker } = toRefs(props);
 
@@ -180,16 +186,16 @@ const showDependencies = ref<boolean>(true);
 const editedEntry = ref<string>('');
 const topicType = ref<string>('');
 const infoMessage = ref<string>('');
-const greetingsList = ref([]);
-const persuasionsList = ref([]);
-const topicsList = ref([]);
-const orderedEntries = ref([]);
+const greetingsList = ref<Record<string, unknown>[]>([]);
+const persuasionsList = ref<Record<string, unknown>[]>([]);
+const topicsList = ref<Record<string, unknown>[]>([]);
+const orderedEntries = ref<DialogueInfoRecord[]>([]);
 
 interface DialogueFiltration {
   key: string;
   value: string | number;
 }
-const appliedFiltration = reactive<Object>({});
+const appliedFiltration = reactive<Record<string, string | number>>({});
 function applyFilter(filter: DialogueFiltration) {
   appliedFiltration[filter.key] = filter.value;
 }
@@ -240,13 +246,20 @@ const currentAnswers = computed(() => {
     answers = orderedEntries.value
       .filter((val) => val.TMP_topic === currentTopic.value)
       .filter((topic) =>
+        // Entries specifically assigned to this speaker
         [
           topic['speaker_id'],
           topic['speaker_cell'],
           topic['speaker_faction'],
           topic['speaker_class'],
           topic['speaker_race'],
-        ].includes(speaker.value.speakerId),
+        ].includes(speaker.value.speakerId) ||
+        // Generic entries (no speaker restriction — apply to all NPCs via filters)
+        (!topic['speaker_id'] &&
+         !topic['speaker_cell'] &&
+         !topic['speaker_faction'] &&
+         !topic['speaker_class'] &&
+         !topic['speaker_race']),
       );
   } else {
     answers = orderedEntries.value
@@ -617,7 +630,7 @@ watch(currentTopic, (async (newValue) => {
       &__value {
         color: black;
         background-color: rgba(202, 165, 96, 0.8);
-        font-family: 'Consolas';
+        font-family: 'Fira Code', monospace;
         font-size: 14px;
         padding: 3px;
         border-radius: 5px;
@@ -873,7 +886,7 @@ watch(currentTopic, (async (newValue) => {
         &__id {
           color: black;
           background-color: rgba(202, 165, 96, 0.8);
-          font-family: 'Consolas';
+          font-family: 'Fira Code', monospace;
           font-size: 14px;
           padding: 3px;
           border-radius: 5px;

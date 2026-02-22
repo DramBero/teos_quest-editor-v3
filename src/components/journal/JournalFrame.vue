@@ -3,35 +3,30 @@
     <div class="journal-frame__header">
       <div class="journal-frame__controls" v-if="!selectedQuestName">
         <span class="frame-title">Journal</span>
-        <input 
-          class="text-input"
-          type="text" 
-          v-model.trim="questSearch" 
+        <TInput
+          v-model="questSearch"
           placeholder="Search"
-        >
+        />
         <div class="controls">
-          <button 
-            class="add-quest" 
-            :class="{'add-quest_active': showMasters}"
+          <TButton
+            :variant="showMasters ? 'dark-active' : 'dark'"
+            size="sm"
             @click="toggleMasters"
             :title="showMasters ? 'Showing all entries (incl. masters)' : 'Showing active plugin only'"
           >
             All
-          </button>
-          <button class="add-quest" @click="addQuest()">
+          </TButton>
+          <TButton variant="dark" size="sm" @click="addQuest()">
             <TdesignAdd />
             Add
-          </button>
+          </TButton>
         </div>
       </div>
       <div v-else class="journal-frame__controls">
         <div class="controls">
-          <button 
-            class="add-quest" 
-            @click="handleQuestNameSelect(null)"
-          >
+          <TButton variant="dark" size="sm" @click="handleQuestNameSelect(null)">
             Back
-          </button>
+          </TButton>
         </div>
       </div>
     </div>
@@ -63,6 +58,8 @@ import { useSelectedQuest } from '@/stores/selectedQuest';
 import { useVirtualList, watchDebounced } from '@vueuse/core';
 import JournalFrameQuestExpanded from './JournalFrameQuestExpanded.vue';
 import TdesignAdd from '~icons/tdesign/add';
+import TInput from '@/components/ui/TInput.vue';
+import TButton from '@/components/ui/TButton.vue';
 
 const primaryModalStore = usePrimaryModal();
 function addQuest() {
@@ -80,7 +77,7 @@ const selectedQuestStore = useSelectedQuest();
 
 const getJournal = computed(() => selectedQuestStore.getQuests);
 
-const questList = ref([]);
+const questList = ref<Record<string, unknown>[]>([]);
 
 function fetchQuests() {
   selectedQuestStore.fetchQuests();
@@ -92,8 +89,6 @@ function handleQuestNameSelect(newValue: String | null) {
 }
 
 async function handleSearch() {
-  questList.value = [];
-  await new Promise((resolve) => setTimeout(resolve, 10));
   if (!questSearch.value || questSearch.value.length < 3) {
     questList.value = getJournal.value;
   } else {
@@ -371,7 +366,7 @@ export default {
       }
     }
     &_finished {
-      background-color: rgba(145, 215, 145, 0.5);
+      border-bottom: 3px solid rgb(202, 165, 96);
     }
     &_highlighted {
       background-image: repeating-linear-gradient(

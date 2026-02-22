@@ -41,11 +41,13 @@
             <div class="curr-id">id: {{ props.answer.id }}</div>
           </div>
 
-          <DialogueEntryFilters
+
+        <DialogueEntryFilters
             :answer="props.answer" 
             :speaker="props.speaker" 
             :topicChoices="props.topicChoices"
-            @fetchTopic="() => {}"
+            :onlyFilters="false"
+            @fetchTopic="emit('updateAll')"
           />
 
           <div class="dialogue-answers-answer__text">
@@ -100,9 +102,10 @@ import DialogueEntryResults from '../dialogue/DialogueEntryResults.vue';
 import { useEditor, EditorContent } from '@tiptap/vue-3';
 import StarterKit from '@tiptap/starter-kit';
 import { Placeholder } from '@tiptap/extension-placeholder';
+import { VariableHighlight } from '@/extensions/VariableHighlight';
 
 import { watchDebounced } from '@vueuse/core';
-import { editTopicText, addDialogueEntry, deleteJournalEntry, modifyEntry } from '@/api/idb.ts';
+import { editTopicText, addDialogueEntry, deleteJournalEntry, modifyEntry, editScriptText } from '@/api/idb.ts';
 import { computed, ref, watch } from 'vue';
 
 import ContextMenu, { type MenuItem } from '@imengyu/vue3-context-menu';
@@ -132,17 +135,16 @@ const props = defineProps<{
   orderedEntries: InfoEntry[];
 }>();
 
-const emit = defineEmits(['applyFilter', 'setCurrentAnswers', 'updateAll', 'updateChoices']);
+const emit = defineEmits<{
+  (e: 'applyFilter', filter: unknown): void;
+  (e: 'setCurrentAnswers', text: string, type: string): void;
+  (e: 'updateAll'): void;
+  (e: 'updateChoices'): void;
+}>();
 
-const getEntryStatus = computed(() => {
-  if (props.answer.TMP_is_active && props.answer.old_values && props.answer.old_values.length > 1) {
-    return 'mod';
-  } else if (props.answer.TMP_is_active) {
-    return 'new';
-  } else {
-    return '';
-  }
-});
+import { useRecordStatus } from '@/composables/useRecordStatus';
+
+const { status: getEntryStatus } = useRecordStatus(() => props.answer);
 
 const currentEntry = ref<InfoEntry | null>(null);
 
@@ -187,8 +189,15 @@ watch(() => props.answer, (newValue) => {
   immediate: true,
 })
 
-watchDebounced(answerText, (newValue) => {
-  editTopicText(props.answer.TMP_info_id, newValue)
+watchDebounced(answerText, async (newValue) => {
+  const result = await editTopicText(props.answer.TMP_info_id, newValue);
+  if (result) {
+    // If we received a result, it means an override was created or modified.
+    // If the ID changed (unlikely for Info ID) or it became active, refresh UI.
+    if (result.TMP_is_active !== props.answer.TMP_is_active) {
+      emit('updateAll');
+    }
+  }
 }, {
   debounce: 500,
 })
@@ -200,6 +209,7 @@ const editor = useEditor({
     Placeholder.configure({
       placeholder: 'New entry',
     }),
+    VariableHighlight,
   ],
   autofocus: props.answer.text === '' ? 'all' : false,
   onUpdate: () => answerText.value = editor.value?.getText() || '',
@@ -292,15 +302,16 @@ function useLuaResults() {
       .join('\r\n');
   });
 
+
   async function addLuaScript() {
     const scriptText = `;lua text\r\n${getMWScript.value}`;
-    const newEntryResponse = await modifyEntry({
-      TMP_index: props.answer.TMP_index,
-      TMP_dep: props.answer.TMP_dep,
-      script_text: scriptText,
-    });
+    const newEntryResponse = await editScriptText(props.answer.TMP_info_id, scriptText);
+
     if (newEntryResponse) {
       currentEntry.value = newEntryResponse;
+      if (newEntryResponse.TMP_is_active !== props.answer.TMP_is_active) {
+         emit('updateAll');
+      }
     }
   }
 
@@ -308,13 +319,14 @@ function useLuaResults() {
     const luaScripts = newValue.split('\r\n').map(val => ';lua ' + val).join('\r\n');
     const scriptText = `${luaScripts}\r\n${getMWScript.value}`;
     console.log('SCRIPT TEXT:', scriptText);
-    const newEntryResponse = await modifyEntry({
-      TMP_index: props.answer.TMP_index,
-      TMP_dep: props.answer.TMP_dep,
-      script_text: scriptText,
-    });
+    
+    const newEntryResponse = await editScriptText(props.answer.TMP_info_id, scriptText);
+
     if (newEntryResponse) {
       currentEntry.value = newEntryResponse;
+      if (newEntryResponse.TMP_is_active !== props.answer.TMP_is_active) {
+         emit('updateAll');
+      }
     }
   }
 
@@ -337,13 +349,14 @@ function useMWScriptResults() {
   async function addMWScript() {
     const luaValue = getLua.value.split('\r\n').map(val => `;lua ${val}`).join('\r\n');
     const scriptText = `${luaValue}\r\ntext`;
-    const newEntryResponse = await modifyEntry({
-      TMP_index: props.answer.TMP_index,
-      TMP_dep: props.answer.TMP_dep,
-      script_text: scriptText,
-    });
+    
+    const newEntryResponse = await editScriptText(props.answer.TMP_info_id, scriptText);
+
     if (newEntryResponse) {
       currentEntry.value = newEntryResponse;
+      if (newEntryResponse.TMP_is_active !== props.answer.TMP_is_active) {
+         emit('updateAll');
+      }
     }
   }
 
@@ -351,14 +364,15 @@ function useMWScriptResults() {
     const luaValue = getLua.value.split('\r\n').map(val => `;lua ${val}`).join('\r\n');
     const scriptText = `${luaValue}\r\n${newValue}`;
     console.log('SCRIPT TEXT:', scriptText);
-    const newEntryResponse = await modifyEntry({
-      TMP_index: props.answer.TMP_index,
-      TMP_dep: props.answer.TMP_dep,
-      script_text: scriptText,
-    });
+    
+    const newEntryResponse = await editScriptText(props.answer.TMP_info_id, scriptText);
     emit('updateChoices');
+
     if (newEntryResponse) {
       currentEntry.value = newEntryResponse;
+      if (newEntryResponse.TMP_is_active !== props.answer.TMP_is_active) {
+         emit('updateAll');
+      }
     }
   }
 
@@ -475,5 +489,24 @@ function applyFilter(filter) {
   float: left;
   height: 0;
   pointer-events: none;
+}
+
+// --- Morrowind variable highlighting ---
+.mw-var {
+  border-radius: 2px;
+  padding: 0 1px;
+  font-weight: 500;
+
+  &--valid {
+    color: rgba(255, 255, 255, 0.95);
+    background: rgba(255, 255, 255, 0.08);
+  }
+  &--invalid {
+    color: rgb(220, 120, 100);
+    background: rgba(220, 120, 100, 0.1);
+  }
+  &--pending {
+    color: rgba(255, 255, 255, 0.5);
+  }
 }
 </style>

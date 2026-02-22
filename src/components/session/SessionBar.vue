@@ -34,54 +34,7 @@
       </svg>
     </button>
 
-    <!-- Storage Modal -->
-    <div v-if="showStorage" class="storage-overlay" @click.self="showStorage = false">
-      <div class="storage-modal">
-        <div class="storage-modal__header">
-          <h3>Plugin Storage</h3>
-          <button class="storage-modal__close" @click="showStorage = false">&times;</button>
-        </div>
 
-        <div class="storage-modal__quota">
-          <div class="storage-modal__quota-text">
-            Used: <strong>{{ storageUsed }} MB</strong> / {{ storageTotal }} GB
-          </div>
-          <div class="storage-modal__quota-bar">
-            <div class="storage-modal__quota-fill" :style="{ width: storagePercent + '%' }"></div>
-          </div>
-        </div>
-
-        <div class="storage-modal__list">
-          <div
-            v-for="plugin in cachedPlugins"
-            :key="plugin.key"
-            class="storage-modal__item"
-            :title="plugin.name"
-          >
-            <span class="storage-modal__item-icon">📜</span>
-            <div class="storage-modal__item-info">
-              <span class="storage-modal__item-name">{{ plugin.name }}</span>
-              <span v-if="plugin.sessions" class="storage-modal__item-sessions">
-                {{ plugin.sessions }} session{{ plugin.sessions > 1 ? 's' : '' }}
-              </span>
-            </div>
-            <span class="storage-modal__item-size">{{ plugin.size }}</span>
-            <button
-              class="storage-modal__item-delete"
-              :disabled="plugin.sessions > 0"
-              :title="plugin.sessions > 0 ? 'Used in active sessions' : 'Delete cached plugin'"
-              @click="deletePlugin(plugin.key)"
-            >
-              &times;
-            </button>
-          </div>
-        </div>
-
-        <div class="storage-modal__footer">
-          <button class="storage-modal__clear">Clear All Unused</button>
-        </div>
-      </div>
-    </div>
   </div>
 </template>
 
@@ -91,6 +44,7 @@ import ContextMenu from '@imengyu/vue3-context-menu';
 import { useSessionStore } from '@/stores/session';
 import { usePluginHeader } from '@/stores/pluginHeader';
 import { useReloadTrigger } from '@/stores/reloadTrigger';
+import { usePrimaryModal } from '@/stores/modals';
 import init, { load_objects } from '@/tes3_wasm/tes3_wasm.js';
 import {
   importPlugin,
@@ -105,19 +59,13 @@ import { logger } from '@/services/logger';
 const sessionStore = useSessionStore();
 const headerStore = usePluginHeader();
 const reloadTriggerStore = useReloadTrigger();
+const primaryModalStore = usePrimaryModal();
 
 const fileInputRef = ref<HTMLInputElement | null>(null);
-const showStorage = ref(false);
-
-// Storage mock (Phase 3 will wire this to real data)
-const storageUsed = ref(174);
-const storageTotal = ref(2);
-const storagePercent = ref(8.7);
-const cachedPlugins = ref<{ key: string; name: string; size: string; sessions: number }[]>([]);
-
 // -------------------------------------------------------------------------
 //  Init
 // -------------------------------------------------------------------------
+
 
 onMounted(async () => {
   await init();
@@ -129,7 +77,17 @@ onMounted(async () => {
       headerStore.setPluginHeader(header);
     }
     // Eagerly init deps so queryAcrossPlugins sees them immediately
-    try { await getDependencies(); } catch { /* no deps or header missing */ }
+    try { 
+        const deps = await getDependencies(); 
+        // Sync deps to session store if they differ (e.g. legacy or fresh import)
+        if (JSON.stringify(restored.dependencies) !== JSON.stringify(deps)) {
+            // Update session with correct deps
+             await sessionStore.updateSession({
+                 ...restored,
+                 dependencies: deps
+             });
+        }
+    } catch { /* no deps or header missing */ }
     // Signal data components to re-fetch (they may have mounted before session was ready)
     reloadTriggerStore.triggerReload();
   }
@@ -147,6 +105,17 @@ async function handleSwitchSession(id: string) {
   if (header) {
     headerStore.setPluginHeader(header);
   }
+  // Ensure deps are up to date
+  try {
+      const deps = await getDependencies();
+      if (sessionStore.currentSession && JSON.stringify(sessionStore.currentSession.dependencies) !== JSON.stringify(deps)) {
+           await sessionStore.updateSession({
+               ...sessionStore.currentSession,
+               dependencies: deps
+           });
+      }
+  } catch { /* ignore */ }
+  
   reloadTriggerStore.triggerReload();
 }
 
@@ -199,7 +168,7 @@ async function loadPluginFile(event: Event) {
     const objects = await load_objects(bytes);
 
     const pluginKey = makePluginKey(file.name, file.size);
-    await importPlugin(objects, pluginKey, file.name);
+    await importPlugin(objects, pluginKey, file.name, true);
 
     // Create session (deps empty initially so getActiveDB works)
     const session = await sessionStore.createSession(file.name, file.size, []);
@@ -210,12 +179,14 @@ async function loadPluginFile(event: Event) {
       await initPlugin(dep);
     }
 
-    // Update deps in-place — single IDB save instead of second createSession
+    // Update deps in persistent store
     if (deps.length && session) {
-      session.dependencies = deps;
-      if (sessionStore.currentSession) {
-        sessionStore.currentSession.dependencies = deps;
-      }
+      // Must fetch fresh session instance or update the one we have
+      // Since createSession returns the object, we can update it
+      await sessionStore.updateSession({
+          ...session,
+          dependencies: deps
+      });
     }
 
     // Update header
@@ -244,7 +215,7 @@ function openGearMenu(e: MouseEvent) {
     items: [
       {
         label: 'Plugin Storage',
-        onClick: () => { showStorage.value = true; },
+        onClick: () => { primaryModalStore.setActiveModal('Storage'); },
       },
       {
         label: 'Session History',
@@ -262,9 +233,7 @@ function openGearMenu(e: MouseEvent) {
   });
 }
 
-function deletePlugin(key: string) {
-  cachedPlugins.value = cachedPlugins.value.filter(p => p.key !== key);
-}
+
 
 // -------------------------------------------------------------------------
 //  Helpers
@@ -410,186 +379,5 @@ function formatBytes(bytes: number, decimals: number = 1): string {
   }
 }
 
-// Storage Modal
-.storage-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.6);
-  z-index: 100;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
 
-.storage-modal {
-  background: #d4b896;
-  border: none;
-  border-radius: 12px;
-  width: 520px;
-  max-height: 80vh;
-  display: flex;
-  flex-direction: column;
-  font-family: 'Pelagiad', serif;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
-  color: rgb(50, 40, 25);
-
-  &__header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 18px 24px;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
-
-    h3 {
-      color: rgb(50, 40, 25);
-      font-size: 24px;
-      font-weight: 500;
-      margin: 0;
-    }
-  }
-
-  &__close {
-    background: none;
-    border: none;
-    color: rgba(50, 40, 25, 0.4);
-    font-size: 26px;
-    cursor: pointer;
-    font-family: 'Pelagiad', serif;
-
-    &:hover {
-      color: rgb(180, 50, 50);
-    }
-  }
-
-  &__quota {
-    padding: 18px 24px;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
-  }
-
-  &__quota-text {
-    font-size: 18px;
-    color: rgb(50, 40, 25);
-    margin-bottom: 10px;
-
-    strong {
-      color: rgb(35, 25, 10);
-    }
-  }
-
-  &__quota-bar {
-    height: 8px;
-    background: rgba(0, 0, 0, 0.15);
-    border-radius: 4px;
-    overflow: hidden;
-  }
-
-  &__quota-fill {
-    height: 100%;
-    background: rgb(60, 160, 80);
-    border-radius: 4px;
-    transition: width 0.3s ease;
-  }
-
-  &__list {
-    padding: 4px 0;
-    overflow-y: auto;
-    max-height: 300px;
-  }
-
-  &__item {
-    display: grid;
-    grid-template-columns: 24px 1fr 80px 32px;
-    align-items: center;
-    gap: 8px;
-    padding: 12px 24px;
-    transition: background 80ms ease;
-
-    &:hover {
-      background: rgba(0, 0, 0, 0.05);
-    }
-  }
-
-  &__item-icon {
-    font-size: 16px;
-    flex-shrink: 0;
-  }
-
-  &__item-info {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    min-width: 0;
-    overflow: hidden;
-  }
-
-  &__item-name {
-    color: rgb(50, 40, 25);
-    font-size: 18px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  &__item-size {
-    color: rgba(50, 40, 25, 0.55);
-    font-size: 15px;
-    text-align: right;
-  }
-
-  &__item-sessions {
-    font-size: 12px;
-    color: rgb(30, 120, 50);
-    background: rgba(60, 160, 80, 0.15);
-    padding: 2px 7px;
-    border-radius: 8px;
-    white-space: nowrap;
-    flex-shrink: 0;
-  }
-
-  &__item-delete {
-    background: none;
-    border: none;
-    cursor: pointer;
-    font-size: 20px;
-    color: rgb(180, 60, 60);
-    opacity: 0.7;
-    transition: opacity 80ms ease;
-    padding: 2px 6px;
-    line-height: 1;
-    text-align: center;
-
-    &:hover:not(:disabled) {
-      opacity: 1;
-    }
-
-    &:disabled {
-      opacity: 0.15;
-      cursor: not-allowed;
-    }
-  }
-
-  &__footer {
-    padding: 18px 24px;
-    border-top: 1px solid rgba(0, 0, 0, 0.08);
-    display: flex;
-    justify-content: center;
-  }
-
-  &__clear {
-    background: rgba(0, 0, 0, 0.7);
-    border: none;
-    color: rgba(255, 255, 255, 0.85);
-    padding: 10px 28px;
-    border-radius: 6px;
-    cursor: pointer;
-    font-family: 'Pelagiad', serif;
-    font-size: 18px;
-    transition: all 80ms ease;
-
-    &:hover {
-      background: rgba(0, 0, 0, 0.85);
-      color: white;
-    }
-  }
-}
 </style>

@@ -9,16 +9,7 @@
   >
     <div class="quest-header">
       <div class="quest-title" @click="emit('selected', props.questNameData.name)">
-        <div 
-          v-if="props.questNameData?.is_new && containsMasterIds"
-          class="quest-status quest-status_mod"
-        >
-        </div>
-        <div
-          v-else-if="props.questNameData?.is_new"
-          class="quest-status quest-status_new"
-        >
-        </div>
+        <TStatusDot :status="questStatus" />
         {{ props.questNameData.name }}
       </div>
     </div>
@@ -30,12 +21,24 @@ import { computed, onMounted, ref, useTemplateRef, watch } from 'vue';
 import { fetchQuestByID } from '@/api/idb.ts'; 
 import type { FilterComparison } from '@/types/pluginEntries.ts';
 import { useJournalHighlight } from '@/stores/journalHighlights';
+import TStatusDot from '@/components/ui/TStatusDot.vue';
+import { useRecordStatus } from '@/composables/useRecordStatus';
 
-const props = defineProps({
-  questNameData: Object,
-});
+interface QuestNameData {
+  name: string;
+  id?: string;
+  is_new: boolean;
+  quests: { id: string; TMP_is_active: boolean; TMP_quest_name: string }[];
+}
 
-const emit = defineEmits(['selected', 'questLoaded']);
+const props = defineProps<{
+  questNameData?: QuestNameData;
+}>();
+
+const emit = defineEmits<{
+  (e: 'selected', name: string): void;
+  (e: 'questLoaded', data: { name: string | undefined; id: string[] }): void;
+}>();
 
 const selectedQuestId = ref('');
 
@@ -55,6 +58,14 @@ const containsMasterIds = computed(() => {
   const isActiveList = props.questNameData.quests.map(val => val.TMP_is_active);
   return isActiveList.includes(false);
 });
+
+const { status: questStatus } = useRecordStatus(
+  () => ({}),
+  {
+    isNew: () => props.questNameData?.is_new ?? false,
+    isModified: containsMasterIds,
+  },
+);
 
 const containsActivePluginIds = computed(() => {
   const isActiveList = props.questNameData.quests.map(val => !val.TMP_is_active);

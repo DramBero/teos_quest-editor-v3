@@ -1,4 +1,3 @@
-import Dexie from 'dexie';
 import {
     getActiveDB,
     getDependencies,
@@ -6,6 +5,7 @@ import {
 } from './db';
 import { Dialogues } from './collection';
 import { addEntry, deleteEntry, modifyEntry } from './import-export';
+import type { DialogueInfoRecord } from '@/types/pluginEntries';
 
 // ---------------------------------------------------------------------------
 //  Quest retrieval
@@ -23,7 +23,7 @@ export async function fetchQuestByID(questID: string) {
     const quest = {
         name: '',
         old_names: [] as string[],
-        entries: [] as any[],
+        entries: [] as DialogueInfoRecord[],
         entry_ids: [] as string[],
     };
 
@@ -31,13 +31,13 @@ export async function fetchQuestByID(questID: string) {
     const entries = await activeDB.pluginData
         .where('TMP_topic')
         .equals(questID)
-        .and((val: any) => val.type === 'DialogueInfo' && val.quest_state !== 'Name')
+        .and((val: Record<string, unknown>) => val.type === 'DialogueInfo' && val.quest_state !== 'Name')
         .toArray();
 
     const nameEntries = await activeDB.pluginData
         .where('TMP_topic')
         .equals(questID)
-        .and((val: any) => val.type === 'DialogueInfo' && val.quest_state === 'Name')
+        .and((val: Record<string, unknown>) => val.type === 'DialogueInfo' && val.quest_state === 'Name')
         .toArray();
 
     quest.name = nameEntries.length ? nameEntries[0].text : '';
@@ -49,12 +49,12 @@ export async function fetchQuestByID(questID: string) {
         const depDB = databases[dep];
         if (!depDB) continue;
 
-        const currentEntryIds = quest.entries.map((val: any) => val.TMP_info_id);
+        const currentEntryIds = quest.entries.map((val) => val.TMP_info_id);
 
         const depName = await depDB.pluginData
             .where('TMP_topic')
             .equals(questID)
-            .and((val: any) => val.type === 'DialogueInfo' && val.quest_state === 'Name')
+            .and((val: Record<string, unknown>) => val.type === 'DialogueInfo' && val.quest_state === 'Name')
             .toArray();
 
         if (depName[0]?.text) {
@@ -65,17 +65,17 @@ export async function fetchQuestByID(questID: string) {
         const depEntries = await depDB.pluginData
             .where('TMP_topic')
             .equals(questID)
-            .and((val: any) => val.type === 'DialogueInfo' && val.quest_state !== 'Name')
+            .and((val: Record<string, unknown>) => val.type === 'DialogueInfo' && val.quest_state !== 'Name')
             .toArray();
 
         for (const entry of depEntries) {
             if (currentEntryIds.includes(entry.TMP_info_id)) {
                 const questEntry = quest.entries.find(
-                    (val: any) => val.TMP_info_id === entry.TMP_info_id,
+                    (val) => val.TMP_info_id === entry.TMP_info_id,
                 );
-                if (questEntry.old_entries?.length) {
+                if (questEntry?.old_entries?.length) {
                     questEntry.old_entries.push(entry);
-                } else {
+                } else if (questEntry) {
                     questEntry.old_entries = [entry];
                 }
             } else {
@@ -150,7 +150,7 @@ export async function addQuestEntry(
     const generatedId =
         Math.random().toString().slice(2, 15) + Math.random().toString().slice(2, 9);
 
-    const defaultEntry: any = {
+    const defaultEntry: Record<string, unknown> = {
         type: 'DialogueInfo',
         flags: '',
         prev_id: prevId || '',
@@ -188,7 +188,7 @@ export async function addQuestEntry(
     let quest = await activeDB.pluginData
         .where('TMP_id')
         .equals(questId)
-        .and((val: any) => val.type === 'Dialogue')
+        .and((val: Record<string, unknown>) => val.type === 'Dialogue')
         .toArray();
 
     if (quest && quest.length > 1) {
@@ -203,7 +203,7 @@ export async function addQuestEntry(
             const depResponse = await depDB.pluginData
                 .where('TMP_id')
                 .equals(questId)
-                .and((val: any) => val.type === 'Dialogue')
+                .and((val: Record<string, unknown>) => val.type === 'Dialogue')
                 .toArray();
             if (depResponse.length) {
                 quest = depResponse;
@@ -212,8 +212,11 @@ export async function addQuestEntry(
             }
         }
         if (!found) throw { key: 'NO_QUEST_FOUND' };
-        delete quest.TMP_index;
-        await addEntry(quest.at(-1));
+        const lastQuest = quest.at(-1);
+        if (lastQuest) {
+            delete (lastQuest as Record<string, unknown>).TMP_index;
+            await addEntry(lastQuest);
+        }
     }
 
     // Find location
@@ -224,8 +227,8 @@ export async function addQuestEntry(
     const lastEntryIndex = lastEntry?.at(-1)?.TMP_index;
     if (!lastEntryIndex) throw { key: 'NO_LAST_ENTRY_INDEX_FOUND' };
 
-    let prevEntry: any[] = [];
-    let nextEntry: any[] = [];
+    let prevEntry: DialogueInfoRecord[] = [];
+    let nextEntry: DialogueInfoRecord[] = [];
 
     if (prevId) {
         prevEntry = await activeDB.pluginData.where('TMP_id').equals(prevId).toArray();
@@ -240,9 +243,9 @@ export async function addQuestEntry(
     if (!prevId && !nextId) {
         index = lastEntryIndex + 1;
     } else if (prevEntry?.length) {
-        index = prevEntry.at(-1).TMP_index + 1;
+        index = prevEntry.at(-1)!.TMP_index + 1;
     } else if (nextEntry?.length) {
-        index = nextEntry.at(-1).TMP_index;
+        index = nextEntry.at(-1)!.TMP_index;
     } else {
         index = lastEntryIndex + 1;
     }
@@ -250,47 +253,47 @@ export async function addQuestEntry(
     defaultEntry.TMP_index = index;
 
     // Calculate disposition
-    const prevDisposition = prevEntry?.at(-1)?.data?.disposition || 0;
-    const nextDisposition = nextEntry?.at(-1)?.data?.disposition || 0;
-    const dispDifference = (nextDisposition || Infinity) - prevDisposition;
+    const prevDisposition = (prevEntry?.at(-1) as Record<string, unknown> | undefined)?.data as Record<string, number> | undefined;
+    const nextDisposition = (nextEntry?.at(-1) as Record<string, unknown> | undefined)?.data as Record<string, number> | undefined;
+    const dispDifference = (nextDisposition?.disposition ?? Infinity) - (prevDisposition?.disposition ?? 0);
 
     let advisedDisposition = 10;
     if (dispDifference > 10) {
-        advisedDisposition = (Math.floor(prevDisposition / 10) + 1) * 10;
+        advisedDisposition = (Math.floor((prevDisposition?.disposition ?? 0) / 10) + 1) * 10;
     } else if (dispDifference > 5) {
-        advisedDisposition = (Math.floor(prevDisposition / 10) + 0.5) * 10;
+        advisedDisposition = (Math.floor((prevDisposition?.disposition ?? 0) / 10) + 0.5) * 10;
     } else if (dispDifference > 1) {
-        advisedDisposition = prevDisposition + 1;
+        advisedDisposition = (prevDisposition?.disposition ?? 0) + 1;
     } else {
         throw { key: 'NO_PLACE_FOR_ENTRY' };
     }
-    defaultEntry.data.disposition = advisedDisposition;
+    (defaultEntry.data as Record<string, number>).disposition = advisedDisposition;
 
     await addEntry(defaultEntry, index);
 
     if (prevEntry.length) {
         await activeDB.pluginData
             .where('TMP_id')
-            .equals(prevEntry.at(-1).id)
+            .equals(prevEntry.at(-1)!.id)
             .modify({ next_id: generatedId, TMP_next_id: generatedId });
     }
     if (nextEntry.length) {
         await activeDB.pluginData
             .where('TMP_id')
-            .equals(nextEntry.at(-1).id)
+            .equals(nextEntry.at(-1)!.id)
             .modify({ prev_id: generatedId, TMP_prev_id: generatedId });
     }
 }
 
-export async function deleteJournalEntry(entry: any, isMod = false) {
+export async function deleteJournalEntry(entry: DialogueInfoRecord, isMod = false) {
     const databases = _getDatabases();
     const activeDB = databases['activePlugin'];
     await deleteEntry(entry);
 
     if (isMod) return;
 
-    let prevEntry: any[] = [];
-    let nextEntry: any[] = [];
+    let prevEntry: DialogueInfoRecord[] = [];
+    let nextEntry: DialogueInfoRecord[] = [];
 
     if (entry.prev_id) {
         prevEntry = await activeDB.pluginData.where('TMP_id').equals(entry.prev_id).toArray();
@@ -300,16 +303,16 @@ export async function deleteJournalEntry(entry: any, isMod = false) {
     }
     if (prevEntry.length) {
         await modifyEntry({
-            TMP_index: prevEntry.at(-1)?.TMP_index,
+            TMP_index: prevEntry.at(-1)!.TMP_index,
             next_id: entry.next_id,
             TMP_next_id: entry.next_id,
-        });
+        } as unknown as DialogueInfoRecord);
     }
     if (nextEntry.length) {
         await modifyEntry({
-            TMP_index: nextEntry.at(-1)?.TMP_index,
+            TMP_index: nextEntry.at(-1)!.TMP_index,
             prev_id: entry.prev_id,
             TMP_prev_id: entry.prev_id,
-        });
+        } as unknown as DialogueInfoRecord);
     }
 }

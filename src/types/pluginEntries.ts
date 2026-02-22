@@ -46,6 +46,8 @@ export type {
     TES3_Npc,
     TES3_Header,
     TES3_Faction,
+    TES3_Script,
+    ScriptHeader,
     TES3_Record,
 } from './tes3';
 
@@ -62,6 +64,7 @@ import type {
     NpcData as TES3_NpcData,
     Sex,
     TravelDestination,
+    ScriptHeader as TES3_ScriptHeader,
 } from './tes3';
 
 // ============================================================================
@@ -126,6 +129,21 @@ export interface InfoEntry extends BaseEntry {
     speaker_faction: string;
     speaker_race: string;
     data: InfoData;
+}
+
+/**
+ * A DialogueInfo record as stored in Dexie (with TMP_ metadata).
+ * Differs from InfoEntry in that the Dexie store uses `type: 'DialogueInfo'` and
+ * injects TMP_ fields during import.
+ */
+export interface DialogueInfoRecord extends Omit<InfoEntry, 'type' | 'old_values'> {
+    type: 'DialogueInfo';
+    TMP_quest_name?: string;
+    quest_state?: string;
+    sound_path?: string;
+    player_faction?: string;
+    old_values?: DialogueInfoRecord[];
+    old_entries?: DialogueInfoRecord[];
 }
 
 // ============================================================================
@@ -200,4 +218,18 @@ export interface InfoFilter {
     function: FilterFunction;
     comparison: FilterComparison;
     value: FilterValue;
+}
+
+// ============================================================================
+//  Script
+// ============================================================================
+
+export interface ScriptEntry extends BaseEntry {
+    type: 'Script';
+    flags: ObjectFlags;
+    id: string;
+    header: TES3_ScriptHeader;
+    variables: number[];
+    bytecode: number[];
+    text: string;
 }

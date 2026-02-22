@@ -52,6 +52,9 @@ const getSelectedFilter = computed(() => {
 </template>
 
 <style lang="scss">
+@import '@fontsource/fira-code/400.css';
+@import '@fontsource/fira-code/700.css';
+
 @font-face {
   font-family: "Pelagiad";
   src: local("Pelagiad"), url(@/assets/fonts/pelagiad/Pelagiad.ttf) format("truetype");
@@ -73,10 +76,7 @@ const getSelectedFilter = computed(() => {
 }
 
 
-@font-face {
-  font-family: "Consolas";
-  src: local("Consolas"), url(@/assets/fonts/consolas/CONSOLA.TTF) format("truetype");
-}
+/* Fira Code — replaces proprietary Consolas */
 
 * {
   padding: 0;
@@ -245,6 +245,14 @@ input::-webkit-inner-spin-button {
   &-item {
     .label {
       font-size: 20px !important;
+    }
+
+    &.disabled {
+      opacity: 0.35 !important;
+      .label {
+        color: #666 !important;
+        text-decoration: line-through;
+      }
     }
   }
 }

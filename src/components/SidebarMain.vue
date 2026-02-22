@@ -21,83 +21,9 @@ import SidebarFactions from '@/components/sidebar/SidebarFactions.vue';
 import { useSidebar } from '@/stores/sidebar';
 import { computed } from 'vue';
 
-const categories = [
-  {
-    name: 'Social',
-    items: [
-      'Class',
-      'Faction',
-      'Race',
-      'Skill',
-      'Birthsign',
-    ]
-  },
-  {
-    name: 'Actors',
-    items: [
-      'Npc',
-      'Creature',
-      'LeveledCreature',
-    ]
-  },
-  {
-    name: 'Items',
-    items: [
-      'Book',
-      'Clothing',
-      'Armor',
-      'Weapon',
-      'MiscItem',
-      'RepairItem',
-      'Apparatus',
-      'Lockpick',
-      'Probe',
-      'Ingredient',
-      'Alchemy',
-      'LeveledItem',
-    ]
-  },
-  {
-    name: 'Scripts',
-    items: [
-      'Script',
-      'GlobalVariable',
-      'StartScript',
-    ]
-  },
-  {
-    name: 'Magic',
-    items: [
-      'MagicEffect',
-      'Spell',
-      'Enchanting',
-    ]
-  },
-  {
-    name: 'Interact',
-    items: [
-      'Door',
-      'Activator',
-      'Container',
-    ]
-  },
-  {
-    name: 'World',
-    items: [
-      'Cell',
-      'Region',
-      'Sound',
-      'SoundGen',
-      'LandscapeTexture',
-      'Static',
-      'Bodypart',
-      'Light',
-      'Landscape',
-      'PathGrid',
-      'GameSetting',
-    ]
-  },
-]
+import { CATEGORIES } from '@/config/categories';
+
+const categories = CATEGORIES;
 
 const sidebarStore = useSidebar();
 const getSidebarActive = computed(() => {

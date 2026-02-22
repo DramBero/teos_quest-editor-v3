@@ -11,22 +11,18 @@
   </div>
 </template>
 
-<script>
-export default {
-  props: {
-    book: Object,
-  },
-  data() {
-    return {
-      isCollapsed: false,
-    };
-  },
-  methods: {
-    toggleCollapse() {
-      this.isCollapsed = !this.isCollapsed;
-    },
-  },
-};
+<script setup lang="ts">
+import { ref } from 'vue';
+
+const props = defineProps<{
+  book: { name?: string; text?: string };
+}>();
+
+const isCollapsed = ref(false);
+
+function toggleCollapse() {
+  isCollapsed.value = !isCollapsed.value;
+}
 </script>
 
 <style lang="scss">
@@ -66,8 +62,6 @@ input[type='reset'] {
 
   &-entry {
     background-color: rgba(255, 255, 255, 0.5);
-    // border-radius: 8px;
-    // margin: 5px 0;
     display: flex;
 
     &_finished {

@@ -27,20 +27,17 @@ import { useSelectedQuest } from '@/stores/selectedQuest';
 
 import { computed, ref, watch } from 'vue';
 
-const props = defineProps({
-  quest: {
-    type: Object,
-    required: true,
-    default: () => ({}),
-  },
-  selected: {
-    type: Boolean,
-    required: true,
-    default: false,
-  }
+const props = withDefaults(defineProps<{
+  quest: { id: string; TMP_is_active: boolean };
+  selected: boolean;
+}>(), {
+  quest: () => ({ id: '', TMP_is_active: false }),
+  selected: false,
 });
 
-const emit = defineEmits(['select']);
+const emit = defineEmits<{
+  (e: 'select', id: string): void;
+}>();
 
 const selectedQuestStore = useSelectedQuest();
 const selectedQuest = computed(() => selectedQuestStore.getSelectedQuest);

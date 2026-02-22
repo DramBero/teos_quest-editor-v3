@@ -3,6 +3,13 @@
     class="record-book__wrapper"
     :class="{'record-book__wrapper_vertical-split': !getSidebarItem,}"
   >
+    <button
+      class="record-book__close"
+      @click="closeRecord"
+      title="Close"
+    >
+      <TdesignClose />
+    </button>
     <div class="record-book" :class="{
       'record-book_scroll': isScroll,
       'record-book_book': !isScroll,
@@ -40,6 +47,7 @@
           <TdesignCaretLeft />
         </button>
         <button
+          v-if="Number(currentPage) < maxPage"
           class="book-pagination book-pagination_next"
           @click="currentPage = currentPage + 1"
         >
@@ -52,11 +60,9 @@
     </div>
     <div class="book-editor">
       <div class="book-editor__header">
-        <input
-          type="text"
-          class="text-input"
+        <TInput
           v-model="entry.name"
-        >
+        />
         <div class="book-editor__controls">
           <button
             :class="{'btn_selected': currentTab === 'editor'}"
@@ -72,25 +78,30 @@
           </button>
         </div>
       </div>
-      <Codemirror
+      <div
         v-if="currentTab === 'editor'"
-        v-model:value="parsedText"
-        :options="cmOptions"
-        :extensions
+        ref="bookEditorContainer"
+        class="book-editor-cm6"
       />
       <div 
         v-if="currentTab === 'editor' && lintingProblems.length"
         class="status-bar"
         :class="`status-bar_${lintingProblems[0].type}`"
       >
-        <div class="status-bar__icon">
-          <TdesignErrorTriangle v-if="lintingProblems[0].type == 'warning'"/>
-        </div>
-        <div class="status-bar__line">
-          Line {{ lintingProblems[0].line }}:
-        </div>
-        <div class="status-bar__text">
-          {{ lintingProblems[0].text }}
+        <div
+          v-for="(problem, idx) in lintingProblems"
+          :key="idx"
+          class="status-bar__item"
+        >
+          <div class="status-bar__icon">
+            <TdesignErrorTriangle v-if="problem.type === 'warning'"/>
+          </div>
+          <div class="status-bar__line">
+            Line {{ problem.line }}:
+          </div>
+          <div class="status-bar__text">
+            {{ problem.text }}
+          </div>
         </div>
       </div>
       <div v-else-if="currentTab === 'settings'" class="form">
@@ -108,67 +119,58 @@
         <div class="form-field">
           <label>
             <span>Skill:</span>
-            <input
-              type="text"
-              class="text-input"
-              :value="selectedRecord.data.skill"
+            <TInput
+              :model-value="selectedRecord.data.skill"
               disabled
-            >
+            />
           </label>
         </div>
         <div class="form-field">
           <label>
             <span>Script:</span>
-            <input
-              type="text"
-              class="text-input"
-              :value="selectedRecord.script || 'None'"
+            <TInput
+              :model-value="selectedRecord.script || 'None'"
               disabled
-            >
+            />
           </label>
         </div>
         <div class="form-field">
           <label>
             <span>Enchanting:</span>
-            <input
-              type="text"
-              class="text-input"
-              :value="selectedRecord.enchanting || 'None'"
+            <TInput
+              :model-value="selectedRecord.enchanting || 'None'"
               disabled
-            >
+            />
           </label>
         </div>
         <div class="form-field">
           <label>
             <span>Enchantment:</span>
-            <input
+            <TInput
               type="number"
-              class="text-input"
-              :value="selectedRecord.data.enchantment"
+              :model-value="String(selectedRecord.data.enchantment)"
               disabled
-            >
+            />
           </label>
         </div>
         <div class="form-field">
           <label>
             <span>Value:</span>
-            <input
+            <TInput
               type="number"
-              class="text-input"
-              :value="selectedRecord.data.value"
+              :model-value="String(selectedRecord.data.value)"
               disabled
-            >
+            />
           </label>
         </div>
         <div class="form-field">
           <label>
             <span>Weight:</span>
-            <input
+            <TInput
               type="number"
-              class="text-input"
-              :value="getWeight"
+              :model-value="String(getWeight)"
               disabled
-            >
+            />
           </label>
         </div>
       </div>
@@ -178,17 +180,20 @@
 
 <script setup lang="ts">
 import { useSelectedRecord } from '@/stores/selectedRecord';
-import { computed, onBeforeUnmount, onMounted, ref, useTemplateRef, watch } from 'vue';
+import TInput from '@/components/ui/TInput.vue';
+import { computed, onBeforeUnmount, onMounted, ref, shallowRef, useTemplateRef, watch, nextTick } from 'vue';
 import sanitize from 'sanitize-html';
 
-import Codemirror from "codemirror-editor-vue3";
-import "codemirror/mode/htmlmixed/htmlmixed.js";
-import "codemirror/theme/dracula.css";
+import { EditorView } from '@codemirror/view';
+import { EditorState } from '@codemirror/state';
+import { html } from '@codemirror/lang-html';
+import { vscodeDarkBookExtensions } from '@/mwscript/cm6-theme';
 import { modifyEntry } from '@/api/idb.ts';
 
 import TdesignCaretRight from '~icons/tdesign/caret-right';
 import TdesignCaretLeft from '~icons/tdesign/caret-left';
 import TdesignErrorTriangle from '~icons/tdesign/error-triangle';
+import TdesignClose from '~icons/tdesign/close';
 
 import { watchDebounced } from '@vueuse/core';
 import { useSidebar } from '@/stores/sidebar';
@@ -204,7 +209,12 @@ const getSidebarItem = computed(() => {
 const selectedRecordStore = useSelectedRecord();
 const selectedRecord = computed(() => selectedRecordStore.getSelectedRecord?.[0] || {});
 
+function closeRecord() {
+  selectedRecordStore.setSelectedRecord(null);
+}
+
 const currentPage = ref<Number>(0);
+const maxPage = ref<number>(0);
 
 const sanitizeOptions: sanitize.IOptions = {
   allowedTags: ['div', 'br', 'font', 'img', 'span', 'p'],
@@ -237,20 +247,63 @@ function parseText(text: String) {
   return newText;
 }
 
-const cmOptions = {
-  mode: 'text/html',
-  theme: 'dracula',
-  lineWrapping: true,
-  spellcheck: true,
+// CM6 editor setup
+const bookEditorContainer = ref<HTMLElement | null>(null);
+const bookEditorView = shallowRef<EditorView | null>(null);
+
+// Theme imported from @/mwscript/cm6-theme
+
+function createBookEditor() {
+  if (!bookEditorContainer.value) return;
+  bookEditorView.value?.destroy();
+
+  const state = EditorState.create({
+    doc: parsedText.value || '',
+    extensions: [
+      html(),
+      ...vscodeDarkBookExtensions,
+      EditorView.lineWrapping,
+      EditorView.updateListener.of((update) => {
+        if (update.docChanged) {
+          parsedText.value = update.state.doc.toString();
+        }
+      }),
+    ],
+  });
+
+  bookEditorView.value = new EditorView({
+    state,
+    parent: bookEditorContainer.value,
+  });
 }
+
+// Recreate editor when tab switches to editor
+watch(currentTab, (newVal) => {
+  if (newVal === 'editor') {
+    nextTick(() => createBookEditor());
+  } else {
+    bookEditorView.value?.destroy();
+    bookEditorView.value = null;
+  }
+});
+
+onMounted(() => {
+  if (currentTab.value === 'editor') {
+    nextTick(() => createBookEditor());
+  }
+});
+
+onBeforeUnmount(() => {
+  bookEditorView.value?.destroy();
+})
 
 const getWeight = computed(() => {
   return Math.round(selectedRecord.value.data.weight * 100) / 100;
 });
 
-const parsedText = ref<String>();
-const entry = ref<Object>({});
-const isScroll = ref<Boolean>(false);
+const parsedText = ref<string>();
+const entry = ref<Record<string, unknown>>({});
+const isScroll = ref<boolean>(false);
 watch(selectedRecord, () => {
   parsedText.value = selectedRecord.value.text;
   currentPage.value = 0;
@@ -323,8 +376,21 @@ async function updatePages() {
   await new Promise((resolve) => setTimeout(resolve, 1));
   if (isScroll.value === 'scroll') return;
   if (!rightPage.value || !leftPage.value) return;
-  leftPage.value.scrollTop = (currentPage.value * 2) * leftPage.value.clientHeight - offset;
-  rightPage.value.scrollTop = ((currentPage.value * 2) + 1) * rightPage.value.clientHeight - offset;
+
+  const pageHeight = leftPage.value.clientHeight;
+  const totalHeight = leftPage.value.scrollHeight;
+
+  // Calculate max page (each "page" = 2 visible panels)
+  const totalPages = Math.ceil(totalHeight / pageHeight);
+  maxPage.value = Math.max(0, Math.ceil(totalPages / 2) - 1);
+
+  // Clamp current page
+  if (Number(currentPage.value) > maxPage.value) {
+    currentPage.value = maxPage.value;
+  }
+
+  leftPage.value.scrollTop = (currentPage.value * 2) * pageHeight - offset;
+  rightPage.value.scrollTop = ((currentPage.value * 2) + 1) * pageHeight - offset;
 }
 
 watch(currentPage, updatePages, {immediate: true});
@@ -357,8 +423,11 @@ watch(isScroll, updatePages, {immediate: true});
     display: flex;
     flex-direction: column;
     height: 100%;
+    position: relative;
     .record-book {
       height: 60%;
+      min-height: fit-content;
+      overflow-y: auto;
       @media (max-width: 1500px) {
         max-height: 900px;
         transform: scale(0.8);
@@ -386,6 +455,30 @@ watch(isScroll, updatePages, {immediate: true});
         border: solid 2px #cb9;
         border-radius: 4px;
       }
+    }
+  }
+  &__close {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    z-index: 20;
+    background: rgba(0, 0, 0, 0.5);
+    border: none;
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background 120ms ease;
+    svg {
+      width: 18px;
+      height: 18px;
+      color: rgb(202, 165, 96);
+    }
+    &:hover {
+      background: rgba(0, 0, 0, 0.8);
     }
   }
   &__title {
@@ -469,9 +562,10 @@ watch(isScroll, updatePages, {immediate: true});
     background-color: #cb9;
     display: flex;
     justify-content: space-between;
+    align-items: center;
     gap: 2px;
     padding: 0 20px;
-    .text-input {
+    .t-input {
       width: 400px;
       border-radius: 0;
       background-color: rgba(255, 255, 255, 0.2);
@@ -491,10 +585,17 @@ watch(isScroll, updatePages, {immediate: true});
   &__controls {
     display: flex;
     gap: 5px;
+    align-items: center;
   }
-  .CodeMirror {
-    font-size: 16px;
-    // max-width: 800px;
+  .book-editor-cm6 {
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+
+    .cm-editor {
+      height: 100%;
+      font-size: 16px;
+    }
   }
   &__form {
     // min-width: 400px;
@@ -565,14 +666,27 @@ watch(isScroll, updatePages, {immediate: true});
 
 .status-bar {
   display: flex;
-  gap: 10px;
-  padding: 5px 10px;
+  flex-direction: column;
   font-size: 14px;
-  font-family: 'Consolas';
+  font-family: 'Fira Code', monospace;
   background-color: rgb(68, 86, 121);
   border-top: solid 2px rgb(45, 97, 201);
   color: white;
-  align-items: center;
+  max-height: 120px;
+  overflow-y: auto;
+  &__item {
+    display: flex;
+    gap: 10px;
+    padding: 4px 10px;
+    align-items: center;
+    &:hover {
+      background-color: rgba(255, 255, 255, 0.05);
+    }
+  }
+  &__line {
+    white-space: nowrap;
+    opacity: 0.7;
+  }
   &_warning {
     background-color: rgb(101, 84, 60);
     border-top: solid 2px rgb(162, 122, 66);

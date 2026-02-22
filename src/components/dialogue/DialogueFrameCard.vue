@@ -31,10 +31,10 @@ import type { NpcEntry } from '@/types/pluginEntries.ts';
 const target = useTemplateRef<HTMLDivElement>('hoverable');
 const targetIsVisible = useElementVisibility(target);
 
-const props = defineProps({
-  speakerType: { type: String },
-  speakerId: { type: String },
-});
+const props = defineProps<{
+  speakerType?: string;
+  speakerId?: string;
+}>();
 
 // ---------- State ----------
 const speakerData = ref<NpcEntry | null>(null);
@@ -50,6 +50,7 @@ watch(targetIsVisible, () => {
 
 async function fetchCardData() {
   if (loaded.value) return; // already loaded
+  if (!props.speakerId) return;
   try {
     const data = await fetchNPCData(props.speakerId);
     speakerData.value = data || null;
