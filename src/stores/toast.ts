@@ -5,7 +5,7 @@ import { defineStore } from 'pinia';
 //  Types
 // ---------------------------------------------------------------------------
 
-export type ToastType = 'error' | 'warning' | 'info';
+export type ToastType = 'error' | 'warning' | 'info' | 'success';
 
 export interface Toast {
     id: string;
@@ -18,14 +18,19 @@ export interface Toast {
 //  Store
 // ---------------------------------------------------------------------------
 
-const AUTO_DISMISS_MS = 5000;
+const AUTO_DISMISS_MS = 8000;
+const MAX_MSG_LENGTH = 120;
 
 export const useToastStore = defineStore('toast', () => {
     const toasts = ref<Toast[]>([]);
 
     function add(type: ToastType, message: string) {
         const id = crypto.randomUUID();
-        const toast: Toast = { id, type, message, timestamp: Date.now() };
+        const truncated =
+            message.length > MAX_MSG_LENGTH
+                ? message.slice(0, MAX_MSG_LENGTH) + '…'
+                : message;
+        const toast: Toast = { id, type, message: truncated, timestamp: Date.now() };
         toasts.value.push(toast);
 
         setTimeout(() => dismiss(id), AUTO_DISMISS_MS);

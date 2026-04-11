@@ -8,6 +8,7 @@ const toasts = computed(() => store.toasts);
 function iconFor(type: string) {
     if (type === 'error')   return '✕';
     if (type === 'warning') return '⚠';
+    if (type === 'success') return '✓';
     return 'ℹ';
 }
 </script>
@@ -76,6 +77,12 @@ function iconFor(type: string) {
         background: rgba(20, 40, 60, 0.92);
         color: #90caf9;
         border-color: rgba(110, 198, 255, 0.35);
+    }
+
+    &--success {
+        background: rgba(20, 60, 30, 0.92);
+        color: #a5d6a7;
+        border-color: rgba(102, 187, 106, 0.35);
     }
 
     &__icon {

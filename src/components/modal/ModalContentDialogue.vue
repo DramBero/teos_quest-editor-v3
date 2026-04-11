@@ -163,6 +163,7 @@ import TdesignCheck from '~icons/tdesign/check';
 import ContextMenu from '@imengyu/vue3-context-menu';
 import TInput from '@/components/ui/TInput.vue';
 import type { RecordStatus } from '@/composables/useRecordStatus';
+import { logger } from '@/services/logger';
 
 /** Same logic as useRecordArrayStatus but callable in v-for without composable */
 function getTopicStatus(question: Record<string, unknown>[]): RecordStatus {
@@ -217,7 +218,7 @@ async function fetchTopics() {
       persuasionsList.value = topicsResponse.persuasions;
       greetingsList.value = topicsResponse.greetings;
     } catch (error) {
-      console.error(error);
+      logger.error('Dialogue', 'Failed to fetch topics', error);
     } finally {
       topicsLoading.value = false;
     }
@@ -527,7 +528,7 @@ async function fetchTopic(topic: string, loading=false) {
       const orderedEntriesResponse = await getOrderedEntriesByTopic(topic);
       orderedEntries.value = orderedEntriesResponse;
     } catch (error) {
-      console.error(error);
+      logger.error('Dialogue', 'Failed to fetch topic entries', error);
     } finally {
       if (loading) {
         dialogueInfoLoading.value = false;

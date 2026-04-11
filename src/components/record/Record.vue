@@ -1,7 +1,7 @@
 <template>
   <transition name="fade">
     <div
-      v-if="selectedRecord"
+      v-if="showRecord"
       class="record"
       :class="{
         'record_overlay': isOverlayType,
@@ -21,6 +21,7 @@
 
 <script setup lang="ts">
 import { useSelectedRecord } from '@/stores/selectedRecord';
+import { useScriptTabs } from '@/stores/scriptTabs';
 import { computed, defineAsyncComponent } from 'vue';
 
 const RecordBook = defineAsyncComponent(
@@ -32,6 +33,8 @@ const RecordScript = defineAsyncComponent(
 );
 
 const selectedRecordStore = useSelectedRecord();
+const scriptTabsStore = useScriptTabs();
+
 const selectedRecord = computed(() => selectedRecordStore.getSelectedRecord);
 
 const recordType = computed(() => {
@@ -39,13 +42,20 @@ const recordType = computed(() => {
   return selectedRecord.value[0]?.type;
 });
 
+/** Script tabs are open — show script editor */
+const hasScriptTabs = computed(() => scriptTabsStore.hasOpenTabs);
+
+/** Show record panel if either script tabs are open or a book/other record is selected */
+const showRecord = computed(() => hasScriptTabs.value || !!selectedRecord.value);
+
 /** Script fills the right area inline; Book is an overlay */
-const isOverlayType = computed(() => recordType.value === 'Book');
+const isOverlayType = computed(() => !hasScriptTabs.value && recordType.value === 'Book');
 
 const getSelectedComponent = computed(() => {
+  // Script tabs take priority
+  if (hasScriptTabs.value) return RecordScript;
   switch(recordType.value) {
     case 'Book': return RecordBook;
-    case 'Script': return RecordScript;
     default: return null;
   }
 });

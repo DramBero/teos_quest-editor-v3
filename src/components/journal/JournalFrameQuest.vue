@@ -23,6 +23,7 @@ import type { FilterComparison } from '@/types/pluginEntries.ts';
 import { useJournalHighlight } from '@/stores/journalHighlights';
 import TStatusDot from '@/components/ui/TStatusDot.vue';
 import { useRecordStatus } from '@/composables/useRecordStatus';
+import { logger } from '@/services/logger';
 
 interface QuestNameData {
   name: string;
@@ -92,7 +93,7 @@ async function loadQuestData(questId: string) {
     emit('questLoaded', {name: questData.value?.name, id: [questId]});
     questDataLoaded.value = true;
   } catch(error) {
-    console.error(error);
+    logger.error('Journal', 'Failed to load quest data', error);
   }
 }
 

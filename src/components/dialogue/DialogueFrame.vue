@@ -47,6 +47,7 @@ import DialogueFrameCard from '@/components/dialogue/DialogueFrameCard.vue';
 import Record from '../record/Record.vue';
 import { fetchAllDialogueBySpeaker, fetchSpeakersAmountBySpeakerType } from '@/api/idb.ts';
 import { computed, defineAsyncComponent, onMounted, ref, watch } from 'vue';
+import { logger } from '@/services/logger';
 import { usePrimaryModal } from '@/stores/modals';
 import { useClassicView } from '@/stores/classicView';
 import { useSelectedSpeaker } from '@/stores/selectedSpeaker';
@@ -122,7 +123,7 @@ watch(currentSpeakerType,
         await new Promise((resolve) => setTimeout(resolve, 5))
       }
     } catch(error) {
-      console.error(error);
+      logger.error('Dialogue', 'Failed to fetch speakers', error);
     }
   },
   { immediate: true },
@@ -142,7 +143,7 @@ onMounted(async () => {
       const speakerLength = await fetchSpeakersAmountBySpeakerType(speakerType);
       speakerTypeAmounts.value[speakerType] = speakerLength;
     } catch (error) {
-      console.error(error);
+      logger.error('Dialogue', 'Failed to fetch speaker count', error);
     }
   }
 })

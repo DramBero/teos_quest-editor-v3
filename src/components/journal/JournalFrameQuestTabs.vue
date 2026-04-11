@@ -57,6 +57,7 @@ import { Extension } from "@tiptap/core";
 import { useEditor, EditorContent } from '@tiptap/vue-3';
 import { watchDebounced } from '@vueuse/core';
 import { useSelectedQuest } from '@/stores/selectedQuest';
+import { logger } from '@/services/logger';
 
 interface QuestForTabs {
   id: string,
@@ -106,7 +107,7 @@ async function addQuest() {
     });
     model.value = newQuestName.value;
   } catch (error) {
-    console.error(error);
+    logger.error('Journal', 'Failed to add quest tab', error);
   }
 }
 

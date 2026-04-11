@@ -279,6 +279,7 @@ import { usePluginHeader } from '@/stores/pluginHeader';
 import TdesignClose from '~icons/tdesign/close';
 import SVGSpinners90RingWithBg from '~icons/svg-spinners/90-ring-with-bg';
 import type { RecordStatus } from '@/composables/useRecordStatus';
+import { logger } from '@/services/logger';
 
 
 const rows = ref<Record<string, unknown>[][]>([]);
@@ -699,7 +700,7 @@ async function fetchDialogue(topic: string) {
     const dialogueResponse = await getOrderedEntriesByTopic(topic);
     dialogueList.value = dialogueResponse.flat();
   } catch (error) {
-    console.error(error);
+    logger.error('Dialogue', 'Failed to fetch dialogue', error);
   } finally {
     dialogueLoading.value = false;
   }

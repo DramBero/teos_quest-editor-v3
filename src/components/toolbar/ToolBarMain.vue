@@ -21,8 +21,22 @@
         </button>
       </div>
 
+      <!-- Center: AI toggle -->
+      <div class="toolbar__group toolbar__group--center">
+
+      </div>
+
       <!-- Right: Header / Export -->
       <div class="toolbar__group toolbar__group--right">
+        <button
+          class="toolbar__btn"
+          :class="{ 'toolbar__btn--active': aiOpen }"
+          title="Toggle AI Assistant"
+          @click="aiOpen = !aiOpen"
+        >
+          <GameIconsGearsAi />
+          <span>AI</span>
+        </button>
         <button class="toolbar__btn" v-if="getTitle" @click="openHeaderModal" title="Edit plugin header">
           <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
           <span>Header</span>
@@ -44,6 +58,8 @@ import { usePrimaryModal } from '@/stores/modals';
 import { pluginToJSON } from '@/api/idb.ts';
 import { save_objects } from '@/tes3_wasm/tes3_wasm.js';
 import GameIconsSave from '~icons/game-icons/save';
+import GameIconsGearsAi from '~icons/game-icons/gears';
+import { logger } from '@/services/logger';
 
 const pluginHeaderStore = usePluginHeader();
 const primaryModalStore = usePrimaryModal();
@@ -54,6 +70,10 @@ const getTitle = computed<string>(() => pluginHeaderStore.getPluginHeader?.TMP_d
 const canUndo = ref(false);
 const canRedo = ref(false);
 
+// AI panel state
+import { useAiPanel } from '@/ai/panel-state';
+const { isOpen: aiOpen } = useAiPanel();
+
 function openHeaderModal() {
   primaryModalStore.setActiveModal('Upload');
 }
@@ -61,6 +81,10 @@ function openHeaderModal() {
 async function savePlugin() {
   try {
     const plugin = await pluginToJSON();
+    if (!plugin) {
+      logger.error('Export', 'Nothing to export — no active session');
+      return;
+    }
     const file = save_objects(plugin);
 
     const blob = new Blob([file], { type: 'application/octet-stream' });
@@ -72,8 +96,10 @@ async function savePlugin() {
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(link.href);
+
+    logger.success('Export', `${getTitle.value} exported successfully`);
   } catch (error) {
-    console.error(error);
+    logger.error('Export', 'Failed to export plugin', error);
   }
 }
 </script>

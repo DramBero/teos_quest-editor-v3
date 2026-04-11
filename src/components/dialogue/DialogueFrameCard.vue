@@ -25,6 +25,7 @@ import { useSelectedSpeaker } from '@/stores/selectedSpeaker';
 import { computed, ref, watch, useTemplateRef } from 'vue';
 import { renderHead } from '@/services/headRenderer';
 import { useElementVisibility } from '@vueuse/core';
+import { logger } from '@/services/logger';
 
 import type { NpcEntry } from '@/types/pluginEntries.ts';
 
@@ -55,7 +56,7 @@ async function fetchCardData() {
     const data = await fetchNPCData(props.speakerId);
     speakerData.value = data || null;
   } catch (error) {
-    console.log('NPC fetch error:', error);
+    logger.warn('Dialogue', 'NPC fetch error', error);
   }
   loaded.value = true;
 }

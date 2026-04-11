@@ -25,6 +25,15 @@
         />
         <div class="controls">
           <TButton
+            v-if="selectedType === 'Script'"
+            variant="dark"
+            size="sm"
+            @click="createNewScript"
+            title="Create a new script"
+          >
+            + New
+          </TButton>
+          <TButton
             :variant="showMasters ? 'dark-active' : 'dark'"
             size="sm"
             @click="showMasters = !showMasters"
@@ -62,6 +71,10 @@ import { fetchByType } from '@/api/idb.ts';
 import { computed, defineAsyncComponent, ref, watch } from 'vue';
 import SVGSpinners90RingWithBg from '~icons/svg-spinners/90-ring-with-bg';
 import { useSelectedRecord } from '@/stores/selectedRecord';
+import { useScriptTabs } from '@/stores/scriptTabs';
+import { dbMutationVersion, addEntry } from '@/api/import-export';
+import { getActiveDB } from '@/api/db';
+import { logger } from '@/services/logger';
 
 const GameIconsBookmarklet = defineAsyncComponent(
   () => import('~icons/game-icons/bookmarklet/GameIconsBookmarklet.vue')
@@ -132,6 +145,9 @@ const selectedRecordStore = useSelectedRecord();
 const getSelectedRecord = computed(() => selectedRecordStore.getSelectedRecord);
 watch(getSelectedRecord, () => fetchFactions({loading: false}));
 
+// Refetch when records are added/removed (e.g. StartScript toggle)
+watch(dbMutationVersion, () => fetchFactions({loading: false}));
+
 const countTypesStore = useCountTypes();
 
 function getTypeAmount(type: string) {
@@ -170,7 +186,7 @@ async function fetchFactions(options: FetchFactionsOptions) {
     factions.value = uniqueFactions;
     countTypesStore.updateCountTypes();
   } catch (error) {
-    console.error(error);
+    logger.error('Sidebar', 'Failed to fetch factions', error);
   } finally {
     loading.value = false;
   }
@@ -191,6 +207,35 @@ function searchFactions() {
 watch(factionSearch, searchFactions, { immediate: true });
 
 watch(factions, searchFactions)
+
+async function createNewScript() {
+  const name = prompt('Script name:');
+  if (!name || !name.trim()) return;
+  const id = name.trim();
+  // Check if script already exists
+  const db = await getActiveDB();
+  const existing = await db.pluginData.where('type').equals('Script').filter((r: Record<string, unknown>) => r.id === id).first();
+  if (existing) {
+    alert(`Script "${id}" already exists.`);
+    return;
+  }
+  try {
+    await addEntry({
+      type: 'Script',
+      id: id,
+      text: `begin ${id}\n\nend ${id}`,
+      TMP_id: id,
+    } as any);
+    // Open the newly created script
+    const created = await db.pluginData.where('type').equals('Script').filter((r: Record<string, unknown>) => r.id === id).first();
+    if (created) {
+      const scriptTabsStore = useScriptTabs();
+      scriptTabsStore.openTab(created);
+    }
+  } catch (err) {
+    logger.error('Script', 'Script create error', err);
+  }
+}
 </script>
 
 <style lang="scss" scoped>

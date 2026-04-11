@@ -11,6 +11,7 @@ import { save_objects } from '@/tes3_wasm/tes3_wasm.js';
 import GameIconsSave from '~icons/game-icons/save';
 import { computed } from 'vue';
 import { usePluginHeader } from '@/stores/pluginHeader';
+import { logger } from '@/services/logger';
 
 const pluginHeaderStore = usePluginHeader();
 const getTitle = computed<string>(() => pluginHeaderStore.getPluginHeader?.TMP_dep || '');
@@ -18,6 +19,10 @@ const getTitle = computed<string>(() => pluginHeaderStore.getPluginHeader?.TMP_d
 async function savePlugin() {
   try {
     const plugin = await pluginToJSON();
+    if (!plugin) {
+      logger.error('Export', 'Nothing to export — no active session');
+      return;
+    }
     const file = save_objects(plugin);
 
     const blob = new Blob([file], { type: 'application/octet-stream' });
@@ -29,8 +34,10 @@ async function savePlugin() {
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(link.href);
+
+    logger.success('Export', `${getTitle.value} exported successfully`);
   } catch (error) {
-    console.error(error);
+    logger.error('Export', 'Failed to export plugin', error);
   }
 }
 </script>

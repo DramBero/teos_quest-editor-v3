@@ -140,7 +140,7 @@ export default {
       newHeader.file_type = this.file_type;
       newHeader.description = this.description;
       newHeader.masters = this.dependencies;
-      console.log(newHeader);
+      // TODO: migrate to logger once HeaderFrame uses Composition API
       //this.$store.commit("setActiveHeader", newHeader)
       this.$store.commit('setActivePluginTitle', this.name);
     },

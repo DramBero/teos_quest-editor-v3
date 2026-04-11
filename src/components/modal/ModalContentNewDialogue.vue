@@ -250,14 +250,16 @@ export default {
     createTopic() {
       if (!this.inputTopic) return;
       else {
-        console.log('SPEAKER_TYPE: ', this.speakerSelectedType.typeId);
+        // TODO: migrate to logger.debug once refactored to Composition API
+        // console.log('SPEAKER_TYPE: ', this.speakerSelectedType.typeId);
         let location = this.$store.getters['getBestOrderLocationForNpc']([
           this.speakerId,
           this.inputTopic,
           this.dialogueSelectedType.typeId,
           this.speakerSelectedType.typeId,
         ]);
-        console.log(location[2]);
+        // TODO: migrate to logger.debug once refactored to Composition API
+        // console.log(location[2]);
         this.$store.commit('addDialogue', [
           this.speakerSelectedType.typeId,
           this.speakerId || this.speakerName,

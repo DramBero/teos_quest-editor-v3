@@ -6,9 +6,16 @@ import {
     _getDatabases,
     GENERIC_TMP,
 } from './db';
+import { ref } from 'vue';
 import { logger } from '@/services/logger';
 import type { BaseEntry } from '@/types/pluginEntries';
+import { useSessionStore } from '@/stores/session';
 import type { TES3_Record } from '@/types/tes3';
+
+// ---------------------------------------------------------------------------
+//  Reactive mutation counter — watchers can react to DB add/delete
+// ---------------------------------------------------------------------------
+export const dbMutationVersion = ref(0);
 
 // ---------------------------------------------------------------------------
 //  Entry CRUD
@@ -17,10 +24,13 @@ import type { TES3_Record } from '@/types/tes3';
 export async function modifyEntry(entry: BaseEntry): Promise<BaseEntry | undefined> {
     const activeDB = await getActiveDB();
     try {
+        // Strip Vue reactive proxies – IDB structured clone cannot handle them
+        const plain = JSON.parse(JSON.stringify(entry));
         const count = await activeDB.pluginData
             .where('TMP_index')
             .equals(entry.TMP_index)
-            .modify(entry);
+            .modify(plain);
+        if (count > 0) useSessionStore().incrementChanges();
         return count > 0 ? entry : undefined;
     } catch (error) {
         logger.error('CRUD', 'Failed to modify entry', error);
@@ -28,49 +38,127 @@ export async function modifyEntry(entry: BaseEntry): Promise<BaseEntry | undefin
     }
 }
 
-export async function addEntry(entry: Partial<BaseEntry>, locationIndex?: number): Promise<void> {
-    const header = await getActiveHeader();
-    const index = locationIndex || header.num_objects + 1;
-    const pluginName = header.TMP_dep;
+export async function addEntry(entry: Record<string, unknown>, locationIndex?: number): Promise<void> {
+    try {
+        const header = await getActiveHeader();
+        const pluginName = header.TMP_dep;
+        const activeDB = await getActiveDB();
 
-    const newEntry: Record<string, unknown> = {
-        ...GENERIC_TMP,
-        ...entry,
-        TMP_index: index,
-        TMP_dep: pluginName,
-    };
-
-    const activeDB = await getActiveDB();
-
-    if (locationIndex) {
-        let nextEntry: BaseEntry | undefined = await activeDB.pluginData
-            .where('TMP_index')
-            .above(locationIndex)
-            .limit(1)
-            .first();
-        if (!nextEntry) {
-            nextEntry = await activeDB.pluginData.orderBy('TMP_index').last();
-            newEntry.TMP_index = (nextEntry?.TMP_index ?? 0) + 1;
+        // Find a safe TMP_index: always use max existing + 1 to avoid collisions
+        let index: number;
+        if (locationIndex) {
+            index = locationIndex;
         } else {
-            newEntry.TMP_index = locationIndex + (nextEntry.TMP_index - locationIndex) / 2;
+            const last = await activeDB.pluginData.orderBy('TMP_index').last();
+            index = (last?.TMP_index ?? 0) + 1;
         }
-    }
 
-    await activeDB.pluginData.add(newEntry);
-    await activeDB.pluginData
-        .where('type')
-        .equals('Header')
-        .modify({ num_objects: header.num_objects + 1 });
+        const newEntry: Record<string, unknown> = {
+            ...GENERIC_TMP,
+            ...entry,
+            TMP_index: index,
+            TMP_dep: pluginName,
+        };
+
+        if (locationIndex) {
+            let nextEntry: BaseEntry | undefined = await activeDB.pluginData
+                .where('TMP_index')
+                .above(locationIndex)
+                .limit(1)
+                .first();
+            if (!nextEntry) {
+                const lastEntry = await activeDB.pluginData.orderBy('TMP_index').last();
+                newEntry.TMP_index = (lastEntry?.TMP_index ?? 0) + 1;
+            } else {
+                newEntry.TMP_index = locationIndex + (nextEntry.TMP_index - locationIndex) / 2;
+            }
+        }
+
+        await activeDB.pluginData.add(newEntry);
+        await activeDB.pluginData
+            .where('type')
+            .equals('Header')
+            .modify({ num_objects: header.num_objects + 1 });
+        dbMutationVersion.value++;
+        useSessionStore().incrementChanges();
+    } catch (error) {
+        logger.error('CRUD', 'Failed to add entry', error);
+    }
 }
 
 export async function deleteEntry(entry: BaseEntry): Promise<void> {
+    try {
+        const activeDB = await getActiveDB();
+        await activeDB.pluginData.delete(entry.TMP_index);
+        const header = await getActiveHeader();
+        await activeDB.pluginData
+            .where('type')
+            .equals('Header')
+            .modify({ num_objects: header.num_objects - 1 });
+        dbMutationVersion.value++;
+        useSessionStore().incrementChanges();
+    } catch (error) {
+        logger.error('CRUD', 'Failed to delete entry', error);
+    }
+}
+
+// ---------------------------------------------------------------------------
+//  Dirtied entries — CS touched but didn't change content
+// ---------------------------------------------------------------------------
+
+/**
+ * Strip internal/TMP fields for content comparison.
+ */
+const stripInternalFields = (obj: Record<string, unknown>) =>
+    Object.fromEntries(
+        Object.entries(obj).filter(
+            ([k]) => !k.includes('_id') && !k.startsWith('TMP_') && k !== 'old_values',
+        ),
+    );
+
+/**
+ * Compare two entries ignoring internal/TMP fields.
+ * Returns true if the entry is "dirtied" (content identical to previous version).
+ */
+function isDirtied(entry: BaseEntry): boolean {
+    const ov = entry.old_values;
+    if (!ov || ov.length < 2) return false;
+
+    const prev = ov[ov.length - 2] as Record<string, unknown>;
+    return JSON.stringify(stripInternalFields(prev))
+        === JSON.stringify(stripInternalFields(entry as unknown as Record<string, unknown>));
+}
+
+/**
+ * Returns all dirtied entries from the **active plugin only**.
+ */
+export async function getDirtiedEntries(): Promise<BaseEntry[]> {
     const activeDB = await getActiveDB();
-    await activeDB.pluginData.delete(entry.TMP_index);
-    const header = await getActiveHeader();
-    await activeDB.pluginData
-        .where('type')
-        .equals('Header')
-        .modify({ num_objects: header.num_objects - 1 });
+    const all = await activeDB.pluginData.toArray() as BaseEntry[];
+    return all.filter(isDirtied);
+}
+
+/**
+ * Bulk-delete entries by TMP_index and update header count.
+ */
+export async function bulkDeleteEntries(entries: BaseEntry[]): Promise<number> {
+    if (entries.length === 0) return 0;
+    try {
+        const activeDB = await getActiveDB();
+        const keys = entries.map(e => e.TMP_index);
+        await activeDB.pluginData.bulkDelete(keys);
+        const header = await getActiveHeader();
+        await activeDB.pluginData
+            .where('type')
+            .equals('Header')
+            .modify({ num_objects: header.num_objects - entries.length });
+        dbMutationVersion.value++;
+        useSessionStore().incrementChanges();
+        return entries.length;
+    } catch (error) {
+        logger.error('CRUD', 'Failed to bulk-delete entries', error);
+        return 0;
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -151,11 +239,18 @@ export async function importPlugin(
         await pluginDB.pluginData.clear();
     }
 
-    const entries: Record<string, unknown>[] = [];
+    const total = pluginData.length;
+    logger.info('Import', `Importing ${total} records for "${pluginName}"`);
 
-    for (let index = 0; index < pluginData.length; index++) {
+    // Process in streaming chunks — never hold all entries at once
+    let chunk: Record<string, unknown>[] = [];
+
+    for (let index = 0; index < total; index++) {
         const record = pluginData[index];
-        let dialogueEntry: Record<string, unknown>;
+        // Free source record to allow GC to reclaim memory progressively
+        (pluginData as unknown as (RawRecord | null)[])[index] = null;
+
+        let entry: Record<string, unknown>;
 
         if (['DialogueInfo', 'Dialogue'].includes(record.type as string)) {
             let TMP_quest_name = '';
@@ -173,7 +268,7 @@ export async function importPlugin(
                 }
             }
 
-            dialogueEntry = {
+            entry = {
                 type: '',
                 ...record,
                 TMP_id: record.id || '',
@@ -193,7 +288,7 @@ export async function importPlugin(
                 TMP_quest_name,
             };
         } else {
-            dialogueEntry = {
+            entry = {
                 type: '',
                 ...GENERIC_TMP,
                 ...record,
@@ -204,18 +299,16 @@ export async function importPlugin(
             };
         }
 
-        entries.push(dialogueEntry);
-    }
+        chunk.push(entry);
 
-    // Chunked bulkAdd with progress reporting
-    const total = entries.length;
-    logger.info('Import', `Importing ${total} records for "${pluginName}"`);
-    for (let i = 0; i < total; i += BULK_CHUNK_SIZE) {
-        const chunk = entries.slice(i, i + BULK_CHUNK_SIZE);
-        await pluginDB.pluginData.bulkAdd(chunk).catch((error: unknown) => {
-            logger.error('Import', `Failed to import chunk at offset ${i}`, error);
-        });
-        onProgress?.(Math.min((i + chunk.length) / total, 1));
+        // Flush chunk when full or at end
+        if (chunk.length >= BULK_CHUNK_SIZE || index === total - 1) {
+            await pluginDB.pluginData.bulkAdd(chunk).catch((error: unknown) => {
+                logger.error('Import', `Failed to import chunk at offset ${index - chunk.length + 1}`, error);
+            });
+            onProgress?.(Math.min((index + 1) / total, 1));
+            chunk = []; // release for GC
+        }
     }
 
     invalidateDependencyCache();

@@ -9,6 +9,7 @@ import {
     type SpeakerType,
 } from './db';
 import { modifyEntry, addEntry } from './import-export';
+import { logger } from '@/services/logger';
 import type { DialogueInfoRecord } from '@/types/pluginEntries';
 
 // ---------------------------------------------------------------------------
@@ -258,86 +259,98 @@ export async function getOrderedEntriesByTopic(topicId: string) {
 
 
 export async function addChoiceFilter(entryId: string, choiceId: number) {
-    const newFilter = {
-        comparison: 'Equal',
-        filter_type: 'Function',
-        function: 'Choice',
-        id: '',
-        value: { type: 'Integer', data: choiceId },
-    };
-    const entries = await getDialogueByTMPInfoId(entryId);
-    const entry = JSON.parse(JSON.stringify(entries.flat().at(-1)));
+    try {
+        const newFilter = {
+            comparison: 'Equal',
+            filter_type: 'Function',
+            function: 'Choice',
+            id: '',
+            value: { type: 'Integer', data: choiceId },
+        };
+        const entries = await getDialogueByTMPInfoId(entryId);
+        const entry = JSON.parse(JSON.stringify(entries.flat().at(-1)));
 
-    // Add filter logic
-    entry.filters = [
-        ...entry.filters,
-        { ...newFilter, index: entry.filters?.length || 0 },
-    ];
+        entry.filters = [
+            ...entry.filters,
+            { ...newFilter, index: entry.filters?.length || 0 },
+        ];
 
-    if (entry.TMP_is_active) {
-        return await modifyEntry(entry);
-    } else {
-        // Create override in active plugin
-        const { TMP_index, TMP_dep, TMP_is_active, ...entryData } = entry;
-        const newEntry = { ...entryData, TMP_is_active: true };
-        await addEntry(newEntry);
-        return newEntry;
+        if (entry.TMP_is_active) {
+            return await modifyEntry(entry);
+        } else {
+            const { TMP_index: _i, TMP_dep: _d, TMP_is_active: _a, ...entryData } = entry;
+            const newEntry = { ...entryData, TMP_is_active: true };
+            await addEntry(newEntry);
+            return newEntry;
+        }
+    } catch (error) {
+        logger.error('Dialogue', 'Failed to add choice filter', error);
     }
 }
 
 export async function editTopicText(entryId: string, text: string) {
-    const entries = await getDialogueByTMPInfoId(entryId);
-    const entry = JSON.parse(JSON.stringify(entries.flat().at(-1)));
-    if (entry.text === text) return entry;
+    try {
+        const entries = await getDialogueByTMPInfoId(entryId);
+        const entry = JSON.parse(JSON.stringify(entries.flat().at(-1)));
+        if (!entry) {
+            logger.error('Dialogue', `No entry found for id: ${entryId}`);
+            return;
+        }
+        if (entry.text === text) return entry;
 
-    entry.text = text;
+        entry.text = text;
 
-    if (entry.TMP_is_active) {
-        return await modifyEntry(entry);
-    } else {
-        // Create override in active plugin
-        // Remove TMP fields specific to the master record source
-        const { TMP_index, TMP_dep, TMP_is_active, ...entryData } = entry;
-        // Adding it will assign a new TMP_index in the active DB
-
-        const newEntry = { ...entryData, TMP_is_active: true };
-        await addEntry(newEntry);
-        return newEntry;
+        if (entry.TMP_is_active) {
+            return await modifyEntry(entry);
+        } else {
+            const { TMP_index: _i, TMP_dep: _d, TMP_is_active: _a, ...entryData } = entry;
+            const newEntry = { ...entryData, TMP_is_active: true };
+            await addEntry(newEntry);
+            return newEntry;
+        }
+    } catch (error) {
+        logger.error('Dialogue', 'Failed to edit topic text', error);
     }
 }
 
 export async function editScriptText(entryId: string, text: string) {
-    const entries = await getDialogueByTMPInfoId(entryId);
-    const entry = JSON.parse(JSON.stringify(entries.flat().at(-1)));
-    if (entry.script_text === text) return entry;
+    try {
+        const entries = await getDialogueByTMPInfoId(entryId);
+        const entry = JSON.parse(JSON.stringify(entries.flat().at(-1)));
+        if (entry.script_text === text) return entry;
 
-    entry.script_text = text;
+        entry.script_text = text;
 
-    if (entry.TMP_is_active) {
-        return await modifyEntry(entry);
-    } else {
-        // Create override in active plugin
-        const { TMP_index, TMP_dep, TMP_is_active, ...entryData } = entry;
-        const newEntry = { ...entryData, TMP_is_active: true };
-        await addEntry(newEntry);
-        return newEntry;
+        if (entry.TMP_is_active) {
+            return await modifyEntry(entry);
+        } else {
+            const { TMP_index: _i, TMP_dep: _d, TMP_is_active: _a, ...entryData } = entry;
+            const newEntry = { ...entryData, TMP_is_active: true };
+            await addEntry(newEntry);
+            return newEntry;
+        }
+    } catch (error) {
+        logger.error('Dialogue', 'Failed to edit script text', error);
     }
 }
 
 export async function deleteFilter(entryId: string, filterIndex: number) {
-    const entries = await getDialogueByTMPInfoId(entryId);
-    const entry = JSON.parse(JSON.stringify(entries.flat().at(-1)));
+    try {
+        const entries = await getDialogueByTMPInfoId(entryId);
+        const entry = JSON.parse(JSON.stringify(entries.flat().at(-1)));
 
-    entry.filters = entry.filters.filter((val: Record<string, unknown>) => val.index !== filterIndex);
+        entry.filters = entry.filters.filter((val: Record<string, unknown>) => val.index !== filterIndex);
 
-    if (entry.TMP_is_active) {
-        return await modifyEntry(entry);
-    } else {
-        // Create override in active plugin
-        const { TMP_index, TMP_dep, TMP_is_active, ...entryData } = entry;
-        const newEntry = { ...entryData, TMP_is_active: true };
-        await addEntry(newEntry);
-        return newEntry;
+        if (entry.TMP_is_active) {
+            return await modifyEntry(entry);
+        } else {
+            const { TMP_index: _i, TMP_dep: _d, TMP_is_active: _a, ...entryData } = entry;
+            const newEntry = { ...entryData, TMP_is_active: true };
+            await addEntry(newEntry);
+            return newEntry;
+        }
+    } catch (error) {
+        logger.error('Dialogue', 'Failed to delete filter', error);
     }
 }
 
@@ -348,21 +361,25 @@ export async function addFilter(entryId: string, filter: {
     id: string;
     value: { type: string; data: number | string };
 }) {
-    const entries = await getDialogueByTMPInfoId(entryId);
-    const entry = JSON.parse(JSON.stringify(entries.flat().at(-1)));
+    try {
+        const entries = await getDialogueByTMPInfoId(entryId);
+        const entry = JSON.parse(JSON.stringify(entries.flat().at(-1)));
 
-    entry.filters = [
-        ...entry.filters,
-        { ...filter, index: entry.filters?.length || 0 },
-    ];
+        entry.filters = [
+            ...entry.filters,
+            { ...filter, index: entry.filters?.length || 0 },
+        ];
 
-    if (entry.TMP_is_active) {
-        return await modifyEntry(entry);
-    } else {
-        const { TMP_index, TMP_dep, TMP_is_active, ...entryData } = entry;
-        const newEntry = { ...entryData, TMP_is_active: true };
-        await addEntry(newEntry);
-        return newEntry;
+        if (entry.TMP_is_active) {
+            return await modifyEntry(entry);
+        } else {
+            const { TMP_index: _i, TMP_dep: _d, TMP_is_active: _a, ...entryData } = entry;
+            const newEntry = { ...entryData, TMP_is_active: true };
+            await addEntry(newEntry);
+            return newEntry;
+        }
+    } catch (error) {
+        logger.error('Dialogue', 'Failed to add filter', error);
     }
 }
 
@@ -377,23 +394,27 @@ export async function updateFilter(
         function: string;
     }>,
 ) {
-    const entries = await getDialogueByTMPInfoId(entryId);
-    const entry = JSON.parse(JSON.stringify(entries.flat().at(-1)));
+    try {
+        const entries = await getDialogueByTMPInfoId(entryId);
+        const entry = JSON.parse(JSON.stringify(entries.flat().at(-1)));
 
-    const filter = entry.filters.find(
-        (f: Record<string, unknown>) => f.index === filterIndex,
-    );
-    if (!filter) return entry;
+        const filter = entry.filters.find(
+            (f: Record<string, unknown>) => f.index === filterIndex,
+        );
+        if (!filter) return entry;
 
-    Object.assign(filter, patch);
+        Object.assign(filter, patch);
 
-    if (entry.TMP_is_active) {
-        return await modifyEntry(entry);
-    } else {
-        const { TMP_index, TMP_dep, TMP_is_active, ...entryData } = entry;
-        const newEntry = { ...entryData, TMP_is_active: true };
-        await addEntry(newEntry);
-        return newEntry;
+        if (entry.TMP_is_active) {
+            return await modifyEntry(entry);
+        } else {
+            const { TMP_index: _i, TMP_dep: _d, TMP_is_active: _a, ...entryData } = entry;
+            const newEntry = { ...entryData, TMP_is_active: true };
+            await addEntry(newEntry);
+            return newEntry;
+        }
+    } catch (error) {
+        logger.error('Dialogue', 'Failed to update filter', error);
     }
 }
 
@@ -403,19 +424,23 @@ export async function updateSpeakerField(
     field: 'speaker_id' | 'speaker_race' | 'speaker_class' | 'speaker_faction' | 'speaker_cell' | 'player_faction',
     value: string,
 ) {
-    const entries = await getDialogueByTMPInfoId(entryId);
-    const entry = JSON.parse(JSON.stringify(entries.flat().at(-1)));
+    try {
+        const entries = await getDialogueByTMPInfoId(entryId);
+        const entry = JSON.parse(JSON.stringify(entries.flat().at(-1)));
 
-    if (entry[field] === value) return entry;
-    entry[field] = value;
+        if (entry[field] === value) return entry;
+        entry[field] = value;
 
-    if (entry.TMP_is_active) {
-        return await modifyEntry(entry);
-    } else {
-        const { TMP_index, TMP_dep, TMP_is_active, ...entryData } = entry;
-        const newEntry = { ...entryData, TMP_is_active: true };
-        await addEntry(newEntry);
-        return newEntry;
+        if (entry.TMP_is_active) {
+            return await modifyEntry(entry);
+        } else {
+            const { TMP_index: _i, TMP_dep: _d, TMP_is_active: _a, ...entryData } = entry;
+            const newEntry = { ...entryData, TMP_is_active: true };
+            await addEntry(newEntry);
+            return newEntry;
+        }
+    } catch (error) {
+        logger.error('Dialogue', `Failed to update ${field}`, error);
     }
 }
 
@@ -429,25 +454,29 @@ export async function updateEntryData(
         player_rank: number;
     }>,
 ) {
-    const entries = await getDialogueByTMPInfoId(entryId);
-    const entry = JSON.parse(JSON.stringify(entries.flat().at(-1)));
+    try {
+        const entries = await getDialogueByTMPInfoId(entryId);
+        const entry = JSON.parse(JSON.stringify(entries.flat().at(-1)));
 
-    let changed = false;
-    for (const [k, v] of Object.entries(patch)) {
-        if (entry.data[k] !== v) {
-            entry.data[k] = v;
-            changed = true;
+        let changed = false;
+        for (const [k, v] of Object.entries(patch)) {
+            if (entry.data[k] !== v) {
+                entry.data[k] = v;
+                changed = true;
+            }
         }
-    }
-    if (!changed) return entry;
+        if (!changed) return entry;
 
-    if (entry.TMP_is_active) {
-        return await modifyEntry(entry);
-    } else {
-        const { TMP_index, TMP_dep, TMP_is_active, ...entryData } = entry;
-        const newEntry = { ...entryData, TMP_is_active: true };
-        await addEntry(newEntry);
-        return newEntry;
+        if (entry.TMP_is_active) {
+            return await modifyEntry(entry);
+        } else {
+            const { TMP_index: _i, TMP_dep: _d, TMP_is_active: _a, ...entryData } = entry;
+            const newEntry = { ...entryData, TMP_is_active: true };
+            await addEntry(newEntry);
+            return newEntry;
+        }
+    } catch (error) {
+        logger.error('Dialogue', 'Failed to update entry data', error);
     }
 }
 

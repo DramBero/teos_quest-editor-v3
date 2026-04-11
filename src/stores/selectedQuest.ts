@@ -1,6 +1,7 @@
 import { ref, computed } from 'vue';
 import { defineStore } from 'pinia';
 import { fetchQuestByID, fetchAllQuestIDs } from '@/api/idb.ts';
+import { logger } from '@/services/logger';
 import type { DialogueInfoRecord } from '@/types/pluginEntries';
 
 export const useSelectedQuest = defineStore('selectedQuest', () => {
@@ -31,7 +32,7 @@ export const useSelectedQuest = defineStore('selectedQuest', () => {
 
   const selectedQuestName = ref<string | null>();
   function setSelectedQuestName(value: string | null) {
-    console.log('SET NAME:', value)
+    logger.debug('Quest', `SET NAME: ${value}`)
     selectedQuestName.value = value;
   }
   const getSelectedQuestName = computed(() => selectedQuestName.value);
@@ -53,7 +54,7 @@ export const useSelectedQuest = defineStore('selectedQuest', () => {
         setSelectedQuestName(questResponse.name);
       }
     } catch (error) {
-      console.error(error);
+      logger.error('Quest', 'Failed to fetch quest', error);
     }
   }
 
@@ -63,7 +64,7 @@ export const useSelectedQuest = defineStore('selectedQuest', () => {
       const questsResponse = await fetchAllQuestIDs(true);
       quests.value = questsResponse;
     } catch (error) {
-      console.error(error);
+      logger.error('Quest', 'Failed to fetch quests', error);
     }
   }
   const getQuests = computed(() => quests.value);

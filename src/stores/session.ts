@@ -93,6 +93,10 @@ export const useSessionStore = defineStore('session', () => {
         target.lastOpened = Date.now();
         await saveSession({ ...toRaw(target) });
         currentSession.value = target;
+
+        // Close any open record editor from the previous plugin
+        const { useSelectedRecord } = await import('./selectedRecord');
+        useSelectedRecord().setSelectedRecord(null);
     }
 
     /** Delete a session (does NOT delete the plugin DB). */

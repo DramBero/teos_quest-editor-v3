@@ -394,7 +394,8 @@ export class Parser {
     private parseMessageBox(): MessageBoxNode {
         const mbTok = this.scanner.scan(); // consume MessageBox
 
-        // Expect string message
+        // Expect string message — an optional comma may precede it
+        this.tryConsume(Special.Comma);
         const msgTok = this.scanner.peek();
         let message: ExprNode;
         if (msgTok.type !== TokenType.String) {
@@ -478,6 +479,10 @@ export class Parser {
 
         const argDefs = ext.args.replace('/', '');
         const args: ExprNode[] = [];
+
+        // MWScript allows a comma between function name and first arg
+        // e.g. `player -> PositionCell, 192, -512, 724, 90, "cell"`
+        this.tryConsume(Special.Comma);
 
         for (const argType of argDefs) {
             const next = this.scanner.peek();

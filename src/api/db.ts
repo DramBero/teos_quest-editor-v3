@@ -292,6 +292,35 @@ export async function getActiveHeader() {
     return getHeader(key);
 }
 
+/**
+ * Update the Header record in the active plugin's IndexedDB.
+ * Merges the provided fields into the existing header and persists.
+ * Returns the updated header record.
+ */
+export async function updateHeader(fields: {
+    version?: number;
+    file_type?: 'Esp' | 'Esm';
+    author?: string;
+    description?: string;
+    masters?: Array<[string, number]>;
+}) {
+    const db = await getActiveDB();
+    const header = await db.pluginData.where('type').equals('Header').first();
+    if (!header) throw new Error('NO_HEADER_FOUND');
+
+    // Merge fields
+    if (fields.version !== undefined) header.version = fields.version;
+    if (fields.file_type !== undefined) header.file_type = fields.file_type;
+    if (fields.author !== undefined) header.author = fields.author;
+    if (fields.description !== undefined) header.description = fields.description;
+    if (fields.masters !== undefined) header.masters = fields.masters;
+
+    // Persist — Dexie put() uses the auto-incrementing key (TMP_index)
+    await db.pluginData.put(header);
+    logger.info('DB', `Header updated: author="${fields.author ?? header.author}", type=${fields.file_type ?? header.file_type}`);
+    return header;
+}
+
 // ---------------------------------------------------------------------------
 //  Migration: clean break from legacy 'activePlugin' DB
 // ---------------------------------------------------------------------------

@@ -107,6 +107,7 @@ import { VariableHighlight } from '@/extensions/VariableHighlight';
 import { watchDebounced } from '@vueuse/core';
 import { editTopicText, addDialogueEntry, deleteJournalEntry, modifyEntry, editScriptText } from '@/api/idb.ts';
 import { computed, ref, watch } from 'vue';
+import { logger } from '@/services/logger';
 
 import ContextMenu, { type MenuItem } from '@imengyu/vue3-context-menu';
 
@@ -318,7 +319,7 @@ function useLuaResults() {
   async function updateLua(newValue: string) {
     const luaScripts = newValue.split('\r\n').map(val => ';lua ' + val).join('\r\n');
     const scriptText = `${luaScripts}\r\n${getMWScript.value}`;
-    console.log('SCRIPT TEXT:', scriptText);
+    logger.debug('Script', `SCRIPT TEXT: ${scriptText}`);
     
     const newEntryResponse = await editScriptText(props.answer.TMP_info_id, scriptText);
 
@@ -363,7 +364,7 @@ function useMWScriptResults() {
   async function updateMWScript(newValue: string) {
     const luaValue = getLua.value.split('\r\n').map(val => `;lua ${val}`).join('\r\n');
     const scriptText = `${luaValue}\r\n${newValue}`;
-    console.log('SCRIPT TEXT:', scriptText);
+    logger.debug('Script', `SCRIPT TEXT: ${scriptText}`);
     
     const newEntryResponse = await editScriptText(props.answer.TMP_info_id, scriptText);
     emit('updateChoices');

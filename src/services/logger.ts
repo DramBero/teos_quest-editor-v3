@@ -4,13 +4,14 @@ import { useToastStore } from '@/stores/toast';
 //  Log levels
 // ---------------------------------------------------------------------------
 
-type LogLevel = 'debug' | 'info' | 'warn' | 'error';
+type LogLevel = 'debug' | 'info' | 'warn' | 'error' | 'success';
 
 const LEVEL_COLORS: Record<LogLevel, string> = {
     debug: '#888',
     info: '#6ec6ff',
     warn: '#ffc107',
     error: '#ff5252',
+    success: '#66bb6a',
 };
 
 const IS_DEV = import.meta.env.DEV;
@@ -25,18 +26,30 @@ function log(level: LogLevel, tag: string, message: string, data?: unknown) {
 
     const style = `color:${LEVEL_COLORS[level]};font-weight:bold`;
     const prefix = `%c[${tag}]`;
+    const consoleFn = level === 'success' ? 'info' : level;
 
     if (data !== undefined) {
-        console[level](prefix, style, message, data);
+        console[consoleFn](prefix, style, message, data);
     } else {
-        console[level](prefix, style, message);
+        console[consoleFn](prefix, style, message);
     }
 
-    // Errors automatically trigger a user-facing toast
-    if (level === 'error') {
+    // Errors and successes automatically trigger a user-facing toast
+    // (except known non-critical init errors that fire before session restores)
+    const SILENT_ERRORS = ['NO_ACTIVE_SESSION', 'SESSION_STORE_NOT_INITIALIZED', 'NO_HEADERFOUND'];
+    const isSilent = level === 'error' && data !== undefined
+        && SILENT_ERRORS.includes(data instanceof Error ? data.message : String(data));
+
+    if ((level === 'error' || level === 'success') && !isSilent) {
         try {
             const store = useToastStore();
-            store.add('error', `[${tag}] ${message}`);
+            let toastMsg = level === 'success' ? message : `[${tag}] ${message}`;
+            // Append a short error hint when available
+            if (level === 'error' && data) {
+                const hint = data instanceof Error ? data.message : String(data);
+                if (hint && hint !== message) toastMsg += ` — ${hint}`;
+            }
+            store.add(level, toastMsg);
         } catch {
             // Store may not be available during init — silently ignore
         }
@@ -52,4 +65,5 @@ export const logger = {
     info: (tag: string, msg: string, data?: unknown) => log('info', tag, msg, data),
     warn: (tag: string, msg: string, data?: unknown) => log('warn', tag, msg, data),
     error: (tag: string, msg: string, data?: unknown) => log('error', tag, msg, data),
+    success: (tag: string, msg: string, data?: unknown) => log('success', tag, msg, data),
 };

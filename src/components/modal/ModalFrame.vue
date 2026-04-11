@@ -66,6 +66,12 @@ const ModalContentNewFilter = defineAsyncComponent(
 const ModalContentNewQuest = defineAsyncComponent(
   () => import('@/components/modal/ModalContentNewQuest.vue')
 )
+const ModalContentCleanDirtied = defineAsyncComponent(
+  () => import('@/components/modal/ModalContentCleanDirtied.vue')
+)
+const ModalContentEditHeader = defineAsyncComponent(
+  () => import('@/components/modal/ModalContentEditHeader.vue')
+)
 
 const getModalComponent = computed(() => {
   switch (getModal.value) {
@@ -74,6 +80,8 @@ const getModalComponent = computed(() => {
     case 'NewQuest': return ModalContentNewQuest;
     case 'Upload': return ModalContentUpload;
     case 'Storage': return ModalContentStorage;
+    case 'CleanDirtied': return ModalContentCleanDirtied;
+    case 'EditHeader': return ModalContentEditHeader;
     default: return null;
   }
 })

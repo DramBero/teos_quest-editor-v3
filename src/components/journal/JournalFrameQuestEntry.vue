@@ -11,13 +11,11 @@
       <div class="quest-entry" :class="{
         'quest-entry_finished': isFinished,
         'quest-entry_highlighted': getIsHighlighted(props.entry.data.disposition),
-        'quest-entry_new': props.entry.TMP_is_active,
+        'quest-entry_new': entryStatus === 'new',
+        'quest-entry_mod': entryStatus === 'mod',
       }" draggable @dragstart="startDrag($event, props.entry)">
         <div class="quest-entry__text">
-          <editor-content v-if="props.entry.TMP_is_active" :editor="editor" />
-          <div v-else>
-            {{ props.entry.text }}
-          </div>
+          <editor-content :editor="editor" />
             <EntryDisposition 
               :entry="props.entry"
               :questId
@@ -39,7 +37,7 @@
             <TdesignAdd />
           </button>
         </div>
-        <div class="entry-controls" v-if="props.entry.TMP_is_active">
+        <div class="entry-controls">
           <button
             type="button"
             class="entry-controls__btn entry-controls__btn_delete"
@@ -60,9 +58,7 @@
             <TdesignFlag v-else />
           </button>
         </div>
-        <div class="entry-finished-flag" v-else-if="isFinished">
-          <TdesignFlagFilled />
-        </div>
+
       </div>
     </div>
   </div>
@@ -78,13 +74,15 @@ import TdesignFlag from '~icons/tdesign/flag';
 import TdesignFlagFilled from '~icons/tdesign/flag-filled';
 import TdesignClose from '~icons/tdesign/close';
 
-import { editTopicText, addQuestEntry, modifyEntry, deleteJournalEntry } from '@/api/idb.ts';
+import { editTopicText, addQuestEntry, modifyJournalEntry, deleteJournalEntry, ensureDialogueInActive } from '@/api/idb.ts';
+import { useRecordStatus } from '@/composables/useRecordStatus';
 import { watchDebounced } from '@vueuse/core';
 import { useSelectedQuest } from '@/stores/selectedQuest';
 
 import EntryDisposition from '@/components/journal/EntryDisposition.vue';
 
 import type { DialogueInfoRecord, FilterComparison } from '@/types/pluginEntries';
+import { logger } from '@/services/logger';
 
 const props = withDefaults(defineProps<{
   entry?: DialogueInfoRecord;
@@ -101,12 +99,21 @@ const props = withDefaults(defineProps<{
 
 const selectedQuestStore = useSelectedQuest();
 
+// Entry status: 'new' (green) | 'mod' (blue) | ''
+const { status: entryStatus } = useRecordStatus(
+  () => props.entry,
+  {
+    isNew: () => props.entry?.TMP_is_active ?? false,
+    isModified: () => !!(props.entry?.old_entries?.length),
+  },
+);
+
 async function handleDeleteEntry() {
   try {
     await deleteJournalEntry(props.entry);
     await selectedQuestStore.fetchQuest(props.entry.TMP_topic, { reload: false });
   } catch (error) {
-    console.error(error);
+    logger.error('Journal', 'Failed to delete entry', error);
   }
 }
 
@@ -154,13 +161,13 @@ watch(propsIsFinished, (newValue) => {
 });
 async function toggleFinished() {
   try {
-    await modifyEntry({
-      TMP_index: props.entry.TMP_index,
-      quest_state: isFinished.value ? null :'Finished',
-    })
+    await modifyJournalEntry(props.entry, {
+      quest_state: isFinished.value ? null : 'Finished',
+    });
     isFinished.value = !isFinished.value;
+    await selectedQuestStore.fetchQuest(props.entry.TMP_topic, { reload: false });
   } catch (error) {
-    console.error(error);
+    logger.error('Journal', 'Failed to toggle finished state', error);
   }
 }
 
@@ -179,8 +186,17 @@ watch(() => props.entry?.text, (newValue) => {
   immediate: true,
 })
 
-watchDebounced(entryText, (newValue) => {
-  editTopicText(props.entry.TMP_info_id, newValue)
+watchDebounced(entryText, async (newValue) => {
+  const result = await editTopicText(props.entry.TMP_info_id, newValue);
+
+  // Ensure the parent Dialogue record is in the active plugin (idempotent)
+  await ensureDialogueInActive(props.entry.TMP_topic);
+
+  if (!props.entry.TMP_is_active) {
+    await selectedQuestStore.fetchQuest(props.entry.TMP_topic, { reload: false, fetchQuests: false });
+  }
+  // Refresh quest list (so dot appears / quest shows in active filter)
+  await selectedQuestStore.fetchQuests();
 }, {
   debounce: 500,
 })

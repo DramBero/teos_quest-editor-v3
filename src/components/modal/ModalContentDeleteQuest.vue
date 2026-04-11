@@ -32,6 +32,7 @@
 import { usePrimaryModal } from '@/stores/modals';
 import { ref } from 'vue';
 import { addJournalQuest } from '@/api/idb.ts';
+import { logger } from '@/services/logger';
 
 const nameError = ref<string>('');
 const idError = ref<string>('');
@@ -44,7 +45,7 @@ async function createQuest() {
     await addJournalQuest(inputId.value, inputName.value)
     primaryModalStore.setActiveModal('');
   } catch (error) {
-    console.error(error);
+    logger.error('Journal', 'Failed to create quest', error);
   }
   //       this.$store.commit('addJournalQuest', [this.inputId, this.inputName]);
 }

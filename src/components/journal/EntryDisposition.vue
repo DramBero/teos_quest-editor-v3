@@ -35,6 +35,7 @@ import TdesignClose from '~icons/tdesign/close';
 import { modifyEntry } from '@/api/idb.ts';
 import { useSelectedQuest } from '@/stores/selectedQuest';
 import type { DialogueInfoRecord } from '@/types/pluginEntries';
+import { logger } from '@/services/logger';
 
 const props = defineProps<{
   entry: DialogueInfoRecord;
@@ -60,7 +61,7 @@ async function handleSubmit() {
     });
     await selectedQuestStore.fetchQuest(props.entry.TMP_topic, { reload: false });
   } catch (error) {
-    console.error(error);
+    logger.error('Journal', 'Failed to update disposition', error);
   }
 }
 </script>

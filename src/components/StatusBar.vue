@@ -6,6 +6,13 @@
           <span class="status-bar__dot" :class="sessionStore.hasChanges ? 'status-bar__dot--blue' : 'status-bar__dot--dim'"></span>
           {{ sessionStore.currentSession.changes }} change{{ sessionStore.currentSession.changes !== 1 ? 's' : '' }}
         </span>
+        <template v-if="dirtiedCount > 0">
+          <span class="status-bar__separator">·</span>
+          <span class="status-bar__stat status-bar__interactive status-bar__stat--dirtied" @click="openCleanDirtied" title="Dirtied entries (CS touched, no changes)">
+            <span class="status-bar__dot status-bar__dot--yellow"></span>
+            {{ dirtiedCount }} dirtied
+          </span>
+        </template>
         <span class="status-bar__separator">·</span>
         <span class="status-bar__stat status-bar__stat--time">
           Last opened: {{ formatLastOpened(sessionStore.currentSession.lastOpened) }}
@@ -35,6 +42,7 @@ import { ref, onMounted, watch } from 'vue';
 import { useSessionStore } from '@/stores/session';
 import { usePrimaryModal } from '@/stores/modals';
 import { useStorageStats } from '@/stores/storageStats';
+import { getDirtiedEntries, dbMutationVersion } from '@/api/idb';
 
 const sessionStore = useSessionStore();
 const primaryModalStore = usePrimaryModal();
@@ -46,6 +54,26 @@ function openStorage() {
 
 function openDeps() {
   primaryModalStore.setActiveModal('Upload');
+}
+
+function openCleanDirtied() {
+  primaryModalStore.setActiveModal('CleanDirtied');
+}
+
+// -------------------------------------------------------------------------
+//  Dirtied entry counter
+// -------------------------------------------------------------------------
+
+const dirtiedCount = ref(0);
+
+async function refreshDirtiedCount() {
+  try {
+    const dirtied = await getDirtiedEntries();
+    dirtiedCount.value = dirtied.length;
+  } catch {
+    // Session not ready yet — ignore
+    dirtiedCount.value = 0;
+  }
 }
 
 // -------------------------------------------------------------------------
@@ -70,11 +98,18 @@ function formatLastOpened(timestamp: number): string {
 
 onMounted(() => {
   storageStats.updateStorageEstimate();
+  refreshDirtiedCount();
 });
 
 // Re-estimate storage when session changes (plugin loaded/deleted)
 watch(() => sessionStore.currentSession?.id, () => {
   storageStats.updateStorageEstimate();
+  refreshDirtiedCount();
+});
+
+// Refresh dirtied count when DB mutates (entries added/deleted)
+watch(dbMutationVersion, () => {
+  refreshDirtiedCount();
 });
 </script>
 
@@ -142,6 +177,7 @@ watch(() => sessionStore.currentSession?.id, () => {
   flex-shrink: 0;
 
   &--blue { background: rgb(80, 160, 255); }
+  &--yellow { background: rgb(220, 180, 50); }
   &--dim { background: rgba(255, 255, 255, 0.15); }
 }
 </style>

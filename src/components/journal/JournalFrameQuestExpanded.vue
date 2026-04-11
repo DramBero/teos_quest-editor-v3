@@ -90,6 +90,7 @@ import { pxValue, useElementVisibility } from '@vueuse/core'
 import SVGSpinners90RingWithBg from '~icons/svg-spinners/90-ring-with-bg';
 import TStatusDot from '@/components/ui/TStatusDot.vue';
 import { useRecordStatus } from '@/composables/useRecordStatus';
+import { logger } from '@/services/logger';
 
 const target = useTemplateRef<HTMLDivElement>('quest');
 const targetIsVisible = useElementVisibility(target);
@@ -182,7 +183,7 @@ async function loadQuestData(questId: string) {
   try {
     await selectedQuestStore.fetchQuest(questId);
   } catch(error) {
-    console.error(error);
+    logger.error('Journal', 'Failed to load quest data', error);
   }
 }
 

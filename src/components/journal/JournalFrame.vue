@@ -104,10 +104,11 @@ const questNames = computed(() => {
   for (let questName of questNameList) {
     const questNameFact = questList.value.find(quest => quest.TMP_quest_name.toLowerCase() === questName)?.TMP_quest_name;
     const quests = questList.value.filter((quest) => quest.TMP_quest_name.toLowerCase() === questName).reverse();
+    const is_new = Boolean(quests.filter((quest) => quest.TMP_is_active)?.length);
     questNameListNew.push({
       name: questNameFact,
       quests,
-      is_new: Boolean(quests.filter((quest) => quest.TMP_is_active)?.length),
+      is_new,
     })
   }
   if (showMasters.value) {
@@ -356,6 +357,9 @@ export default {
     border-left: 5px solid transparent;
     &_new {
       border-left: 5px solid rgba(89, 170, 106, 0.7);
+    }
+    &_mod {
+      border-left: 5px solid rgba(75, 119, 190, 0.7);
     }
     &_start {
       text-align: center;

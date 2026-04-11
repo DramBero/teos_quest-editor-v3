@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
+import { logger } from '@/services/logger';
 
 export const useStorageStats = defineStore('storageStats', () => {
     const storageUsed = ref('—');
@@ -30,7 +31,7 @@ export const useStorageStats = defineStore('storageStats', () => {
             storagePercent.value = total > 0 ? (used / total) * 100 : 0;
             isPersisted.value = persisted;
         } catch (e) {
-            console.warn('Storage estimate failed', e);
+            logger.warn('Storage', 'Storage estimate failed', e);
         }
     }
 

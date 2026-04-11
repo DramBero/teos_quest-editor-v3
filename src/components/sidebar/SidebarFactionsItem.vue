@@ -18,13 +18,32 @@
           </span>
         </div>
         <span class="faction__id">{{ getId }}</span>
-        <input 
+        <div 
           v-if="props.faction[0].type === 'GlobalVariable'"
-          type="text" 
-          disabled 
-          class="faction__value" 
-          :value="props.faction[0].value?.data"
-        />
+          class="faction__gvar"
+          @click.stop
+        >
+          <div class="faction__gvar-row">
+            <input
+              type="number"
+              class="faction__gvar-value" 
+              :value="props.faction[0].value?.data"
+              :disabled="!isActiveEntry"
+              :title="isActiveEntry ? 'Edit value' : 'Read-only (master file)'"
+              @change="onGlobalValueChange($event)"
+            />
+            <select
+              class="faction__gvar-type"
+              :value="props.faction[0].value?.type"
+              :disabled="!isActiveEntry"
+              @change="onGlobalTypeChange($event)"
+            >
+              <option value="Short">Short</option>
+              <option value="Long">Long</option>
+              <option value="Float">Float</option>
+            </select>
+          </div>
+        </div>
         <textarea 
           v-if="props.faction[0].type === 'GameSetting'"
           type="text" 
@@ -68,12 +87,16 @@
 
 <script setup lang="ts">
 import { useSelectedRecord } from '@/stores/selectedRecord';
+import { useScriptTabs } from '@/stores/scriptTabs';
 import { useSelectedSpeaker } from '@/stores/selectedSpeaker';
 import { computed } from 'vue';
 import TdesignChatMessageFilled from '~icons/tdesign/chat-message-filled';
 import MagicEffects from './MagicEffects.vue';
 import TStatusDot from '@/components/ui/TStatusDot.vue';
 import { useRecordArrayStatus } from '@/composables/useRecordStatus';
+import { collection } from '@/api/collection';
+import { modifyEntry } from '@/api/import-export';
+import type { BaseEntry } from '@/types/pluginEntries';
 
 const props = defineProps<{
   faction: Record<string, unknown>[];
@@ -82,12 +105,42 @@ const props = defineProps<{
 
 const { status: recordStatus } = useRecordArrayStatus(() => props.faction);
 
-const selectedRecordStore = useSelectedRecord();
+const isActiveEntry = computed(() => {
+  return !!props.faction[0]?.TMP_is_active;
+});
 
-function handleSelect() {
+const selectedRecordStore = useSelectedRecord();
+const scriptTabsStore = useScriptTabs();
+
+async function handleSelect() {
   const type = props.faction[0]?.type;
-  if (type !== 'Book' && type !== 'Script') return;
+  if (type === 'StartScript') {
+    await openStartScriptTarget();
+    return;
+  }
+  if (type === 'Script') {
+    scriptTabsStore.openTab(props.faction[0]);
+    return;
+  }
+  if (type !== 'Book') return;
   selectedRecordStore.setSelectedRecord(props.faction);
+}
+
+/** Look up the Script record referenced by a StartScript entry and open it */
+async function openStartScriptTarget() {
+  const entry = props.faction[0];
+  const scriptName = entry?.script || entry?.id || '';
+  if (!scriptName) return;
+  const scripts = await collection({ type: 'Script' })
+    .filter((s) => (s as Record<string, unknown>).id === scriptName)
+    .first()
+    .acrossPlugins();
+  if (scripts) {
+    const scriptEntry = Array.isArray(scripts) ? scripts[0] : scripts;
+    if (scriptEntry) {
+      scriptTabsStore.openTab(scriptEntry as Record<string, unknown>);
+    }
+  }
 }
 
 function onDragStart(event: DragEvent) {
@@ -132,6 +185,9 @@ const getName = computed(() => {
     case 'Cell': return props.faction[0].name || props.faction[0].region;
     case 'MagicEffect': return props.faction[0].effect_id;
     case 'Enchanting': return props.faction[0].id;
+    case 'Script': return props.faction[0].id;
+    case 'GlobalVariable': return props.faction[0].id;
+    case 'StartScript': return props.faction[0].script || props.faction[0].id;
     default: return props.faction[0].name;
   } 
 });
@@ -142,9 +198,46 @@ const getId = computed(() => {
     case 'PathGrid': return `${props.faction[0]?.data?.grid?.[0]}:${props.faction[0]?.data?.grid?.[1]}`;
     case 'Landscape': return `${props.faction[0].grid?.[0]}:${props.faction[0].grid?.[1]}`;
     case 'MagicEffect': return props.faction[0].description;
+    case 'Script': return '';
+    case 'GlobalVariable': return '';
+    case 'StartScript': return '⚡ Startup Script';
     default: return props.faction[0]?.id;
   }
 })
+
+// ---------- GlobalVariable inline editing ----------
+
+async function onGlobalValueChange(event: Event) {
+  const input = event.target as HTMLInputElement;
+  const raw = Number(input.value);
+  if (isNaN(raw)) return;
+
+  const entry = props.faction[0] as Record<string, unknown>;
+  const currentType = (entry.value as Record<string, unknown>)?.type || 'Short';
+  let clamped = raw;
+  if (currentType === 'Short') clamped = Math.max(-32768, Math.min(32767, Math.round(raw)));
+  else if (currentType === 'Long') clamped = Math.round(raw);
+
+  (entry.value as Record<string, unknown>).data = clamped;
+  input.value = String(clamped);
+  await modifyEntry(entry as unknown as BaseEntry);
+}
+
+async function onGlobalTypeChange(event: Event) {
+  const select = event.target as HTMLSelectElement;
+  const newType = select.value; // Short | Long | Float
+  const entry = props.faction[0] as Record<string, unknown>;
+  const valObj = entry.value as Record<string, unknown>;
+  valObj.type = newType;
+
+  // Clamp existing value to new type range
+  let current = Number(valObj.data) || 0;
+  if (newType === 'Short') current = Math.max(-32768, Math.min(32767, Math.round(current)));
+  else if (newType === 'Long') current = Math.round(current);
+  valObj.data = current;
+
+  await modifyEntry(entry as unknown as BaseEntry);
+}
 </script>
 
 <style lang="scss">
@@ -217,6 +310,65 @@ const getId = computed(() => {
   }
   &__value {
     font-size: 18px;
+  }
+  &__gvar {
+    margin-top: 4px;
+    &-row {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+    &-value {
+      flex: 1;
+      min-width: 0;
+      padding: 4px 8px;
+      font-size: 14px;
+      font-family: 'Fira Code', monospace;
+      color: #e0e0e0;
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 3px;
+      outline: none;
+      transition: border-color 0.2s;
+      &:focus {
+        border-color: rgba(202, 165, 96, 0.6);
+      }
+      &:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+      /* Hide number spinner arrows */
+      &::-webkit-outer-spin-button,
+      &::-webkit-inner-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+      }
+      -moz-appearance: textfield;
+      appearance: textfield;
+    }
+    &-type {
+      padding: 4px 6px;
+      font-size: 12px;
+      font-family: 'Fira Code', monospace;
+      color: #c0c0c0;
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 3px;
+      cursor: pointer;
+      outline: none;
+      transition: border-color 0.2s;
+      &:focus {
+        border-color: rgba(202, 165, 96, 0.6);
+      }
+      &:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+      option {
+        background: #2a2a3e;
+        color: #e0e0e0;
+      }
+    }
   }
   textarea {
     font-size: 15px;

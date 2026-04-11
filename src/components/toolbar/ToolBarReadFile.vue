@@ -50,6 +50,7 @@ import { usePluginHeader } from '@/stores/pluginHeader';
 import { useSessionStore } from '@/stores/session';
 import { useReloadTrigger } from '@/stores/reloadTrigger';
 import { useParseWorker } from '@/composables/useParseWorker';
+import { logger } from '@/services/logger';
 import TdesignUpload from '~icons/tdesign/upload';
 import TdesignDelete from '~icons/tdesign/delete';
 
@@ -141,7 +142,7 @@ async function loadTextFromFile(event: Event) {
     progressPct.value = 5;
 
     // 2. Parse via Web Worker (off main thread)
-    const objects = await parse(buffer);
+    let objects: any = await parse(buffer);
     progressPct.value = 30;
 
     // 3. Import to IDB with real chunked progress (30%→90%)
@@ -154,6 +155,10 @@ async function loadTextFromFile(event: Event) {
 
     if (!props.dep) {
       await importPlugin(objects, pluginKey, fileName, true, onImportProgress);
+      // Free parsed data ASAP — importPlugin already nulled individual records
+      objects = null;
+      terminate(); // kill worker to free WASM memory
+
       progressPct.value = 92;
       stage.value = 'Finalizing…';
 
@@ -171,6 +176,10 @@ async function loadTextFromFile(event: Event) {
     } else {
       const depKey = makePluginKey(props.dep, file.size);
       await importPlugin(objects, depKey, props.dep, false, onImportProgress);
+      // Free parsed data ASAP
+      objects = null;
+      terminate();
+
       // Open the dep DB in memory so queryAcrossPlugins can see it
       await initPlugin(depKey);
       invalidateDependencyCache();
@@ -182,7 +191,7 @@ async function loadTextFromFile(event: Event) {
     // Reset input so the same file can be re-selected
     element.value = '';
   } catch (error) {
-    console.error(error);
+    logger.error('Import', 'Failed to load plugin file', error);
   } finally {
     stage.value = '';
     progressPct.value = 0;
@@ -292,7 +301,7 @@ input[type='file'] {
     left: 0;
     top: 0;
     height: 100%;
-    background: linear-gradient(90deg, rgba(202, 165, 96, 0.20), rgba(202, 165, 96, 0.35));
+    background: linear-gradient(90deg, rgba(89, 170, 106, 0.15), rgba(89, 170, 106, 0.35));
     border-radius: 4px;
     transition: width 150ms ease;
   }

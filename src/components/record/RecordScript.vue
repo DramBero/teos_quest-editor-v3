@@ -1,10 +1,10 @@
 <template>
   <div class="record-script">
-    <!-- Header -->
-    <div class="record-script__header">
-      <div class="record-script__title">
-        <span>{{ scriptName }}</span>
-      </div>
+    <!-- Tab Bar -->
+    <ScriptTabBar @renamed="onTabRenamed" />
+
+    <!-- Toolbar (visible when a tab is active) -->
+    <div v-if="activeTab" class="record-script__header">
       <div class="record-script__meta">
         <span v-if="diagnosticCounts.errors > 0" class="record-script__badge record-script__badge_error">
           {{ diagnosticCounts.errors }} {{ diagnosticCounts.errors === 1 ? 'error' : 'errors' }}
@@ -32,30 +32,44 @@
           <button
             type="button"
             class="record-script__action-btn record-script__action-btn_save"
-            :disabled="!isDirty"
+            :disabled="!activeTab?.isDirty"
             title="Save changes (Ctrl+S)"
             @click.stop="saveScript"
           >
             Save
           </button>
+          <button
+            type="button"
+            class="record-script__action-btn record-script__action-btn_startup"
+            :class="{ 'record-script__action-btn_startup-active': isStartScript }"
+            :title="isStartScript ? 'Remove from startup scripts' : 'Add as startup script'"
+            @click.stop="toggleStartScript"
+          >
+            ⚡ Startup
+          </button>
+          <button
+            v-if="isActiveEntry"
+            type="button"
+            class="record-script__action-btn record-script__action-btn_delete"
+            title="Delete this script"
+            @click.stop="deleteScript"
+          >
+            🗑
+          </button>
         </div>
-
-        <button
-          type="button"
-          class="record-script__close-btn"
-          title="Close script"
-          @click.stop="closeScript"
-        >
-          ✕
-        </button>
       </div>
     </div>
 
     <!-- CM6 Editor -->
-    <div ref="editorContainer" class="record-script__editor" />
+    <div v-show="activeTab" ref="editorContainer" class="record-script__editor" />
+
+    <!-- Empty state when no tabs -->
+    <div v-if="!activeTab" class="record-script__empty">
+      <span>Open a script from the sidebar</span>
+    </div>
 
     <!-- Diagnostics panel -->
-    <div v-if="diagnostics.length > 0" class="record-script__diagnostics">
+    <div v-if="activeTab && diagnostics.length > 0" class="record-script__diagnostics">
       <div class="record-script__diagnostics-header">
         Problems ({{ diagnostics.length }})
       </div>
@@ -89,12 +103,12 @@ import { EditorView, keymap, lineNumbers, highlightActiveLine, highlightActiveLi
 import { EditorState } from '@codemirror/state';
 import { defaultKeymap, history, historyKeymap, indentWithTab } from '@codemirror/commands';
 import { bracketMatching, indentOnInput } from '@codemirror/language';
-import { highlightSelectionMatches, searchKeymap } from '@codemirror/search';
+import { highlightSelectionMatches, searchKeymap, search } from '@codemirror/search';
 import { lintGutter } from '@codemirror/lint';
 import { acceptCompletion } from '@codemirror/autocomplete';
 
-import { useSelectedRecord } from '@/stores/selectedRecord';
-import { modifyEntry } from '@/api/import-export';
+import { useScriptTabs } from '@/stores/scriptTabs';
+import { modifyEntry, addEntry, deleteEntry } from '@/api/import-export';
 import { parseForDiagnostics } from '@/mwscript';
 import type { Diagnostic } from '@/mwscript';
 import { compile } from '@/mwscript/codegen';
@@ -103,35 +117,28 @@ import { loadGlobals } from '@/mwscript/globals';
 import type { BaseEntry } from '@/types/pluginEntries';
 import { mwscript } from '@/mwscript/cm6-mwscript';
 import { vscodeDarkExtensions } from '@/mwscript/cm6-theme';
+import { getActiveDB } from '@/api/db';
+import { logger } from '@/services/logger';
+import ScriptTabBar from './ScriptTabBar.vue';
 
-// ---------- Data ----------
+// ---------- Stores ----------
 
-const selectedRecordStore = useSelectedRecord();
+const scriptTabsStore = useScriptTabs();
+const activeTab = computed(() => scriptTabsStore.activeTab);
 
-function closeScript() {
-  selectedRecordStore.setSelectedRecord(null);
-}
-
-const entry = computed(() => {
-  const records = selectedRecordStore.getSelectedRecord;
-  return records?.[0] as Record<string, unknown> | undefined;
-});
-
-const scriptName = computed(() => {
-  const e = entry.value;
-  if (!e) return 'Script';
-  return (e.id as string) || 'Script';
-});
+// ---------- Per-session state ----------
 
 const diagnostics = ref<Diagnostic[]>([]);
 const editorContainer = ref<HTMLElement | null>(null);
 const editorView = shallowRef<EditorView | null>(null);
 const compileStatus = ref<'idle' | 'ok' | 'error'>('idle');
-const isDirty = ref(false);
 const needsCompile = ref(false);
-const savedCode = ref('');
-const lastCompiledCode = ref('');
+const isStartScript = ref(false);
+const isActiveEntry = computed(() => !!(activeTab.value?.entry as Record<string, unknown> | undefined)?.TMP_is_active);
 let compileStatusTimer: ReturnType<typeof setTimeout> | null = null;
+
+/** Track which tab the editor currently shows, to avoid redundant dispatches */
+let currentEditorTabId: string | null = null;
 
 const diagnosticCounts = computed(() => {
   let errors = 0;
@@ -143,9 +150,7 @@ const diagnosticCounts = computed(() => {
   return { errors, warnings };
 });
 
-// Theme imported from @/mwscript/cm6-theme
-
-// ---------- Init ----------
+// ---------- Editor ----------
 
 function createEditor(initialCode: string) {
   if (!editorContainer.value) return;
@@ -160,6 +165,7 @@ function createEditor(initialCode: string) {
       bracketMatching(),
       highlightActiveLine(),
       highlightSelectionMatches(),
+      search(),
       keymap.of([
         ...defaultKeymap,
         ...historyKeymap,
@@ -179,10 +185,12 @@ function createEditor(initialCode: string) {
         if (update.docChanged) {
           const code = update.state.doc.toString();
           debouncedParse(code);
-          // Track dirty state
-          isDirty.value = code !== savedCode.value;
+          // Update tab store with current code
+          if (scriptTabsStore.activeTabId) {
+            scriptTabsStore.updateTabCode(scriptTabsStore.activeTabId, code);
+          }
           // Track compile state
-          needsCompile.value = code !== lastCompiledCode.value;
+          needsCompile.value = true;
           // Reset compile status flash on new edits
           if (compileStatus.value !== 'idle') {
             compileStatus.value = 'idle';
@@ -209,14 +217,17 @@ function debouncedParse(code: string) {
 }
 
 onMounted(() => {
-  const e = entry.value;
-  const initialCode = (e && typeof e.text === 'string') ? e.text : '';
-  savedCode.value = initialCode;
+  // Create the editor with empty content initially
+  const tab = activeTab.value;
+  const initialCode = tab ? tab.unsavedCode : '';
+  currentEditorTabId = tab?.id ?? null;
   createEditor(initialCode);
 
-  // Initial parse
   if (initialCode) {
     diagnostics.value = parseForDiagnostics(initialCode);
+  }
+  if (tab) {
+    checkIsStartScript();
   }
 });
 
@@ -225,28 +236,71 @@ onBeforeUnmount(() => {
   if (parseTimer) clearTimeout(parseTimer);
 });
 
-// Watch for sidebar script changes — update editor content
-watch(entry, (newEntry) => {
+// ---------- Tab switching ----------
+
+watch(() => scriptTabsStore.activeTabId, (newTabId, oldTabId) => {
   const view = editorView.value;
-  if (!view || !newEntry) return;
-  const newCode = (typeof newEntry.text === 'string') ? newEntry.text : '';
+  if (!view) return;
+  if (newTabId === currentEditorTabId) return;
+
+  const newTab = scriptTabsStore.activeTab;
+  if (!newTab) {
+    // No active tab — clear editor
+    const currentCode = view.state.doc.toString();
+    if (currentCode) {
+      view.dispatch({
+        changes: { from: 0, to: currentCode.length, insert: '' },
+      });
+    }
+    currentEditorTabId = null;
+    diagnostics.value = [];
+    needsCompile.value = false;
+    compileStatus.value = 'idle';
+    return;
+  }
+
+  // Swap editor content to the new tab's code
+  const newCode = newTab.unsavedCode;
   const currentCode = view.state.doc.toString();
 
-  // Reset state for new script
-  savedCode.value = newCode;
-  lastCompiledCode.value = '';  // unknown compile state
-  isDirty.value = false;
-  needsCompile.value = true;    // new script hasn't been compiled in this session
-  compileStatus.value = 'idle';
-  if (compileStatusTimer) clearTimeout(compileStatusTimer);
+  currentEditorTabId = newTabId;
 
   if (newCode !== currentCode) {
     view.dispatch({
       changes: { from: 0, to: currentCode.length, insert: newCode },
     });
-    diagnostics.value = newCode ? parseForDiagnostics(newCode) : [];
   }
+
+  diagnostics.value = newCode ? parseForDiagnostics(newCode) : [];
+  needsCompile.value = true;
+  compileStatus.value = 'idle';
+  if (compileStatusTimer) clearTimeout(compileStatusTimer);
+
+  // Re-check startup status for new script
+  checkIsStartScript();
+
+  // Focus the editor
+  nextTick(() => view.focus());
 });
+
+// ---------- Rename callback ----------
+
+function onTabRenamed(oldId: string, newId: string) {
+  // After rename, need to update Begin line in the editor if it's the active tab
+  const view = editorView.value;
+  if (!view || scriptTabsStore.activeTabId !== newId) return;
+
+  const code = view.state.doc.toString();
+  const updatedCode = code.replace(
+    /^(\s*Begin\s+)\S+/im,
+    `$1${newId}`
+  );
+  if (updatedCode !== code) {
+    view.dispatch({
+      changes: { from: 0, to: code.length, insert: updatedCode },
+    });
+  }
+}
 
 // ---------- Navigation ----------
 
@@ -267,7 +321,8 @@ function goToLine(line: number) {
 
 async function compileScript() {
   const view = editorView.value;
-  if (!view) return;
+  const tab = activeTab.value;
+  if (!view || !tab) return;
 
   const source = view.state.doc.toString();
   const globals = await loadGlobals();
@@ -288,13 +343,12 @@ async function compileScript() {
   // Update compile state
   const hasErrors = allErrors.some(d => d.severity === 'error');
   compileStatus.value = hasErrors ? 'error' : 'ok';
-  lastCompiledCode.value = source;
   needsCompile.value = false;
 
   // On successful compile, write bytecode/variables/header into record
-  if (!hasErrors && entry.value) {
+  if (!hasErrors && tab.entry) {
     const record = buildScriptRecord(source, result);
-    Object.assign(entry.value, record);
+    Object.assign(tab.entry, record);
   }
 
   // Clear flash after delay
@@ -306,17 +360,94 @@ async function compileScript() {
 
 async function saveScript() {
   const view = editorView.value;
-  if (!view || !entry.value) return;
+  const tab = activeTab.value;
+  if (!view || !tab) return;
 
   const source = view.state.doc.toString();
   // Persist source text back to the record object
-  (entry.value as Record<string, unknown>).text = source;
-  savedCode.value = source;
-  isDirty.value = false;
+  (tab.entry as Record<string, unknown>).text = source;
+
+  // Mark as saved in tab store
+  scriptTabsStore.markSaved(tab.id, source);
 
   // Persist to IndexedDB
-  if ((entry.value as Record<string, unknown>).TMP_index != null) {
-    await modifyEntry(entry.value as unknown as BaseEntry);
+  if ((tab.entry as Record<string, unknown>).TMP_index != null) {
+    await modifyEntry(tab.entry as unknown as BaseEntry);
+  }
+}
+
+// ---------- StartScript toggle ----------
+
+async function findStartScriptFor(name: string): Promise<Record<string, unknown> | undefined> {
+  try {
+    const db = await getActiveDB();
+    const all = await db.table('pluginData')
+      .where('type')
+      .equals('StartScript')
+      .toArray();
+    return all.find((rec: Record<string, unknown>) =>
+      rec.script === name || rec.id === name
+    );
+  } catch (err) {
+    logger.error('Script', 'StartScript query error', err);
+    return undefined;
+  }
+}
+
+async function checkIsStartScript() {
+  const tab = activeTab.value;
+  if (!tab) {
+    isStartScript.value = false;
+    return;
+  }
+  const name = tab.id;
+  if (!name) {
+    isStartScript.value = false;
+    return;
+  }
+  const found = await findStartScriptFor(name);
+  isStartScript.value = !!found;
+}
+
+async function toggleStartScript() {
+  const tab = activeTab.value;
+  if (!tab) return;
+  const name = tab.id;
+  if (!name) return;
+
+  try {
+    if (isStartScript.value) {
+      // Remove StartScript record
+      const found = await findStartScriptFor(name);
+      if (found) {
+        await deleteEntry(found as unknown as BaseEntry);
+      }
+      isStartScript.value = false;
+    } else {
+      // Create StartScript record
+      await addEntry({
+        type: 'StartScript',
+        id: name,
+        script: name,
+        TMP_id: name,
+      } as unknown as Partial<BaseEntry>);
+      isStartScript.value = true;
+    }
+  } catch (err) {
+    logger.error('Script', 'StartScript toggle error', err);
+  }
+}
+
+async function deleteScript() {
+  const tab = activeTab.value;
+  if (!tab) return;
+  const name = tab.id;
+  if (!confirm(`Delete script "${name}"? This cannot be undone.`)) return;
+  try {
+    await deleteEntry(tab.entry as unknown as BaseEntry);
+    scriptTabsStore.closeTab(tab.id);
+  } catch (err) {
+    logger.error('Script', 'Script delete error', err);
   }
 }
 </script>
@@ -332,25 +463,15 @@ async function saveScript() {
   border-radius: 8px;
   overflow: hidden;
 
-  // Header
+  // Header / Toolbar
   &__header {
     display: flex;
-    justify-content: space-between;
+    justify-content: flex-end;
     align-items: center;
-    padding: 10px 16px;
-    background: rgba(170, 169, 98, 0.1);
-    border-bottom: 1px solid rgba(170, 169, 98, 0.2);
+    padding: 6px 16px;
+    background: rgba(170, 169, 98, 0.06);
+    border-bottom: 1px solid rgba(170, 169, 98, 0.15);
     flex-shrink: 0;
-  }
-
-  &__title {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    color: rgb(237, 238, 167);
-    font-size: 18px;
-    font-weight: 600;
-    font-family: 'Fira Code', monospace;
   }
 
   &__meta {
@@ -432,24 +553,49 @@ async function saveScript() {
         background: rgba(100, 180, 255, 0.1);
       }
     }
+
+    &_startup {
+      opacity: 0.5;
+      transition: all 0.2s ease;
+
+      &:hover {
+        opacity: 0.8;
+      }
+
+      &-active {
+        opacity: 1;
+        border-color: rgba(255, 200, 50, 0.6);
+        color: #ffc832;
+        background: rgba(255, 200, 50, 0.15);
+        box-shadow: 0 0 8px rgba(255, 200, 50, 0.2);
+
+        &:hover {
+          background: rgba(255, 200, 50, 0.25);
+        }
+      }
+    }
+
+    &_delete {
+      opacity: 0.5;
+      &:hover {
+        opacity: 1;
+        border-color: rgba(255, 80, 80, 0.5);
+        color: #ff6b6b;
+        background: rgba(255, 80, 80, 0.1);
+      }
+    }
   }
 
-  &__close-btn {
-    background: none;
-    border: none;
-    color: rgba(237, 238, 167, 0.5);
+  // Empty state
+  &__empty {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: rgba(216, 216, 216, 0.25);
+    font-family: 'Pelagiad', serif;
     font-size: 18px;
-    cursor: pointer;
-    padding: 2px 6px;
-    line-height: 1;
-    border-radius: 4px;
-    margin-left: 4px;
-    transition: all 0.15s;
-
-    &:hover {
-      color: #ff6b6b;
-      background: rgba(255, 80, 80, 0.15);
-    }
+    font-style: italic;
   }
 
   // Editor — CM6 container

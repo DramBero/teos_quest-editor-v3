@@ -19,6 +19,7 @@
 <script setup lang="ts">
 import { computed, useTemplateRef, watch } from 'vue';
 import { searchByType } from '@/api/idb.ts';
+import { logger } from '@/services/logger';
 
 const props = defineProps<{
   searchTypes: string[];
@@ -82,7 +83,7 @@ async function getItems(query: string) {
       dialogueType = 'Journal';
     }
     const response = await searchByType(speakerTypes, searchString, dialogueType);
-    console.log('RESPONSE:', response)
+    logger.debug('Search', `RESPONSE: ${JSON.stringify(response)}`)
     return response.map(val => ({
       label: val.id,
       value: val,

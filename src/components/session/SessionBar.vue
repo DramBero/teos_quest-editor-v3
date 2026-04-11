@@ -39,7 +39,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, onUnmounted } from 'vue';
 import ContextMenu from '@imengyu/vue3-context-menu';
 import { useSessionStore } from '@/stores/session';
 import { usePluginHeader } from '@/stores/pluginHeader';
@@ -91,6 +91,24 @@ onMounted(async () => {
     // Signal data components to re-fetch (they may have mounted before session was ready)
     reloadTriggerStore.triggerReload();
   }
+});
+
+// -------------------------------------------------------------------------
+//  Unsaved-changes guard
+// -------------------------------------------------------------------------
+
+function onBeforeUnload(e: BeforeUnloadEvent) {
+  if (sessionStore.currentSession && sessionStore.currentSession.changes > 0) {
+    e.preventDefault();
+  }
+}
+
+onMounted(() => {
+  window.addEventListener('beforeunload', onBeforeUnload);
+});
+
+onUnmounted(() => {
+  window.removeEventListener('beforeunload', onBeforeUnload);
 });
 
 // -------------------------------------------------------------------------
@@ -163,12 +181,14 @@ async function loadPluginFile(event: Event) {
   const file = input.files[0];
 
   try {
-    const buffer = await file.arrayBuffer();
+    let buffer: ArrayBuffer | null = await file.arrayBuffer();
     const bytes = new Uint8Array(buffer);
-    const objects = await load_objects(bytes);
+    let objects: any = await load_objects(bytes);
+    buffer = null; // free raw buffer
 
     const pluginKey = makePluginKey(file.name, file.size);
     await importPlugin(objects, pluginKey, file.name, true);
+    objects = null; // free parsed data ASAP
 
     // Create session (deps empty initially so getActiveDB works)
     const session = await sessionStore.createSession(file.name, file.size, []);
@@ -213,6 +233,11 @@ function openGearMenu(e: MouseEvent) {
     x: e.x,
     y: e.y,
     items: [
+      {
+        label: 'Edit Header',
+        onClick: () => { primaryModalStore.setActiveModal('EditHeader'); },
+        disabled: !sessionStore.currentSession,
+      },
       {
         label: 'Plugin Storage',
         onClick: () => { primaryModalStore.setActiveModal('Storage'); },
