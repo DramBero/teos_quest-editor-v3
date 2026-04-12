@@ -4,6 +4,13 @@
  */
 
 import { useScriptTabs } from '@/stores/scriptTabs';
+import { useSidebar } from '@/stores/sidebar';
+import { useSelectedSpeaker } from '@/stores/selectedSpeaker';
+import { useSelectedQuest } from '@/stores/selectedQuest';
+import { useClassicView, useClassicViewTopic } from '@/stores/classicView';
+import { usePrimaryModal } from '@/stores/modals';
+import { useSelectedFilter } from '@/stores/selectedFilter';
+import { useSelectedRecord } from '@/stores/selectedRecord';
 import { getActiveDB } from '@/api/db';
 
 const SYSTEM_PROMPT = `You are an expert Morrowind modder and MWScript programmer.
@@ -202,6 +209,89 @@ async function buildModSummary(): Promise<string> {
     }
 }
 
+/**
+ * Build a compact editor state summary for the system prompt.
+ * This gives AI immediate awareness of what the user is looking at (~30-50 tokens).
+ */
+function buildEditorContext(): string {
+    const lines: string[] = ['\n## Current Editor State'];
+
+    try {
+        // Sidebar
+        const sidebar = useSidebar();
+        if (sidebar.activeItem) {
+            lines.push(`Sidebar: ${sidebar.activeItem}`);
+        }
+
+        // Selected quest
+        const questStore = useSelectedQuest();
+        const questName = questStore.getSelectedQuestName;
+        if (questName) {
+            lines.push(`Active Quest: ${questName}`);
+        }
+
+        // Selected speaker (NPC in dialogue view)
+        const speakerStore = useSelectedSpeaker();
+        const speaker = speakerStore.getSelectedSpeaker;
+        if (speaker?.speakerId) {
+            const label = speaker.speakerName
+                ? `${speaker.speakerId} ("${speaker.speakerName}")`
+                : speaker.speakerId;
+            lines.push(`Selected Speaker: ${label} [${speaker.speakerType || 'unknown'}]`);
+        }
+
+        // Classic view topic (dialogue topic being viewed)
+        const topicStore = useClassicViewTopic();
+        if (topicStore.classicViewTopic) {
+            lines.push(`Dialogue Topic: ${topicStore.classicViewTopic}`);
+        }
+
+        // Classic view mode
+        const classicStore = useClassicView();
+        if (classicStore.classicView) {
+            lines.push(`View Mode: Classic (TES3 Construction Set style)`);
+        }
+
+        // Active modal
+        const modalStore = usePrimaryModal();
+        if (modalStore.activeModal) {
+            lines.push(`Open Modal: ${modalStore.activeModal}`);
+        }
+
+        // Selected filter (dialogue filter being edited)
+        const filterStore = useSelectedFilter();
+        const filter = filterStore.getSelectedFilter;
+        if (filter?.filter?.type) {
+            lines.push(`Editing Filter: ${filter.filter.type}`);
+        }
+
+        // Selected record (record editor open)
+        const recordStore = useSelectedRecord();
+        const record = recordStore.getSelectedRecord;
+        if (record && Array.isArray(record) && record.length > 0) {
+            const firstRecord = record[0];
+            const recId = (firstRecord as Record<string, unknown>).id || (firstRecord as Record<string, unknown>).TMP_id || '';
+            const recType = (firstRecord as Record<string, unknown>).type || '';
+            if (recId) {
+                lines.push(`Editing Record: ${recType} "${recId}"`);
+            }
+        }
+
+        // Script tabs
+        const tabStore = useScriptTabs();
+        if (tabStore.tabs.length > 0) {
+            lines.push(`Open Scripts: ${tabStore.tabs.map(t => t.id + (t.isDirty ? '*' : '')).join(', ')}`);
+            if (tabStore.activeTab) {
+                lines.push(`Active Script: ${tabStore.activeTab.id}`);
+            }
+        }
+    } catch {
+        // Stores not available
+    }
+
+    return lines.length > 1 ? lines.join('\n') : '';
+}
+
 export async function buildSystemPrompt(): Promise<string> {
     const parts: string[] = [SYSTEM_PROMPT];
 
@@ -209,14 +299,14 @@ export async function buildSystemPrompt(): Promise<string> {
     const modSummary = await buildModSummary();
     if (modSummary) parts.push(modSummary);
 
-    // Add current editor context
+    // Add current editor context (sync, ~50 tokens)
+    const editorCtx = buildEditorContext();
+    if (editorCtx) parts.push(editorCtx);
+
+    // Add active script code
     try {
         const tabStore = useScriptTabs();
         const activeTab = tabStore.activeTab;
-
-        if (tabStore.tabs.length > 0) {
-            parts.push(`\n## Currently Open Scripts\n${tabStore.tabs.map(t => '- ' + t.id).join('\n')}`);
-        }
 
         if (activeTab) {
             const code = activeTab.unsavedCode;
@@ -254,9 +344,15 @@ Available tools:
 - \`getCellDetails\` — get cell/location info with NPCs present
 - \`listFactions\` — list factions with IDs, names, and rank names
 - \`searchByScript\` — find all records (NPCs, objects) that use a specific script
-- \`getContext\` — current editor state (open tabs, active script)
+- \`getContext\` — full editor state: sidebar, selected quest/NPC/topic, open scripts, filters, modal
 - \`getPluginDiff\` — list all records added/modified in the active plugin vs masters
 - \`getBookContent\` — read the text content of a book by name/ID
+
+### Write/Mutation Tools (modify the active plugin):
+- \`writeScript\` — create a new script or update/override an existing one
+- \`createRecord\` — create any TES3 record (NPC, Weapon, Spell, Book, etc.)
+- \`modifyRecord\` — update fields on an existing record (auto-creates override from master)
+- \`addDialogueEntries\` — add dialogue entries to a topic with proper linked-list insertion
 
 ## Instructions
 - When generating MWScript, output complete scripts with proper Begin/End.
@@ -265,6 +361,12 @@ Available tools:
 - Use tools to check existing IDs in the mod before suggesting new ones.
 - The user can insert your code blocks directly as new scripts — make them ready to compile.
 - Respond in the same language the user writes in.
+- All query tools search across the active plugin AND master files. Results are tagged with source (active/master).
+- Use the "Current Editor State" section to understand what the user is currently working on. When they say "this NPC" or "add another entry", refer to the selected speaker/quest/topic.
+- Use \`getContext\` tool for FULL details about editor state (script code, quest entries, NPC data).
+- Use \`getPluginDiff\` when the user asks about their own changes/additions.
+- **Write tools**: When the user asks to CREATE or MODIFY records, use \`writeScript\`, \`createRecord\`, \`modifyRecord\`, or \`addDialogueEntries\` to apply changes directly. Always confirm with the user before making bulk changes.
+- **Structured blocks (teos-journal, teos-dialogue)**: Use these for quest journal entries that the user wants to review before inserting. The blocks render as interactive cards with "Insert" buttons.
 
 ## Structured Output — Insertable Blocks
 

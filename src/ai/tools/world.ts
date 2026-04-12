@@ -1,14 +1,16 @@
 /**
  * AI Tools — World data (getCellDetails, listFactions)
+ *
+ * All queries search across active plugin + master files.
  */
 
 import type { TeosTool } from './index';
-import { getActiveDB } from '@/api/db';
+import { queryAllDBs } from './helpers';
 
 export const worldTools: TeosTool[] = [
     {
         name: 'getCellDetails',
-        description: 'Get details about a cell/location: name, region, and NPCs/creatures present. Useful for placing quest content in specific locations.',
+        description: 'Get details about a cell/location: name, region, and NPCs/creatures present. Searches across the active plugin AND master files. Useful for placing quest content in specific locations.',
         parameters: {
             type: 'object',
             properties: {
@@ -22,28 +24,26 @@ export const worldTools: TeosTool[] = [
         execute: async (params) => {
             const name = (params.name as string).toLowerCase();
             try {
-                const db = await getActiveDB();
+                const cells = await queryAllDBs(async (db) => {
+                    return db.table('pluginData')
+                        .where('type').equals('Cell')
+                        .filter((r: Record<string, unknown>) =>
+                            ((r.id as string) || '').toLowerCase().includes(name) ||
+                            ((r.name as string) || '').toLowerCase().includes(name),
+                        )
+                        .limit(10)
+                        .toArray();
+                }, 10);
 
-                // Find matching cells
-                const cells = await db.table('pluginData')
-                    .where('type').equals('Cell')
-                    .filter((r: Record<string, unknown>) =>
-                        ((r.id as string) || '').toLowerCase().includes(name) ||
-                        ((r.name as string) || '').toLowerCase().includes(name),
-                    )
-                    .limit(10)
-                    .toArray();
+                if (!cells.length) return { error: `No cells matching "${name}" found in active plugin or masters` };
 
-                if (!cells.length) return { error: `No cells matching "${name}" found` };
-
-                const results = cells.map((cell: Record<string, unknown>) => {
+                const results = cells.map((cell) => {
                     const refs = (cell.references || []) as Record<string, unknown>[];
 
                     // Extract NPC/creature references
                     const npcs = refs
                         .filter(r => {
                             const id = ((r.id as string) || '').toLowerCase();
-                            // Heuristic: NPCs and creatures often have specific prefixes
                             return r.type === 'Npc' || r.type === 'Creature' ||
                                 id.includes('npc') || id.includes('_');
                         })
@@ -57,6 +57,7 @@ export const worldTools: TeosTool[] = [
                         flags: cell.flags ?? null,
                         referenceCount: refs.length,
                         npcs: npcs.length ? npcs : undefined,
+                        source: cell._source,
                     };
                 });
 
@@ -68,7 +69,7 @@ export const worldTools: TeosTool[] = [
     },
     {
         name: 'listFactions',
-        description: 'List all factions in the mod with their IDs, names, and rank names. Essential for setting correct faction filters in dialogue entries.',
+        description: 'List all factions with their IDs, names, and rank names. Searches across the active plugin AND master files. Essential for setting correct faction filters in dialogue entries.',
         parameters: {
             type: 'object',
             properties: {
@@ -81,22 +82,22 @@ export const worldTools: TeosTool[] = [
         execute: async (params) => {
             const filter = (params.filter as string)?.toLowerCase();
             try {
-                const db = await getActiveDB();
+                const factions = await queryAllDBs(async (db) => {
+                    let query = db.table('pluginData')
+                        .where('type').equals('Faction');
 
-                let query = db.table('pluginData')
-                    .where('type').equals('Faction');
+                    if (filter) {
+                        query = query.filter((r: Record<string, unknown>) => {
+                            const id = ((r.id as string) || '').toLowerCase();
+                            const name = ((r.name as string) || '').toLowerCase();
+                            return id.includes(filter) || name.includes(filter);
+                        });
+                    }
 
-                if (filter) {
-                    query = query.filter((r: Record<string, unknown>) => {
-                        const id = ((r.id as string) || '').toLowerCase();
-                        const name = ((r.name as string) || '').toLowerCase();
-                        return id.includes(filter) || name.includes(filter);
-                    });
-                }
+                    return query.limit(30).toArray();
+                }, 30);
 
-                const factions = await query.limit(30).toArray();
-
-                const results = factions.map((f: Record<string, unknown>) => {
+                const results = factions.map((f) => {
                     const ranks = (f.ranks || []) as Record<string, unknown>[];
                     return {
                         id: f.id,
@@ -106,6 +107,7 @@ export const worldTools: TeosTool[] = [
                             name: r.name || r,
                         })),
                         hidden: f.hidden ?? false,
+                        source: f._source,
                     };
                 });
 

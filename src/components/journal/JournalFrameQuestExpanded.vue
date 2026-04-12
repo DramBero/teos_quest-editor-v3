@@ -101,9 +101,16 @@ const selectedQuestStore = useSelectedQuest();
 
 async function createEntry() {
   const questId = selectedQuestId.value;
-  if (!questId) return;
-  await addQuestEntry(questId, 'New entry');
-  await selectedQuestStore.fetchQuest(questId);
+  if (!questId) {
+    logger.warn('Journal', 'Cannot create entry: no quest selected');
+    return;
+  }
+  try {
+    await addQuestEntry(questId, 'New entry', '', '');
+    await selectedQuestStore.fetchQuest(questId);
+  } catch (error) {
+    logger.error('Journal', 'Failed to create entry', error);
+  }
 }
 
 interface QuestNameData {
@@ -130,17 +137,17 @@ function update(questId: string) {
   selectedQuestId.value = questId;
 }
 
-onMounted(() => {
-  if (props.questNameData.quests?.length) {
-    selectedQuestId.value = props.questNameData.quests[0].id;
-  }
-})
-
 watch(selectedQuestId, (newValue) => {
   if (newValue) {
     loadQuestData(newValue);
   }
 })
+
+watch(() => props.questNameData?.quests, (quests) => {
+  if (quests?.length && !selectedQuestId.value) {
+    selectedQuestId.value = quests[0].id;
+  }
+}, { immediate: true });
 
 const containsMasterIds = computed(() => {
   const isActiveList = props.questNameData.quests.map(val => val.TMP_is_active);

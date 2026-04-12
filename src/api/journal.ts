@@ -282,6 +282,7 @@ export async function addQuestEntry(
         id: generatedId,
         TMP_id: generatedId,
         TMP_info_id: generatedId,
+        TMP_is_active: true,
         data: {
             dialogue_type: 'Journal',
             disposition: 10,
@@ -303,8 +304,7 @@ export async function addQuestEntry(
         TMP_type: 'Journal',
     };
 
-    const databases = _getDatabases();
-    const activeDB = databases['activePlugin'];
+    const activeDB = await getActiveDB();
 
     // Ensure quest exists
     let quest = await activeDB.pluginData
@@ -318,6 +318,7 @@ export async function addQuestEntry(
     } else if (!quest || quest.length === 0) {
         // Look in dependencies
         const dependencies = await getDependencies();
+        const databases = _getDatabases();
         let found = false;
         for (const dep of dependencies) {
             const depDB = databases[dep];

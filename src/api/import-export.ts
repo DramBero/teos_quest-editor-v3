@@ -30,7 +30,10 @@ export async function modifyEntry(entry: BaseEntry): Promise<BaseEntry | undefin
             .where('TMP_index')
             .equals(entry.TMP_index)
             .modify(plain);
-        if (count > 0) useSessionStore().incrementChanges();
+        if (count > 0) {
+            dbMutationVersion.value++;
+            useSessionStore().incrementChanges();
+        }
         return count > 0 ? entry : undefined;
     } catch (error) {
         logger.error('CRUD', 'Failed to modify entry', error);

@@ -168,8 +168,10 @@ import { logger } from '@/services/logger';
 /** Same logic as useRecordArrayStatus but callable in v-for without composable */
 function getTopicStatus(question: Record<string, unknown>[]): RecordStatus {
   if (!question?.length) return '';
-  const first = question[0];
-  if (!first.TMP_is_active) return '';
+  const hasActive = question.some((entry) => entry.TMP_is_active);
+  const topicName = question[0]?.TMP_topic;
+  logger.info('TopicStatus', `"${topicName}": len=${question.length}, hasActive=${hasActive}, entries=[${question.map(e => `{active:${e.TMP_is_active}, dep:${e.TMP_dep}}`).join(', ')}]`);
+  if (!hasActive) return '';
   if (question.length > 1) return 'mod';
   return 'new';
 }
@@ -225,7 +227,7 @@ async function fetchTopics() {
   }
 }
 
-watch(speaker, fetchTopics);
+watch(speaker, fetchTopics, { immediate: true });
 
 async function addDialogue(
   topicName: string,

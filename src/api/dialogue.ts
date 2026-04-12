@@ -73,6 +73,13 @@ export async function fetchTopicListByNPC(npcID: string, speakerType: SpeakerTyp
     let topicList: TopicList = { topics: [], greetings: [], persuasions: [] };
 
     const activeEntries = await buildSpeakerWhereClause(activeDB, speakerType, speakerTypeKey, npcID);
+    // Ensure ALL entries from the active plugin are marked as active
+    // (legacy entries created before TMP_is_active fix may lack the flag)
+    for (const entry of activeEntries) {
+        if (entry.TMP_is_active === undefined) {
+            entry.TMP_is_active = true;
+        }
+    }
     topicList = addTopicEntries(topicList, activeEntries);
 
     const dependencies = await getDependencies();
@@ -216,7 +223,20 @@ export async function getOrderedEntriesByTopic(topicId: string) {
     const orderedDialogue: DialogueInfoRecord[] = [firstElement];
     let nextEntry: DialogueInfoRecord | undefined;
 
+    const MAX_ITERATIONS = 10_000;
+    let iterations = 0;
+
+    // Log the chain start
+    logger.debug('OrderChain', `=== Ordering topic: ${topicId}, total raw entries: ${pluginDialogue.flat(1).length} ===`);
+    logger.debug('OrderChain', `First element: id=${firstElement.id}, prev_id=${firstElement.prev_id}, next_id=${firstElement.next_id}, dep=${firstElement.TMP_dep}, active=${firstElement.TMP_is_active}`);
+
     while (true) {
+        if (++iterations > MAX_ITERATIONS) {
+            logger.warn('Dialogue', `getOrderedEntriesByTopic: loop exceeded ${MAX_ITERATIONS} iterations, breaking`);
+            break;
+        }
+
+        nextEntry = undefined;
         const last = orderedDialogue.at(-1)!;
         const nextEntries = [
             ...new Set([
@@ -248,6 +268,12 @@ export async function getOrderedEntriesByTopic(topicId: string) {
         } else {
             break;
         }
+    }
+
+    // Log the resulting chain
+    logger.debug('OrderChain', `Result: ${orderedDialogue.length} entries ordered in ${iterations} iterations`);
+    for (const e of orderedDialogue) {
+        logger.debug('OrderChain', `  [${e.TMP_is_active ? 'ACT' : 'DEP'}] id=${e.id.slice(0,12)}.. prev=${e.prev_id?.slice(0,12) || '-'}.. next=${e.next_id?.slice(0,12) || '-'}.. text="${(e.text || '').slice(0,30)}"`);
     }
 
     return orderedDialogue;
@@ -607,19 +633,26 @@ export async function addDialogueEntry(
     nextId: string,
     text = '',
 ) {
+    logger.info('AddEntry', `=== addDialogueEntry START ===`);
+    logger.info('AddEntry', `topic=${topicId}, speaker=${speakerId}, speakerType=${speakerType}`);
+    logger.info('AddEntry', `entryId=${entryId}, prevId=${prevId}, nextId=${nextId}`);
+
     let prev_id = '';
     let next_id = '';
     if (!entryId) {
         const location = await getBestEntryLocation(speakerId, topicId, speakerType);
         prev_id = location[0] as string;
         next_id = location[1] as string;
+        logger.info('AddEntry', `Auto-location: prev_id=${prev_id}, next_id=${next_id}`);
     } else {
         prev_id = prevId;
         next_id = nextId;
+        logger.info('AddEntry', `Manual location: prev_id=${prev_id}, next_id=${next_id}`);
     }
 
     const generatedId =
         Math.random().toString().slice(2, 15) + Math.random().toString().slice(2, 9);
+    logger.info('AddEntry', `Generated ID: ${generatedId}`);
 
     const topicObject = {
         dialogue_type: 'Topic',
@@ -645,6 +678,7 @@ export async function addDialogueEntry(
         id: generatedId,
         TMP_id: generatedId,
         TMP_info_id: generatedId,
+        TMP_is_active: true,
         next_id: next_id || '',
         prev_id: prev_id || '',
         TMP_next_id: next_id || '',
@@ -682,10 +716,14 @@ export async function addDialogueEntry(
         .equals(topicId)
         .last();
 
+    logger.info('AddEntry', `lastActiveEntry: ${lastActiveEntry ? `TMP_index=${lastActiveEntry.TMP_index}, id=${lastActiveEntry.id}` : 'NONE'}`);
+
     if (!lastActiveEntry) {
+        logger.info('AddEntry', `No active entry — creating topic + entry from scratch`);
         await addEntry(topicObject);
         await addEntry(newEntry);
     } else {
+        logger.info('AddEntry', `Inserting at locationIndex=${lastActiveEntry.TMP_index}`);
         await addEntry(newEntry, lastActiveEntry.TMP_index);
 
         const lastEntry = await activeDB.pluginData
@@ -698,23 +736,35 @@ export async function addDialogueEntry(
 
         if (prev_id) {
             prevEntry = await activeDB.pluginData.where('TMP_id').equals(prev_id).toArray();
+            logger.info('AddEntry', `prevEntry lookup by TMP_id=${prev_id}: found ${prevEntry.length} records`);
         } else {
             prevEntry = lastEntry;
+            logger.info('AddEntry', `No prev_id — using all topic entries (${lastEntry.length})`);
         }
         if (next_id) {
             nextEntryArr = await activeDB.pluginData.where('TMP_id').equals(next_id).toArray();
+            logger.info('AddEntry', `nextEntry lookup by TMP_id=${next_id}: found ${nextEntryArr.length} records`);
         }
+
         if (prevEntry?.length) {
-            await activeDB.pluginData
+            const prevTarget = prevEntry.at(-1)!;
+            logger.info('AddEntry', `Patching prev entry: id=${prevTarget.id}, setting next_id=${generatedId}`);
+            const modCount = await activeDB.pluginData
                 .where('TMP_id')
-                .equals(prevEntry.at(-1)!.id)
+                .equals(prevTarget.id)
                 .modify({ next_id: generatedId, TMP_next_id: generatedId });
+            logger.info('AddEntry', `  → modified ${modCount} records`);
         }
         if (nextEntryArr?.length) {
-            await activeDB.pluginData
+            const nextTarget = nextEntryArr.at(-1)!;
+            logger.info('AddEntry', `Patching next entry: id=${nextTarget.id}, setting prev_id=${generatedId}`);
+            const modCount = await activeDB.pluginData
                 .where('TMP_id')
-                .equals(nextEntryArr.at(-1)!.id)
+                .equals(nextTarget.id)
                 .modify({ prev_id: generatedId, TMP_prev_id: generatedId });
+            logger.info('AddEntry', `  → modified ${modCount} records`);
         }
     }
+
+    logger.info('AddEntry', `=== addDialogueEntry END ===`);
 }

@@ -1,51 +1,54 @@
 /**
- * AI Tools — Dialogue queries (searchDialogues, getDialogueTree)
+ * AI Tools — Dialogue queries (searchDialogues, getDialogueTree, findRelatedDialogues)
+ *
+ * All queries search across active plugin + master files.
+ * Results are tagged with `_source` to show where each entry lives.
  */
 
 import type { TeosTool } from './index';
-import { getActiveDB } from '@/api/db';
+import { queryAllDBs, findFirstAcrossDBs } from './helpers';
 
 export const dialogueTools: TeosTool[] = [
     {
         name: 'searchDialogues',
-        description: 'Search dialogue entries by text content or speaker/NPC name. Returns matching entries with their response text.',
+        description: 'Search dialogue entries by text content or speaker/NPC name across the active plugin AND all master files. Returns matching entries tagged with their source (active plugin or master).',
         parameters: {
             type: 'object',
             properties: {
                 query: {
                     type: 'string',
-                    description: 'Text to search for in dialogue text or speaker ID',
+                    description: 'Text to search for in dialogue text, speaker ID, or topic name',
                 },
                 limit: {
                     type: 'number',
-                    description: 'Maximum results (default 10)',
+                    description: 'Maximum results (default 20)',
                 },
             },
             required: ['query'],
         },
         execute: async (params) => {
             const query = (params.query as string).toLowerCase();
-            const limit = (params.limit as number) || 10;
+            const limit = (params.limit as number) || 20;
             try {
-                const db = await getActiveDB();
+                const raw = await queryAllDBs(async (db) => {
+                    return db.table('pluginData')
+                        .where('type').equals('DialogueInfo')
+                        .filter((r: Record<string, unknown>) => {
+                            const text = ((r.text as string) || '').toLowerCase();
+                            const speaker = ((r.speaker_id as string) || '').toLowerCase();
+                            const topic = ((r.TMP_topic as string) || '').toLowerCase();
+                            return text.includes(query) || speaker.includes(query) || topic.includes(query);
+                        })
+                        .limit(limit)
+                        .toArray();
+                }, limit);
 
-                // Search across DialogueInfo records directly
-                const infos = await db.table('pluginData')
-                    .where('type').equals('DialogueInfo')
-                    .filter((r: Record<string, unknown>) => {
-                        const text = ((r.text as string) || '').toLowerCase();
-                        const speaker = ((r.speaker_id as string) || '').toLowerCase();
-                        const topic = ((r.TMP_topic as string) || '').toLowerCase();
-                        return text.includes(query) || speaker.includes(query) || topic.includes(query);
-                    })
-                    .limit(limit)
-                    .toArray();
-
-                const results = infos.map((e: Record<string, unknown>) => ({
+                const results = raw.map(e => ({
                     topic: e.TMP_topic,
                     type: e.TMP_type || null,
                     speaker_id: e.speaker_id || null,
                     text: ((e.text as string) || '').slice(0, 200),
+                    source: e._source,
                 }));
 
                 return { count: results.length, results };
@@ -56,7 +59,7 @@ export const dialogueTools: TeosTool[] = [
     },
     {
         name: 'getDialogueTree',
-        description: 'Get the full structure of a dialogue topic: all entries in order with their speaker, text, filters, and result scripts. Useful for understanding existing dialogue before adding new entries.',
+        description: 'Get the full structure of a dialogue topic: all entries in order with their speaker, text, filters, and result scripts. Searches across active plugin AND master files.',
         parameters: {
             type: 'object',
             properties: {
@@ -70,27 +73,29 @@ export const dialogueTools: TeosTool[] = [
         execute: async (params) => {
             const topicId = params.topicId as string;
             try {
-                const db = await getActiveDB();
+                // Find the dialogue header
+                const dialogue = await findFirstAcrossDBs(async (db) => {
+                    return db.table('pluginData')
+                        .where('type').equals('Dialogue')
+                        .filter((r: Record<string, unknown>) =>
+                            (r.id as string)?.toLowerCase() === topicId.toLowerCase(),
+                        )
+                        .first();
+                });
 
-                // Find the dialogue record
-                const dialogue = await db.table('pluginData')
-                    .where('type').equals('Dialogue')
-                    .filter((r: Record<string, unknown>) =>
-                        (r.id as string)?.toLowerCase() === topicId.toLowerCase(),
-                    )
-                    .first();
+                if (!dialogue) return { error: `Topic "${topicId}" not found in active plugin or masters` };
 
-                if (!dialogue) return { error: `Topic "${topicId}" not found` };
+                // Get all entries across all DBs
+                const entries = await queryAllDBs(async (db) => {
+                    return db.table('pluginData')
+                        .where('type').equals('DialogueInfo')
+                        .filter((r: Record<string, unknown>) =>
+                            (r.TMP_topic as string)?.toLowerCase() === topicId.toLowerCase(),
+                        )
+                        .toArray();
+                }, 50);
 
-                // Get all DialogueInfo entries for this topic
-                const entries = await db.table('pluginData')
-                    .where('type').equals('DialogueInfo')
-                    .filter((r: Record<string, unknown>) =>
-                        (r.TMP_topic as string)?.toLowerCase() === topicId.toLowerCase(),
-                    )
-                    .toArray();
-
-                const tree = entries.map((e: Record<string, unknown>) => {
+                const tree = entries.map(e => {
                     const filters = (e.filters || []) as Record<string, unknown>[];
                     return {
                         id: e.TMP_id || e.id,
@@ -102,6 +107,7 @@ export const dialogueTools: TeosTool[] = [
                         text: ((e.text as string) || '').slice(0, 500),
                         result_script: ((e.script_text as string) || '').slice(0, 500),
                         disposition: (e.data as Record<string, unknown>)?.disposition ?? null,
+                        source: e._source,
                         filters: filters.map(f => ({
                             type: f.filter_type || f.type,
                             function: f.function,
@@ -115,6 +121,7 @@ export const dialogueTools: TeosTool[] = [
                 return {
                     topicId: dialogue.id,
                     dialogue_type: dialogue.dialogue_type,
+                    foundIn: dialogue._source,
                     entryCount: tree.length,
                     entries: tree.slice(0, 30),
                 };
@@ -125,7 +132,7 @@ export const dialogueTools: TeosTool[] = [
     },
     {
         name: 'findRelatedDialogues',
-        description: 'Find ALL dialogue entries related to a specific NPC — not just by speaker ID, but also by their faction, race, class, and cell. Shows everything the NPC could potentially say. Requires the NPC to exist in the plugin.',
+        description: 'Find ALL dialogue entries related to a specific NPC — by speaker ID, faction, race, class, and cell. Searches across active plugin AND master files. Shows everything the NPC could potentially say.',
         parameters: {
             type: 'object',
             properties: {
@@ -144,18 +151,18 @@ export const dialogueTools: TeosTool[] = [
             const npcId = params.npcId as string;
             const limit = (params.limit as number) || 30;
             try {
-                const db = await getActiveDB();
+                // Find NPC across all DBs
+                const npc = await findFirstAcrossDBs(async (db) => {
+                    return db.table('pluginData')
+                        .where('type').equals('Npc')
+                        .filter((r: Record<string, unknown>) =>
+                            (r.id as string)?.toLowerCase() === npcId.toLowerCase() ||
+                            (r.name as string)?.toLowerCase() === npcId.toLowerCase(),
+                        )
+                        .first();
+                });
 
-                // First, find the NPC record to get their attributes
-                const npc = await db.table('pluginData')
-                    .where('type').equals('Npc')
-                    .filter((r: Record<string, unknown>) =>
-                        (r.id as string)?.toLowerCase() === npcId.toLowerCase() ||
-                        (r.name as string)?.toLowerCase() === npcId.toLowerCase(),
-                    )
-                    .first();
-
-                if (!npc) return { error: `NPC "${npcId}" not found` };
+                if (!npc) return { error: `NPC "${npcId}" not found in active plugin or masters` };
 
                 const attrs = {
                     id: (npc.id as string || '').toLowerCase(),
@@ -164,25 +171,27 @@ export const dialogueTools: TeosTool[] = [
                     faction: (npc.faction as string || '').toLowerCase(),
                 };
 
-                // Search DialogueInfo entries matching ANY of the NPC's attributes
-                const entries = await db.table('pluginData')
-                    .where('type').equals('DialogueInfo')
-                    .filter((r: Record<string, unknown>) => {
-                        const speakerId = ((r.speaker_id as string) || '').toLowerCase();
-                        const speakerRace = ((r.speaker_race as string) || '').toLowerCase();
-                        const speakerClass = ((r.speaker_class as string) || '').toLowerCase();
-                        const speakerFaction = ((r.speaker_faction as string) || '').toLowerCase();
+                // Search dialogue entries matching NPC attributes across all DBs
+                const entries = await queryAllDBs(async (db) => {
+                    return db.table('pluginData')
+                        .where('type').equals('DialogueInfo')
+                        .filter((r: Record<string, unknown>) => {
+                            const speakerId = ((r.speaker_id as string) || '').toLowerCase();
+                            const speakerRace = ((r.speaker_race as string) || '').toLowerCase();
+                            const speakerClass = ((r.speaker_class as string) || '').toLowerCase();
+                            const speakerFaction = ((r.speaker_faction as string) || '').toLowerCase();
 
-                        if (speakerId && speakerId === attrs.id) return true;
-                        if (speakerFaction && attrs.faction && speakerFaction === attrs.faction) return true;
-                        if (speakerRace && attrs.race && speakerRace === attrs.race) return true;
-                        if (speakerClass && attrs.class && speakerClass === attrs.class) return true;
-                        return false;
-                    })
-                    .limit(limit)
-                    .toArray();
+                            if (speakerId && speakerId === attrs.id) return true;
+                            if (speakerFaction && attrs.faction && speakerFaction === attrs.faction) return true;
+                            if (speakerRace && attrs.race && speakerRace === attrs.race) return true;
+                            if (speakerClass && attrs.class && speakerClass === attrs.class) return true;
+                            return false;
+                        })
+                        .limit(limit)
+                        .toArray();
+                }, limit);
 
-                const results = entries.map((e: Record<string, unknown>) => {
+                const results = entries.map(e => {
                     const matchedBy: string[] = [];
                     const sid = ((e.speaker_id as string) || '').toLowerCase();
                     const sr = ((e.speaker_race as string) || '').toLowerCase();
@@ -198,11 +207,12 @@ export const dialogueTools: TeosTool[] = [
                         type: e.TMP_type || null,
                         text: ((e.text as string) || '').slice(0, 200),
                         matchedBy,
+                        source: e._source,
                     };
                 });
 
                 return {
-                    npc: { id: npc.id, name: npc.name, race: npc.race, class: npc.class, faction: npc.faction },
+                    npc: { id: npc.id, name: npc.name, race: npc.race, class: npc.class, faction: npc.faction, foundIn: npc._source },
                     count: results.length,
                     entries: results,
                 };

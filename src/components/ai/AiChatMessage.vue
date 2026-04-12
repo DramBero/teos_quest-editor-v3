@@ -314,9 +314,9 @@ onUpdated(() => {
 
 <style lang="scss">
 .ai-msg {
-  padding: 10px 14px;
-  font-size: 16px;
-  line-height: 1.55;
+  padding: 12px 16px;
+  font-size: 20px;
+  line-height: 1.6;
 
   &--user {
     background: rgba(202, 165, 96, 0.08);
@@ -358,16 +358,16 @@ onUpdated(() => {
       margin: 12px 0 6px;
       font-family: 'Pelagiad', serif;
     }
-    h1 { font-size: 20px; }
-    h2 { font-size: 18px; }
-    h3 { font-size: 16px; }
+    h1 { font-size: 26px; }
+    h2 { font-size: 23px; }
+    h3 { font-size: 20px; }
 
     code {
       background: rgba(0, 0, 0, 0.4);
       padding: 1px 5px;
       border-radius: 3px;
       font-family: 'Fira Code', monospace;
-      font-size: 14px;
+      font-size: 17px;
       color: rgb(237, 238, 167);
     }
 
@@ -400,7 +400,7 @@ onUpdated(() => {
     table {
       border-collapse: collapse;
       margin: 8px 0;
-      font-size: 14px;
+      font-size: 16px;
       width: 100%;
     }
 
@@ -428,6 +428,128 @@ onUpdated(() => {
       margin: 8px 0;
       color: rgba(216, 216, 216, 0.6);
     }
+
+    // Strikethrough
+    del {
+      color: rgba(216, 216, 216, 0.4);
+      text-decoration: line-through;
+    }
+
+    // Horizontal rule
+    hr {
+      border: none;
+      border-top: 1px solid rgba(170, 169, 98, 0.3);
+      margin: 16px 0;
+    }
+
+    // Task lists
+    .task-list {
+      list-style: none;
+      padding-left: 4px;
+    }
+
+    .task-list-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      margin: 4px 0;
+
+      input[type="checkbox"] {
+        appearance: none;
+        -webkit-appearance: none;
+        width: 18px;
+        height: 18px;
+        min-width: 18px;
+        border: 2px solid rgba(170, 169, 98, 0.4);
+        border-radius: 3px;
+        background: rgba(0, 0, 0, 0.3);
+        margin-top: 3px;
+        cursor: default;
+        position: relative;
+
+        &:checked {
+          background: rgba(202, 165, 96, 0.25);
+          border-color: rgb(202, 165, 96);
+
+          &::after {
+            content: '✓';
+            position: absolute;
+            top: -2px;
+            left: 2px;
+            font-size: 14px;
+            color: rgb(216, 186, 131);
+          }
+        }
+      }
+
+      span {
+        flex: 1;
+      }
+    }
+
+    // Collapsible details
+    details {
+      border: 1px solid rgba(170, 169, 98, 0.2);
+      border-radius: 6px;
+      margin: 8px 0;
+      overflow: hidden;
+
+      summary {
+        padding: 8px 12px;
+        background: rgba(170, 169, 98, 0.06);
+        cursor: pointer;
+        color: rgb(216, 186, 131);
+        font-weight: 600;
+        user-select: none;
+        transition: background 80ms ease;
+
+        &:hover {
+          background: rgba(170, 169, 98, 0.12);
+        }
+
+        &::marker {
+          color: rgba(202, 165, 96, 0.5);
+        }
+      }
+
+      .details-content {
+        padding: 8px 12px;
+        border-top: 1px solid rgba(170, 169, 98, 0.15);
+      }
+    }
+
+    // MWScript syntax highlighting
+    .mws-comment {
+      color: rgba(120, 160, 120, 0.7);
+      font-style: italic;
+    }
+
+    .mws-keyword {
+      color: rgb(237, 178, 90);
+      font-weight: 600;
+    }
+
+    .mws-type {
+      color: rgb(130, 180, 255);
+      font-style: italic;
+    }
+
+    .mws-builtin {
+      color: rgb(200, 220, 140);
+    }
+
+    .mws-string {
+      color: rgb(200, 160, 130);
+    }
+
+    .mws-number {
+      color: rgb(180, 140, 220);
+    }
+
+    .mws-operator {
+      color: rgb(216, 186, 131);
+      font-weight: 600;
+    }
   }
 
   // Tool call
@@ -436,7 +558,7 @@ onUpdated(() => {
     border: 1px solid rgba(170, 169, 98, 0.15);
     border-radius: 6px;
     overflow: hidden;
-    font-size: 14px;
+    font-size: 17px;
   }
 
   &__tool-header {
@@ -463,7 +585,7 @@ onUpdated(() => {
 
   &__tool-name {
     font-family: 'Fira Code', monospace;
-    font-size: 12px;
+    font-size: 14px;
   }
 
   &__tool-toggle {
@@ -480,7 +602,7 @@ onUpdated(() => {
       margin: 0;
       white-space: pre-wrap;
       word-break: break-all;
-      font-size: 12px;
+      font-size: 14px;
       font-family: 'Fira Code', monospace;
       color: rgba(216, 216, 216, 0.6);
       max-height: 200px;
@@ -510,7 +632,7 @@ onUpdated(() => {
     border: none;
     color: rgba(216, 216, 216, 0.45);
     font-family: 'Fira Code', monospace;
-    font-size: 11px;
+    font-size: 13px;
     cursor: pointer;
     transition: all 80ms ease;
 
@@ -553,7 +675,7 @@ onUpdated(() => {
     align-items: center;
     gap: 8px;
     padding: 10px 14px;
-    font-size: 15px;
+    font-size: 18px;
     font-weight: 600;
 
     svg {
@@ -572,7 +694,7 @@ onUpdated(() => {
 
   &__id, &__type {
     font-family: 'Fira Code', monospace;
-    font-size: 11px;
+    font-size: 13px;
     padding: 2px 8px;
     border-radius: 4px;
     white-space: nowrap;
@@ -596,7 +718,7 @@ onUpdated(() => {
     border: none;
     border-radius: 6px;
     font-family: 'Pelagiad', serif;
-    font-size: 14px;
+    font-size: 17px;
     cursor: pointer;
     transition: all 120ms ease;
 
@@ -666,21 +788,21 @@ onUpdated(() => {
     color: rgb(216, 186, 131);
     border-radius: 4px;
     font-family: 'Fira Code', monospace;
-    font-size: 12px;
+    font-size: 14px;
     font-weight: 600;
   }
 
   &__entry-text {
     flex: 1;
     color: rgba(216, 216, 216, 0.8);
-    font-size: 14px;
+    font-size: 17px;
     line-height: 1.5;
   }
 
   &__finished {
     flex-shrink: 0;
     color: rgb(120, 200, 120);
-    font-size: 12px;
+    font-size: 14px;
     font-family: 'Fira Code', monospace;
     opacity: 0.8;
   }
@@ -720,20 +842,20 @@ onUpdated(() => {
 
   &__speaker {
     font-family: 'Fira Code', monospace;
-    font-size: 12px;
+    font-size: 14px;
     color: rgb(216, 186, 131);
     margin-bottom: 4px;
     opacity: 0.8;
 
     &::before {
       content: '👤 ';
-      font-size: 11px;
+      font-size: 13px;
     }
   }
 
   &__dialogue-text {
     color: rgba(216, 216, 216, 0.85);
-    font-size: 14px;
+    font-size: 17px;
     line-height: 1.5;
     font-style: italic;
     margin-bottom: 6px;
@@ -756,7 +878,7 @@ onUpdated(() => {
     border: 1px solid rgba(170, 169, 98, 0.15);
     border-radius: 4px;
     font-family: 'Fira Code', monospace;
-    font-size: 11px;
+    font-size: 13px;
     color: rgba(216, 216, 216, 0.6);
   }
 
@@ -767,7 +889,7 @@ onUpdated(() => {
       padding: 6px 10px;
       border-radius: 4px;
       font-family: 'Fira Code', monospace;
-      font-size: 12px;
+      font-size: 14px;
       color: rgba(237, 238, 167, 0.7);
       white-space: pre-wrap;
       word-break: break-word;

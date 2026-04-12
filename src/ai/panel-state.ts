@@ -1,10 +1,12 @@
 import { ref } from 'vue';
 
 const aiPanelOpen = ref(false);
+const aiPanelFullscreen = ref(false);
 
 export function useAiPanel() {
     function toggle() {
         aiPanelOpen.value = !aiPanelOpen.value;
+        if (!aiPanelOpen.value) aiPanelFullscreen.value = false;
     }
 
     function open() {
@@ -13,7 +15,19 @@ export function useAiPanel() {
 
     function close() {
         aiPanelOpen.value = false;
+        aiPanelFullscreen.value = false;
     }
 
-    return { isOpen: aiPanelOpen, toggle, open, close };
+    function toggleFullscreen() {
+        aiPanelFullscreen.value = !aiPanelFullscreen.value;
+    }
+
+    return {
+        isOpen: aiPanelOpen,
+        isFullscreen: aiPanelFullscreen,
+        toggle,
+        open,
+        close,
+        toggleFullscreen,
+    };
 }

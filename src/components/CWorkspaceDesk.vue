@@ -1,18 +1,20 @@
 <template>
-  <div class="workspace-desk">
+  <div class="workspace-desk" :class="{ 'workspace-desk--ai-fullscreen': aiPanelFullscreen }">
     <WorkspaceControls />
     <transition-group name="fadeSidebarr" :style="{ display: 'flex', width: '100%', height: '100%', minWidth: 0 }" mode="out-in">
-      <SidebarMain />
+      <SidebarMain v-show="!aiPanelFullscreen" />
 
-      <DialogueFrame v-show="true" />
+      <DialogueFrame v-show="!aiPanelFullscreen" />
     </transition-group>
 
     <div
       v-if="aiPanelOpen"
       class="ai-panel-wrapper"
-      :style="{ width: aiPanelWidth + 'px', minWidth: aiPanelWidth + 'px' }"
+      :class="{ 'ai-panel-wrapper--fullscreen': aiPanelFullscreen }"
+      :style="aiPanelFullscreen ? {} : { width: aiPanelWidth + 'px', minWidth: aiPanelWidth + 'px' }"
     >
       <div
+        v-if="!aiPanelFullscreen"
         class="ai-panel-resize-handle"
         @mousedown="startResize"
       />
@@ -32,7 +34,7 @@ const AiChatPanel = defineAsyncComponent(
   () => import('./ai/AiChatPanel.vue')
 );
 
-const { isOpen: aiPanelOpen, close: closeAi } = useAiPanel();
+const { isOpen: aiPanelOpen, isFullscreen: aiPanelFullscreen, close: closeAi } = useAiPanel();
 
 // --- Resizable AI Panel ---
 const AI_WIDTH_KEY = 'teos_ai_panel_width';
@@ -137,5 +139,15 @@ onUnmounted(() => {
   width: 100% !important;
   min-width: 0 !important;
   max-width: none !important;
+}
+
+.ai-panel-wrapper--fullscreen {
+  flex: 1 !important;
+  width: 100% !important;
+  min-width: 0 !important;
+}
+
+.workspace-desk--ai-fullscreen > .fadeSidebarr-leave-active {
+  display: none !important;
 }
 </style>

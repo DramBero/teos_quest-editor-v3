@@ -15,6 +15,7 @@ import { dialogueTools } from './dialogue';
 import { npcTools } from './npc';
 import { worldTools } from './world';
 import { editorTools } from './editor';
+import { mutationTools } from './mutations';
 
 // ---------------------------------------------------------------------------
 //  TeosTool interface
@@ -39,6 +40,7 @@ export const tools: TeosTool[] = [
     ...npcTools,
     ...worldTools,
     ...editorTools,
+    ...mutationTools,
 ];
 
 // ---------------------------------------------------------------------------

@@ -99,13 +99,13 @@ const emit = defineEmits<{
 async function addQuest() {
   try {
     await addJournalQuest(newQuestName.value, props.questName);
-    // emit('update', newQuestName.value);
     await selectedQuestStore.fetchQuest(newQuestName.value, {
       fetchQuests: true,
       updateName: true,
       reload: false
     });
     model.value = newQuestName.value;
+    addModeOff();
   } catch (error) {
     logger.error('Journal', 'Failed to add quest tab', error);
   }

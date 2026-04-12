@@ -25,6 +25,11 @@
           @click="startNewChat"
         ><TdesignAdd /></button>
         <button
+          class="ai-chat__header-btn"
+          :title="isFullscreen ? 'Exit fullscreen' : 'Fullscreen'"
+          @click="toggleFullscreen"
+        ><TdesignFullscreen v-if="!isFullscreen" /><TdesignFullscreenExit v-else /></button>
+        <button
           class="ai-chat__header-btn ai-chat__header-btn--close"
           title="Close"
           @click="$emit('close')"
@@ -124,6 +129,7 @@ import { streamChat, type ChatMessage } from '@/ai/llm-client';
 import { getToolDefinitions } from '@/ai/tools';
 import { executeTool } from '@/ai/tool-executor';
 import { buildSystemPrompt } from '@/ai/context';
+import { useAiPanel } from '@/ai/panel-state';
 
 import GameIconsGears from '~icons/game-icons/gears';
 import TdesignSetting from '~icons/tdesign/setting';
@@ -137,12 +143,15 @@ import TdesignSearch from '~icons/tdesign/search';
 import TdesignUserList from '~icons/tdesign/user-list';
 import TdesignChatBubble from '~icons/tdesign/chat-bubble';
 import TdesignSend from '~icons/tdesign/send';
+import TdesignFullscreen from '~icons/tdesign/fullscreen';
+import TdesignFullscreenExit from '~icons/tdesign/fullscreen-exit';
 import SVGSpinners90RingWithBg from '~icons/svg-spinners/90-ring-with-bg';
 
 defineEmits<{ (e: 'close'): void }>();
 
 const aiSettings = useAiSettings();
 const chatHistory = useChatHistory();
+const { isFullscreen, toggleFullscreen } = useAiPanel();
 const showSettings = ref(false);
 const showSessions = ref(false);
 const inputText = ref('');

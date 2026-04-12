@@ -4,6 +4,7 @@
  */
 
 import { addJournalQuest, addQuestEntry } from '@/api/journal';
+import { addDialogueEntry } from '@/api/dialogue';
 import { logger } from '@/services/logger';
 
 // ---------------------------------------------------------------------------
@@ -111,15 +112,84 @@ export async function insertJournal(data: AiJournalData): Promise<InsertResult> 
 }
 
 /**
- * Insert dialogue entries — currently shows instructions since dialogue
- * insertion requires complex linked-list and location logic.
- * Future: direct API integration.
+ * Insert dialogue entries directly into the plugin via addDialogueEntry API.
+ * Handles linked-list insertion, speaker type routing, and post-creation
+ * script patching. Falls back to clipboard if direct insert fails.
  */
 export async function insertDialogue(data: AiDialogueData): Promise<InsertResult> {
-    // Dialogue insertion is complex — requires knowing the exact linked-list
-    // position, existing entries, speaker type resolution, etc.
-    // For now, copy the data to clipboard as a structured format the user
-    // can reference while manually adding entries.
+    let inserted = 0;
+    const errors: string[] = [];
+
+    try {
+        for (const entry of data.entries) {
+            try {
+                const speakerType = entry.speaker_id ? 'npc' : '';
+
+                await addDialogueEntry(
+                    entry.speaker_id || '',  // speakerId
+                    data.topic,              // topicId
+                    data.type,               // dialogueType
+                    speakerType,             // speakerType
+                    '',                      // entryId (auto-generate)
+                    '',                      // prevId (auto-locate)
+                    '',                      // nextId (auto-locate)
+                    entry.text,              // text
+                );
+
+                // If result script is provided, patch the just-created entry
+                if (entry.result) {
+                    try {
+                        const { editScriptText } = await import('@/api/dialogue');
+                        const { getActiveDB } = await import('@/api/db');
+                        const db = await getActiveDB();
+
+                        // Find the last entry in this topic with TMP_is_active
+                        const topicEntries = await db.table('pluginData')
+                            .where('TMP_topic').equals(data.topic)
+                            .filter((r: Record<string, unknown>) =>
+                                r.type === 'DialogueInfo' && r.TMP_is_active === true,
+                            )
+                            .toArray();
+
+                        // Highest TMP_index = most recently added
+                        const lastEntry = [...topicEntries].sort(
+                            (a, b) => (b.TMP_index as number) - (a.TMP_index as number),
+                        )[0];
+
+                        if (lastEntry?.TMP_info_id) {
+                            await editScriptText(lastEntry.TMP_info_id as string, entry.result);
+                        }
+                    } catch (scriptErr) {
+                        logger.warn('AI Insert', `Script patch failed for "${entry.text.slice(0, 30)}..."`, scriptErr);
+                    }
+                }
+
+                inserted++;
+            } catch (err) {
+                const msg = `Entry "${entry.text.slice(0, 40)}...": ${err}`;
+                errors.push(msg);
+                logger.warn('AI Insert', msg);
+            }
+        }
+
+        if (inserted > 0) {
+            return {
+                success: true,
+                message: `Dialogue "${data.topic}" (${data.type}): ${inserted}/${data.entries.length} entries inserted directly.${errors.length ? `\n⚠️ ${errors.length} failed: ${errors.join('; ')}` : ''}`,
+                inserted,
+            };
+        }
+
+        // All failed — fall back to clipboard
+        return fallbackToClipboard(data);
+    } catch (err) {
+        logger.error('AI Insert', 'insertDialogue failed completely, falling back to clipboard', err);
+        return fallbackToClipboard(data);
+    }
+}
+
+/** Fallback: copy dialogue data to clipboard when direct insert fails */
+async function fallbackToClipboard(data: AiDialogueData): Promise<InsertResult> {
     const summary = data.entries.map((e, i) =>
         `Entry ${i + 1}: [${e.speaker_id || 'any'}] "${e.text.slice(0, 60)}..."`,
     ).join('\n');
@@ -129,13 +199,13 @@ export async function insertDialogue(data: AiDialogueData): Promise<InsertResult
         await navigator.clipboard.writeText(clipText);
         return {
             success: true,
-            message: `Dialogue data copied to clipboard (${data.entries.length} entries).\n${summary}\n\nUse the Dialogue editor to add these entries.`,
-            inserted: data.entries.length,
+            message: `Direct insert failed. Dialogue data copied to clipboard (${data.entries.length} entries).\n${summary}\n\nUse the Dialogue editor to add entries manually.`,
+            inserted: 0,
         };
     } catch {
         return {
-            success: true,
-            message: `Dialogue "${data.topic}" (${data.type}) with ${data.entries.length} entries ready.\n${summary}\n\nNote: Auto-insert for dialogue is not yet available. Use the Dialogue editor to add entries manually.`,
+            success: false,
+            message: `Failed to insert dialogue "${data.topic}". ${data.entries.length} entries could not be added.`,
             inserted: 0,
         };
     }

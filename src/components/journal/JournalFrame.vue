@@ -102,8 +102,8 @@ const questNames = computed(() => {
   questNameList = [...new Set(questNameList)];
   let questNameListNew = [];
   for (let questName of questNameList) {
-    const questNameFact = questList.value.find(quest => quest.TMP_quest_name.toLowerCase() === questName)?.TMP_quest_name;
-    const quests = questList.value.filter((quest) => quest.TMP_quest_name.toLowerCase() === questName).reverse();
+    const questNameFact = questList.value.find(quest => quest.TMP_quest_name?.toLowerCase() === questName)?.TMP_quest_name;
+    const quests = questList.value.filter((quest) => quest.TMP_quest_name?.toLowerCase() === questName).reverse();
     const is_new = Boolean(quests.filter((quest) => quest.TMP_is_active)?.length);
     questNameListNew.push({
       name: questNameFact,

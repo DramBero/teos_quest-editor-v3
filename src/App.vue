@@ -37,8 +37,8 @@ const getSelectedFilter = computed(() => {
     <CWorkspace />
     <StatusBar />
     <ModalMain 
-      v-show="getSpeakerData.speakerId"
-      :header="getSpeakerData.speakerName || getSpeakerData.speaker?.name || getSpeakerData.speakerId"
+      v-if="getSpeakerData.speakerId"
+      :header="(getSpeakerData.speakerName || getSpeakerData.speaker?.name || getSpeakerData.speakerId) || ''"
     >
       <ModalContentDialogue :speaker="getSpeakerData"/>
     </ModalMain>

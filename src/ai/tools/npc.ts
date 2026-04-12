@@ -1,9 +1,11 @@
 /**
  * AI Tools — NPC & Item queries (getNPCDetails, searchItems)
+ *
+ * All queries search across active plugin + master files.
  */
 
 import type { TeosTool } from './index';
-import { getActiveDB } from '@/api/db';
+import { queryAllDBs, findFirstAcrossDBs } from './helpers';
 
 const ITEM_TYPES = [
     'Weapon', 'Armor', 'Clothing', 'Miscellaneous',
@@ -14,7 +16,7 @@ const ITEM_TYPES = [
 export const npcTools: TeosTool[] = [
     {
         name: 'getNPCDetails',
-        description: 'Get detailed info about a specific NPC: race, class, faction, stats, inventory, spells, and attached script.',
+        description: 'Get detailed info about a specific NPC: race, class, faction, stats, inventory, spells, and attached script. Searches across the active plugin AND master files.',
         parameters: {
             type: 'object',
             properties: {
@@ -28,16 +30,17 @@ export const npcTools: TeosTool[] = [
         execute: async (params) => {
             const name = params.name as string;
             try {
-                const db = await getActiveDB();
-                const npc = await db.table('pluginData')
-                    .where('type').equals('Npc')
-                    .filter((r: Record<string, unknown>) =>
-                        (r.id as string)?.toLowerCase() === name.toLowerCase() ||
-                        (r.name as string)?.toLowerCase() === name.toLowerCase(),
-                    )
-                    .first();
+                const npc = await findFirstAcrossDBs(async (db) => {
+                    return db.table('pluginData')
+                        .where('type').equals('Npc')
+                        .filter((r: Record<string, unknown>) =>
+                            (r.id as string)?.toLowerCase() === name.toLowerCase() ||
+                            (r.name as string)?.toLowerCase() === name.toLowerCase(),
+                        )
+                        .first();
+                });
 
-                if (!npc) return { error: `NPC "${name}" not found` };
+                if (!npc) return { error: `NPC "${name}" not found in active plugin or masters` };
 
                 const result: Record<string, unknown> = {
                     id: npc.id,
@@ -48,6 +51,7 @@ export const npcTools: TeosTool[] = [
                     rank: npc.rank,
                     level: npc.level,
                     script: npc.script,
+                    source: npc._source,
                 };
 
                 if (npc.stats) result.stats = npc.stats;
@@ -65,7 +69,7 @@ export const npcTools: TeosTool[] = [
     },
     {
         name: 'searchItems',
-        description: 'Search for items (weapons, armor, clothing, potions, ingredients, books, etc.) by name or ID. Returns item details including type, name, weight, and value.',
+        description: 'Search for items (weapons, armor, clothing, potions, ingredients, books, etc.) by name or ID across the active plugin AND master files. Returns item details including type, name, weight, and value, tagged with source.',
         parameters: {
             type: 'object',
             properties: {
@@ -89,29 +93,31 @@ export const npcTools: TeosTool[] = [
             const itemType = params.itemType as string | undefined;
             const limit = (params.limit as number) || 20;
             try {
-                const db = await getActiveDB();
-
                 const typesToSearch = itemType
                     ? [itemType.charAt(0).toUpperCase() + itemType.slice(1)]
                     : ITEM_TYPES;
 
-                const results: Record<string, unknown>[] = [];
+                // Search each item type across all DBs
+                const allResults: { id: unknown; name: unknown; type: unknown; weight: unknown; value: unknown; script: unknown; enchantment: unknown; source: unknown }[] = [];
 
                 for (const type of typesToSearch) {
-                    if (results.length >= limit) break;
+                    if (allResults.length >= limit) break;
 
-                    const items = await db.table('pluginData')
-                        .where('type').equals(type)
-                        .filter((r: Record<string, unknown>) => {
-                            const id = ((r.id as string) || '').toLowerCase();
-                            const name = ((r.name as string) || '').toLowerCase();
-                            return id.includes(query) || name.includes(query);
-                        })
-                        .limit(limit - results.length)
-                        .toArray();
+                    const remaining = limit - allResults.length;
+                    const results = await queryAllDBs(async (db) => {
+                        return db.table('pluginData')
+                            .where('type').equals(type)
+                            .filter((r: Record<string, unknown>) => {
+                                const id = ((r.id as string) || '').toLowerCase();
+                                const name = ((r.name as string) || '').toLowerCase();
+                                return id.includes(query) || name.includes(query);
+                            })
+                            .limit(remaining)
+                            .toArray();
+                    }, remaining);
 
-                    for (const item of items) {
-                        results.push({
+                    for (const item of results) {
+                        allResults.push({
                             id: item.id,
                             name: item.name,
                             type: item.type,
@@ -119,11 +125,12 @@ export const npcTools: TeosTool[] = [
                             value: item.value ?? null,
                             script: item.script ?? null,
                             enchantment: item.enchantment ?? null,
+                            source: item._source,
                         });
                     }
                 }
 
-                return { count: results.length, items: results };
+                return { count: allResults.length, items: allResults };
             } catch (err) {
                 return { error: String(err) };
             }

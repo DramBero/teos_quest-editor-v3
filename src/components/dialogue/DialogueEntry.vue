@@ -106,7 +106,7 @@ import { VariableHighlight } from '@/extensions/VariableHighlight';
 
 import { watchDebounced } from '@vueuse/core';
 import { editTopicText, addDialogueEntry, deleteJournalEntry, modifyEntry, editScriptText } from '@/api/idb.ts';
-import { computed, ref, watch } from 'vue';
+import { computed, ref, watch, onBeforeUnmount } from 'vue';
 import { logger } from '@/services/logger';
 
 import ContextMenu, { type MenuItem } from '@imengyu/vue3-context-menu';
@@ -114,7 +114,7 @@ import ContextMenu, { type MenuItem } from '@imengyu/vue3-context-menu';
 import TdesignAdd from '~icons/tdesign/add';
 import TdesignMore from '~icons/tdesign/more';
 
-import type { InfoEntry } from '@/types/pluginEntries';
+import type { InfoEntry, DialogueInfoRecord } from '@/types/pluginEntries';
 
 interface SpeakerData {
   speakerId: string;
@@ -129,7 +129,7 @@ interface TopicChoice {
 }
 
 const props = defineProps<{
-  answer: InfoEntry;
+  answer: InfoEntry | DialogueInfoRecord;
   speaker: SpeakerData;
   topicChoices: TopicChoice[];
   topicsList: InfoEntry[][];
@@ -191,16 +191,19 @@ watch(() => props.answer, (newValue) => {
 })
 
 watchDebounced(answerText, async (newValue) => {
+  if (newValue === props.answer.text) return;
+
   const result = await editTopicText(props.answer.TMP_info_id, newValue);
   if (result) {
-    // If we received a result, it means an override was created or modified.
-    // If the ID changed (unlikely for Info ID) or it became active, refresh UI.
+    emit('updateChoices');
+    
     if (result.TMP_is_active !== props.answer.TMP_is_active) {
       emit('updateAll');
     }
   }
 }, {
   debounce: 500,
+  maxWait: 2000,
 })
 
 const editor = useEditor({
@@ -213,7 +216,27 @@ const editor = useEditor({
     VariableHighlight,
   ],
   autofocus: props.answer.text === '' ? 'all' : false,
-  onUpdate: () => answerText.value = editor.value?.getText() || '',
+  onUpdate: () => {
+    const text = editor.value?.getText() || '';
+    if (answerText.value !== text) {
+      answerText.value = text;
+    }
+  },
+});
+
+// Sync editor content when props change (important when component is reused)
+watch(() => props.answer.text, (newText) => {
+  if (editor.value && editor.value.getText() !== newText) {
+    editor.value.commands.setContent(newText, false);
+    answerText.value = newText;
+  }
+});
+
+onBeforeUnmount(async () => {
+  // Save changes on component destruction (e.g. closing the modal)
+  if (answerText.value !== props.answer.text) {
+    await editTopicText(props.answer.TMP_info_id, answerText.value);
+  }
 });
 
 watch(answerText, (newValue) => {
@@ -224,19 +247,21 @@ watch(answerText, (newValue) => {
 });
 
 const getModificationList = computed(() => {
-  if (!props.answer.TMP_is_active || !props.answer.old_values.length) {
+  const oldValues = props.answer.old_values || [];
+  if (!props.answer.TMP_is_active || !oldValues.length) {
     return [];
   } else {
-    return props.answer.old_values.slice(0, -1).map(val => val.TMP_dep).reverse();
+    return [...oldValues.slice(0, -1)].map(val => (val as any).TMP_dep).reverse();
   }
 })
 
 const getIsDirty = computed(() => {
-  if (!props.answer.old_values?.length) {
+  const oldValues = (props.answer.old_values || []) as any[];
+  if (!oldValues.length) {
     return false;
   }
   const entryOneNonId = Object.fromEntries(
-    Object.entries(props.answer.old_values.slice(-2)[0]).filter(
+    Object.entries(oldValues.slice(-2)[0]).filter(
       ([key]) => !key.includes('_id') && !key.includes('TMP_') && !key.includes('old_values'),
     ),
   );
@@ -249,16 +274,12 @@ const getIsDirty = computed(() => {
 });
 
 const getContextMenuItems = computed<MenuItem[]>(() => {
-  const items: MenuItem[] = [
-/*     {
-      label: 'Copy',
-    } */
-  ]
+  const items: MenuItem[] = []
 
   if (!getLua.value) {
     items.push({
       label: 'Add Lua (MWSE)',
-      divided: getMWScript.value,
+      divided: !!getMWScript.value,
       onClick: addLuaScript,
     });
   }
@@ -390,19 +411,18 @@ function showMenu(e: MouseEvent) {
   })
 }
 
-function handleAnswerClick(e) {
+function handleAnswerClick(e: any) {
   if (e.target.className == 'dialogue-answers-answer__text_hyperlink') {
     emit('setCurrentAnswers', e.target.innerText, 'Topic');
-    // currentTopic.value = e.target.innerText;
   }
 }
 
-function getHyperlinkedAnswer(text) {
+function getHyperlinkedAnswer(text: string) {
   let hyperlinkedAnswer = text;
   for (const topic of props.topicsList) {
-    if (hyperlinkedAnswer.includes(topic)) {
+    if (hyperlinkedAnswer.includes(topic as any)) {
       hyperlinkedAnswer = hyperlinkedAnswer.replace(
-        topic,
+        topic as any,
         `<span class="dialogue-answers-answer__text_hyperlink">${topic}</span>`,
       );
     }
@@ -410,7 +430,7 @@ function getHyperlinkedAnswer(text) {
   return hyperlinkedAnswer;
 }
 
-function applyFilter(filter) {
+function applyFilter(filter: any) {
   emit('applyFilter', filter);
 }
 </script>
