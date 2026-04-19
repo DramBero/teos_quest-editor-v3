@@ -10,7 +10,6 @@
     <div class="quest-header">
       <div class="quest-title quest-title_expanded">
         <TStatusDot :status="questStatus" />
-        <span v-if="questStatus" class="quest-status-label">{{ questStatus === 'mod' ? 'Mod' : 'New' }}</span>
         <QuestNameEditor 
           :default="props.questNameData?.name"
           :disabled="true || !props.questNameData?.is_new"

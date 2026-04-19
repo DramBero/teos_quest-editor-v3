@@ -82,6 +82,7 @@ const getModalComponent = computed(() => {
     case 'Storage': return ModalContentStorage;
     case 'CleanDirtied': return ModalContentCleanDirtied;
     case 'EditHeader': return ModalContentEditHeader;
+    case 'CreatePlugin': return ModalContentEditHeader;
     default: return null;
   }
 })

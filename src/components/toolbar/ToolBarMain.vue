@@ -4,6 +4,7 @@
       <!-- Left: Undo / Redo -->
       <div class="toolbar__group">
         <button
+          v-if="false"
           class="toolbar__btn"
           :class="{ 'toolbar__btn--disabled': !canUndo }"
           :disabled="!canUndo"
@@ -12,6 +13,7 @@
           <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12.5 8c-2.65 0-5.05 1.04-6.83 2.73L2.5 7.5v9h9l-3.19-3.19C9.84 12.02 11.11 11.5 12.5 11.5c3.03 0 5.55 2.11 6.22 4.94l2.86-.86C20.53 11.45 16.84 8 12.5 8z"/></svg>
         </button>
         <button
+          v-if="false"
           class="toolbar__btn"
           :class="{ 'toolbar__btn--disabled': !canRedo }"
           :disabled="!canRedo"
@@ -75,7 +77,7 @@ import { useAiPanel } from '@/ai/panel-state';
 const { isOpen: aiOpen } = useAiPanel();
 
 function openHeaderModal() {
-  primaryModalStore.setActiveModal('Upload');
+  primaryModalStore.setActiveModal('EditHeader');
 }
 
 async function savePlugin() {

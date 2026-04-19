@@ -1,6 +1,6 @@
 <template>
   <div class="frame-upload">
-    <h2 class="modal__title">Edit Plugin Header</h2>
+    <h2 class="modal__title">{{ isCreateMode ? 'New Plugin' : 'Edit Plugin Header' }}</h2>
 
     <div class="header-edit" v-if="loaded">
       <!-- Plugin Name + Type -->
@@ -13,12 +13,15 @@
               autocomplete="off"
               placeholder="Plugin name"
               v-model="pluginName"
+              :disabled="!isCreateMode"
+              required
             />
           </label>
           <div class="header-edit__type-toggle">
             <button
               class="header-edit__type-btn"
               :class="{ 'header-edit__type-btn--active': fileType === 'Esp' }"
+              :disabled="!isCreateMode"
               @click="fileType = 'Esp'"
             >
               ESP
@@ -26,6 +29,7 @@
             <button
               class="header-edit__type-btn"
               :class="{ 'header-edit__type-btn--active': fileType === 'Esm' }"
+              :disabled="!isCreateMode"
               @click="fileType = 'Esm'"
             >
               ESM
@@ -85,13 +89,43 @@
           >
             <span class="header-edit__dep-name">{{ dep[0] }}</span>
             <span class="header-edit__dep-size">{{ formatBytes(dep[1]) }}</span>
+            <div class="header-edit__dep-actions">
+              <button
+                class="header-edit__dep-btn header-edit__dep-btn_edit"
+                title="Replace with file"
+                @click="triggerReplace(i)"
+              >✎</button>
+              <button
+                class="header-edit__dep-btn header-edit__dep-btn_remove"
+                title="Remove"
+                @click="removeDep(i)"
+              >×</button>
+            </div>
           </div>
         </div>
         <p v-else class="header-edit__empty">No master files</p>
+
+        <button class="header-edit__dep-add" @click="triggerAdd">
+          + Add master file
+        </button>
+
+        <!-- hidden file inputs -->
+        <input
+          ref="fileInputAdd"
+          type="file"
+          style="display:none"
+          @change="onFileAdd"
+        />
+        <input
+          ref="fileInputReplace"
+          type="file"
+          style="display:none"
+          @change="onFileReplace"
+        />
       </div>
 
-      <!-- Record count (read-only info) -->
-      <div class="header-edit__info">
+      <!-- Record count (read-only info, only in edit mode) -->
+      <div class="header-edit__info" v-if="!isCreateMode">
         <span class="header-edit__info-item">
           Records: <strong>{{ numObjects }}</strong>
         </span>
@@ -102,8 +136,8 @@
 
       <!-- Actions -->
       <div class="header-edit__actions">
-        <button class="modal-button header-edit__save" @click="saveHeader" :disabled="saving">
-          {{ saving ? 'Saving...' : 'Save' }}
+        <button class="modal-button header-edit__save" @click="saveHeader" :disabled="saving || !pluginName">
+          {{ saving ? (isCreateMode ? 'Creating...' : 'Saving...') : (isCreateMode ? 'Create Plugin' : 'Save') }}
         </button>
         <button class="modal-button header-edit__cancel" @click="cancel">Cancel</button>
       </div>
@@ -119,16 +153,20 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, nextTick } from 'vue';
+import { ref, watch, nextTick, toRaw, computed } from 'vue';
 import { usePluginHeader } from '@/stores/pluginHeader';
 import { usePrimaryModal } from '@/stores/modals';
 import { useSessionStore } from '@/stores/session';
-import { updateHeader } from '@/api/idb';
+import { useReloadTrigger } from '@/stores/reloadTrigger';
+import { updateHeader, createBlankPlugin, invalidateDependencyCache } from '@/api/idb';
 import { logger } from '@/services/logger';
 
 const headerStore = usePluginHeader();
 const primaryModalStore = usePrimaryModal();
 const sessionStore = useSessionStore();
+const reloadTriggerStore = useReloadTrigger();
+
+const isCreateMode = computed(() => primaryModalStore.activeModal === 'CreatePlugin');
 
 const loaded = ref(false);
 const saving = ref(false);
@@ -136,56 +174,138 @@ const saved = ref(false);
 
 // Editable fields
 const pluginName = ref('');
-const fileType = ref<'Esp' | 'Esm'>('Esp');
+const fileType = ref<'Esp' | 'Esm'>('Esm');
 const version = ref<number>(1.0);
 const author = ref('');
 const description = ref('');
 const dependencies = ref<Array<[string, number]>>([]);
 const numObjects = ref(0);
 
-onMounted(async () => {
-  const header = headerStore.getPluginHeader;
-  if (!header) return;
+// --- Dependency editing ---
+const fileInputAdd = ref<HTMLInputElement | null>(null);
+const fileInputReplace = ref<HTMLInputElement | null>(null);
+let replaceIndex = -1;
 
-  pluginName.value = header.TMP_dep || '';
-  fileType.value = header.file_type || 'Esp';
-  version.value = header.version ?? 1.0;
-  author.value = header.author || '';
-  description.value = header.description || '';
-  dependencies.value = header.masters ? structuredClone(header.masters) : [];
-  numObjects.value = header.num_objects ?? 0;
+function triggerAdd() {
+  fileInputAdd.value!.value = '';
+  fileInputAdd.value!.click();
+}
 
-  await nextTick();
-  loaded.value = true;
-});
+function triggerReplace(i: number) {
+  replaceIndex = i;
+  fileInputReplace.value!.value = '';
+  fileInputReplace.value!.click();
+}
+
+function removeDep(i: number) {
+  dependencies.value.splice(i, 1);
+}
+
+function onFileAdd(e: Event) {
+  const file = (e.target as HTMLInputElement).files?.[0];
+  if (!file) return;
+  dependencies.value.push([file.name, file.size]);
+}
+
+function onFileReplace(e: Event) {
+  const file = (e.target as HTMLInputElement).files?.[0];
+  if (!file || replaceIndex < 0) return;
+  dependencies.value[replaceIndex] = [file.name, file.size];
+  replaceIndex = -1;
+}
+
+watch(
+  () => headerStore.pluginHeader,
+  async (header) => {
+    // In create mode, show the blank form immediately; don't load existing data
+    if (isCreateMode.value) {
+      pluginName.value = '';
+      fileType.value = 'Esm';
+      version.value = 1.0;
+      author.value = '';
+      description.value = '';
+      dependencies.value = [];
+      numObjects.value = 0;
+      loaded.value = true;
+      return;
+    }
+    if (!header) return;
+
+    pluginName.value = header.TMP_dep || '';
+    fileType.value = header.file_type || 'Esp';
+    version.value = header.version != null ? parseFloat(header.version.toFixed(2)) : 1.0;
+    author.value = header.author || '';
+    description.value = header.description || '';
+    dependencies.value = header.masters ? structuredClone(toRaw(header.masters)) : [];
+    numObjects.value = header.num_objects ?? 0;
+
+    await nextTick();
+    loaded.value = true;
+  },
+  { immediate: true },
+);
 
 async function saveHeader() {
   saving.value = true;
   saved.value = false;
 
   try {
-    const updated = await updateHeader({
-      version: version.value,
-      file_type: fileType.value,
-      author: author.value,
-      description: description.value,
-      masters: dependencies.value,
-    });
+    if (isCreateMode.value) {
+      // Strip any existing extension, always append lowercase ext from the toggle
+      const rawName = pluginName.value.trim() || 'NewPlugin';
+      const baseName = rawName.replace(/\.(esp|esm)$/i, '');
+      const ext = fileType.value === 'Esm' ? '.esm' : '.esp';
+      const fileName = baseName + ext;
 
-    // Sync Pinia store
-    headerStore.setPluginHeader(updated);
-
-    // Update session plugin name if changed
-    if (pluginName.value && sessionStore.currentSession) {
-      await sessionStore.updateSession({
-        ...sessionStore.currentSession,
-        pluginName: pluginName.value,
+      const { header } = await createBlankPlugin({
+        fileName,
+        fileType: fileType.value,
+        version: version.value,
+        author: author.value,
+        description: description.value,
+        masters: JSON.parse(JSON.stringify(toRaw(dependencies.value))),
       });
-    }
 
-    saved.value = true;
-    setTimeout(() => { saved.value = false; }, 2000);
-    logger.info('Header', 'Plugin header saved');
+      // Create session (size = 0 for new plugin)
+      await sessionStore.createSession(fileName, 0, []);
+
+      // Sync header store with the object we already have (no DB roundtrip needed)
+      invalidateDependencyCache();
+      headerStore.setPluginHeader(header as any);
+
+      // Close modal first so watchers don't re-run in create mode
+      primaryModalStore.setActiveModal('');
+
+      // Wait for Vue to propagate currentSession to all reactive consumers
+      // before triggerReload destroys/recreates components that query the DB
+      await nextTick();
+      await new Promise((r) => setTimeout(r, 50));
+      await reloadTriggerStore.triggerReload();
+      logger.info('Header', `New plugin "${fileName}" created`);
+    } else {
+      const updated = await updateHeader({
+        version: version.value,
+        file_type: fileType.value,
+        author: author.value,
+        description: description.value,
+        masters: dependencies.value,
+      });
+
+      // Sync Pinia store
+      headerStore.setPluginHeader(updated);
+
+      // Update session plugin name if changed
+      if (pluginName.value && sessionStore.currentSession) {
+        await sessionStore.updateSession({
+          ...sessionStore.currentSession,
+          pluginName: pluginName.value,
+        });
+      }
+
+      saved.value = true;
+      setTimeout(() => { saved.value = false; }, 2000);
+      logger.info('Header', 'Plugin header saved');
+    }
   } catch (err) {
     logger.error('Header', 'Failed to save header', err);
   } finally {
@@ -296,6 +416,55 @@ function formatBytes(bytes: number, decimals: number = 1): string {
 
     &:not(:last-child) {
       border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    }
+  }
+
+  &__dep-actions {
+    display: flex;
+    gap: 4px;
+    margin-left: 8px;
+    flex-shrink: 0;
+  }
+
+  &__dep-btn {
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    cursor: pointer;
+    padding: 2px 7px;
+    font-size: 16px;
+    line-height: 1;
+    transition: background 0.1s, color 0.1s;
+
+    &_edit {
+      color: rgba(0, 0, 0, 0.4);
+      &:hover { background: rgba(202, 165, 96, 0.2); color: rgba(0,0,0,0.75); }
+    }
+
+    &_remove {
+      color: rgba(180, 50, 50, 0.5);
+      font-size: 20px;
+      &:hover { background: rgba(180, 50, 50, 0.1); color: rgba(180, 50, 50, 0.9); }
+    }
+  }
+
+  &__dep-add {
+    margin-top: 6px;
+    background: transparent;
+    border: 1px dashed rgba(202, 165, 96, 0.6);
+    border-radius: 6px;
+    color: rgba(0,0,0,0.5);
+    font-family: 'Pelagiad', serif;
+    font-size: 16px;
+    padding: 6px 12px;
+    cursor: pointer;
+    width: 100%;
+    text-align: left;
+    transition: background 0.1s, color 0.1s;
+
+    &:hover {
+      background: rgba(202, 165, 96, 0.1);
+      color: rgba(0,0,0,0.75);
     }
   }
 

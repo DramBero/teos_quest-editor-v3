@@ -228,7 +228,8 @@ export class Parser {
         }
 
         // Name → instruction, function call, or explicit reference
-        if (tok.type === TokenType.Name) {
+        // A quoted string can also serve as an explicit object reference: "NPC"->Disable
+        if (tok.type === TokenType.Name || tok.type === TokenType.String) {
             return this.parseNameStatement();
         }
 

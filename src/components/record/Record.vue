@@ -9,6 +9,7 @@
       }"
       @click="isOverlayType && closeRecord()"
     >
+      <button v-if="!isOverlayType" class="record__close" @click="closeAll" title="Close">&times;</button>
       <div class="record__content" @click.stop>
         <component
           :is="getSelectedComponent"
@@ -63,10 +64,36 @@ const getSelectedComponent = computed(() => {
 function closeRecord(){
   selectedRecordStore.setSelectedRecord(null);
 }
+
+function closeAll() {
+  scriptTabsStore.closeAll();
+  selectedRecordStore.setSelectedRecord(null);
+}
 </script>
 
 <style lang="scss">
 .record {
+  &__close {
+    position: absolute;
+    top: 6px;
+    right: 8px;
+    z-index: 10;
+    background: transparent;
+    border: none;
+    color: rgba(202, 165, 96, 0.6);
+    font-size: 20px;
+    line-height: 1;
+    cursor: pointer;
+    padding: 2px 6px;
+    border-radius: 4px;
+    transition: color 0.15s, background 0.15s;
+
+    &:hover {
+      color: rgba(202, 165, 96, 1);
+      background: rgba(202, 165, 96, 0.1);
+    }
+  }
+
   &__content {
     height: 100%;
   }

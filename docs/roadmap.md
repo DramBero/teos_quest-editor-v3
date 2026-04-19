@@ -1,21 +1,21 @@
 # TODO before release-ready:
-- Edit from master
+v Edit from master
 - Disable master dialogue
 - Copy / Paste / Replace / Switch entry
-- Filters drag and drop
-- Add filters via context menu
-- Delete filters
-- Edit filters
+v Filters drag and drop
+v Add filters via context menu
+v Delete filters
+v Edit filters
 - Classic menu - changing order
 - Update choices on results edit
 - Option to show not only NPC-specific dialogue for the NPC, but also his faction, race, class, rank and global dialogue. (Maybe also cell, based on his starting cell)
 - Add books
-- Edit header
-- Create new plugin
+v Edit header
+v Create new plugin
 - Help menu
 - Watch and edit dialogue or journal changes
-- Full journal editing for master plugin
-- More error handling
+v Full journal editing for master plugin
+v More error handling
 - A video about functionality
 - Release text for Nexus
 - Finish the heads, and think of what to display for other speakers
@@ -28,7 +28,7 @@ These features are not essential for the release
 ### Edit GMST and variables
 ### Ability to open several dialogue windows
 ### Split IndexedDB to plugins and sessions 
-- Allows to open several tabs with plugins
+v Allows to open several tabs with plugins
 - Allows to remove all changes from current session
 - Allows to preview all changes from current session
 ### Make dependency keys in IndexedDB not based on name
@@ -39,11 +39,11 @@ Features I really wish to implement, but it would take several lifetimes. Still,
 ### Change history
 - Would allow to undo and redo changes and watch changes
 ### Custom highlighting for MWScript
-- For now, it uses highlighting for different conventional languages
+v For now, it uses highlighting for different conventional languages
 ### Code library for scripts
 - Would show some specific examples of scripts for usage
 ### Linting and LSP
-- Would allow to lint and autocomplete MWScript, Lua (MWSE) and Morrowind-specific HTML
+v Would allow to lint and autocomplete MWScript, Lua (MWSE) and Morrowind-specific HTML
 ### Keybindings with editing
 - Would allow to set and edit keybindings for certain operations
 ### Filters for different types of records
@@ -59,7 +59,7 @@ Features I really wish to implement, but it would take several lifetimes. Still,
 ### Item Module
 - Would allow to add and edit different types of items
 ### Scripts Module
-- Would allow to view and possibly edit scripts. May require compilation to bytecode
+v Would allow to view and possibly edit scripts. May require compilation to bytecode
 ### Magic Module
 - Would allow to add and create spells and enchantments. Maybe also Magic Effects
 ### Class/Skill/Birthsign Module

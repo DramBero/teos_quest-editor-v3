@@ -52,11 +52,13 @@ import { usePrimaryModal } from '@/stores/modals';
 import { useClassicView } from '@/stores/classicView';
 import { useSelectedSpeaker } from '@/stores/selectedSpeaker';
 import { useSelectedRecord } from '@/stores/selectedRecord';
+import { useScriptTabs } from '@/stores/scriptTabs';
 
 const selectedRecordStore = useSelectedRecord();
+const scriptTabsStore = useScriptTabs();
 const isScriptActive = computed(() => {
   const rec = selectedRecordStore.getSelectedRecord;
-  return rec?.[0]?.type === 'Script';
+  return rec?.[0]?.type === 'Script' || scriptTabsStore.hasOpenTabs;
 });
 
 type SpeakerType = 'npc' | 'cell' | 'class' | 'faction' | 'rank' | 'global';

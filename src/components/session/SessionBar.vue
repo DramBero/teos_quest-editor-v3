@@ -165,7 +165,7 @@ function onPlusClick(e: MouseEvent) {
       },
       {
         label: 'Create new plugin',
-        disabled: true,
+        onClick: () => { primaryModalStore.setActiveModal('CreatePlugin'); },
       },
     ],
   });
@@ -236,6 +236,11 @@ function openGearMenu(e: MouseEvent) {
       {
         label: 'Edit Header',
         onClick: () => { primaryModalStore.setActiveModal('EditHeader'); },
+        disabled: !sessionStore.currentSession,
+      },
+      {
+        label: 'Upload Masters',
+        onClick: () => { primaryModalStore.setActiveModal('Upload'); },
         disabled: !sessionStore.currentSession,
       },
       {

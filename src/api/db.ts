@@ -293,6 +293,44 @@ export async function getActiveHeader() {
 }
 
 /**
+ * Bootstrap a brand-new empty plugin in IndexedDB with only a Header record.
+ * Returns the plugin key so the caller can create a session.
+ */
+export async function createBlankPlugin(params: {
+    fileName: string;
+    fileType: 'Esp' | 'Esm';
+    version: number;
+    author: string;
+    description: string;
+    masters: Array<[string, number]>;
+}): Promise<{ pluginKey: string; header: Record<string, unknown> }> {
+    const pluginKey = makePluginKey(params.fileName, 0);
+    const db = await initPlugin(pluginKey);
+
+    // Wipe if somehow already exists
+    const existing = await db.pluginData.count();
+    if (existing) await db.pluginData.clear();
+
+    const header: Record<string, unknown> = {
+        type: 'Header',
+        TMP_index: 0,
+        TMP_id: '',
+        TMP_dep: params.fileName,
+        TMP_is_active: true,
+        version: params.version,
+        file_type: params.fileType,
+        author: params.author,
+        description: params.description,
+        masters: JSON.parse(JSON.stringify(params.masters)),
+        num_objects: 0,
+    };
+
+    await db.pluginData.add(header);
+    logger.info('DB', `Blank plugin "${params.fileName}" created with key "${pluginKey}"`);
+    return { pluginKey, header };
+}
+
+/**
  * Update the Header record in the active plugin's IndexedDB.
  * Merges the provided fields into the existing header and persists.
  * Returns the updated header record.
@@ -313,12 +351,15 @@ export async function updateHeader(fields: {
     if (fields.file_type !== undefined) header.file_type = fields.file_type;
     if (fields.author !== undefined) header.author = fields.author;
     if (fields.description !== undefined) header.description = fields.description;
-    if (fields.masters !== undefined) header.masters = fields.masters;
+    if (fields.masters !== undefined) header.masters = JSON.parse(JSON.stringify(fields.masters));
+
+    // Strip any Vue/Proxy wrappers before writing to IDB
+    const plainHeader = JSON.parse(JSON.stringify(header));
 
     // Persist — Dexie put() uses the auto-incrementing key (TMP_index)
-    await db.pluginData.put(header);
+    await db.pluginData.put(plainHeader);
     logger.info('DB', `Header updated: author="${fields.author ?? header.author}", type=${fields.file_type ?? header.file_type}`);
-    return header;
+    return plainHeader;
 }
 
 // ---------------------------------------------------------------------------
