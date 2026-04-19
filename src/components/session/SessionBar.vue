@@ -216,6 +216,9 @@ async function loadPluginFile(event: Event) {
     }
 
     reloadTriggerStore.triggerReload();
+
+    // Open Upload modal to load master files immediately after loading plugin
+    primaryModalStore.setActiveModal('Upload');
   } catch (error) {
     logger.error('Session', 'Failed to load plugin', error);
   } finally {

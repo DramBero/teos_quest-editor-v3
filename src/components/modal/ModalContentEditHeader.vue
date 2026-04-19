@@ -273,8 +273,8 @@ async function saveHeader() {
       invalidateDependencyCache();
       headerStore.setPluginHeader(header as any);
 
-      // Close modal first so watchers don't re-run in create mode
-      primaryModalStore.setActiveModal('');
+      // Open Upload modal to load master files immediately after creation
+      primaryModalStore.setActiveModal('Upload');
 
       // Wait for Vue to propagate currentSession to all reactive consumers
       // before triggerReload destroys/recreates components that query the DB
